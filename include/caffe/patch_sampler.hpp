@@ -4,7 +4,7 @@
 #include <map>
 #include <string>
 #include <vector>
-
+#include "caffe/blob.hpp"
 #include "caffe/common.hpp"
 #include "caffe/internal_thread.hpp"
 #include "caffe/util/blocking_queue.hpp"
@@ -12,6 +12,41 @@
 
 namespace caffe {
 
+  template <typename Dtype>
+  class Batch_data {
+   public:
+    Blob<Dtype> data_;
+    Blob<Dtype> label_;
+  };
+ template <typename Dtype>
+  class QueuePair_Batch {
+   public:
+    explicit QueuePair_Batch(const LayerParameter& param);
+    ~QueuePair_Batch();
+
+    BlockingQueue<Batch_data<Dtype>*> free_;
+    BlockingQueue<Batch_data<Dtype>*> full_;
+
+  DISABLE_COPY_AND_ASSIGN(QueuePair_Batch);
+  };
+  // A single body is created per source
+  template <typename Dtype>
+  class Runner : public InternalThread {
+   public:
+    explicit Runner(const LayerParameter& param);
+    virtual ~Runner();
+
+   protected:
+    void InternalThreadEntry();
+    //void read_one(db::Cursor* cursor, QueuePair* qp);
+
+    const LayerParameter param_;
+    BlockingQueue<shared_ptr<QueuePair_Batch<Dtype> > > new_queue_pairs_;
+
+    friend class PatchSampler;
+
+  DISABLE_COPY_AND_ASSIGN(Runner);
+  };
 /**
  * @brief warp patches from a data_reader_general to queues available to PatchSamplerLayer layers.
  * A single reading thread is created per source, even if multiple solvers
@@ -34,41 +69,11 @@ class PatchSampler {
   }
 
  protected:
-  // Queue pairs are shared between a body and its readers
-  class QueuePair_Batch {
-   public:
-    explicit QueuePair_blob(int size);
-    ~QueuePair_blob();
 
-    BlockingQueue<Batch_multi_data<Dtype>*> free_;
-    BlockingQueue<Batch_multi_data<Dtype>*> full_;
+  // Queue pairs are shared between a runner and its readers
+  //template <typename Dtype>
 
-  DISABLE_COPY_AND_ASSIGN(QueuePair);
-  };
 
-  template <typename Dtype>
-  class Batch_multi_data {
-   public:
-    vector<Blob<Dtype>> data_,
-    blob<Dtype> label_;
-  };
-  // A single body is created per source
-  class Runner : public InternalThread {
-   public:
-    explicit Runner(const LayerParameter& param);
-    virtual ~Runner();
-
-   protected:
-    void InternalThreadEntry();
-    //void read_one(db::Cursor* cursor, QueuePair* qp);
-
-    const LayerParameter param_;
-    BlockingQueue<shared_ptr<QueuePair_Batch> > new_queue_pairs_;
-
-    friend class PatchSampler;
-
-  DISABLE_COPY_AND_ASSIGN(Runner);
-  };
 
   // A source is uniquely identified by its layer name + path, in case
   // the same database is read from two different locations in the net.
@@ -76,10 +81,10 @@ class PatchSampler {
     return param.name() + ":" + param.data_param().source();
   }
 
-  const shared_ptr<QueuePair_Batch> queue_pair_;
-  shared_ptr<Runner> runner_;
+  const shared_ptr<QueuePair_Batch<Dtype> > queue_pair_;
+  shared_ptr<Runner<Dtype> > runner_;
 
-  static map<const string, boost::weak_ptr<PatchSampler::Runner> > runners_;
+  static map<const string, boost::weak_ptr<Runner<Dtype> > > runners_;
 
 DISABLE_COPY_AND_ASSIGN(PatchSampler);
 };
