@@ -90,6 +90,20 @@ class DataTransformer {
    */
   void Transform(Blob<Dtype>* input_blob, Blob<Dtype>* transformed_blob);
 
+
+  /**
+   * @brief Applies the N dimentional transformation defined in the data layer's
+   * transform_param block to all the num images in a input_blob.
+   *
+   * @param input_blob
+   *    A Blob containing the data to be transformed. It applies the same
+   *    transformation to all the num images in the blob.
+   * @param transformed_blob
+   *    This is destination blob, it will contain as many images as the
+   *    input blob. It can be part of top blob's data.
+   */
+  void Transform_ND(Blob<Dtype>* input_blob, Blob<Dtype>* transformed_blob);
+
   /**
    * @brief Infers the shape of transformed_blob will have when
    *    the transformation is applied to the data.
