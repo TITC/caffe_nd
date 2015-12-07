@@ -192,7 +192,7 @@ void DataTransformerND<Dtype>::Transform(Blob<Dtype>* input_blob,
         //  nd_point.push_back(data_axis_idx);
           pre_aixs_len*=transform_shape[i];
      }
-       it =np_point.begin();
+       it =nd_point.begin();
        nd_point.insert(it, data_axis_idx);
        //nd_point.push_back(data_axis_idx);
    }
