@@ -306,7 +306,7 @@ message ParamSpec {
 // NOTE
 // Update the next available ID when you add a new LayerParameter field.
 //
-// LayerParameter next available layer-specific ID: 140 (last added: batch_norm_param)
+// LayerParameter next available layer-specific ID: 143 (last added: data_provider_param)
 message LayerParameter {
   optional string name = 1; // the layer name
   optional string type = 2; // the layer type
@@ -361,6 +361,7 @@ message LayerParameter {
   optional ContrastiveLossParameter contrastive_loss_param = 105;
   optional ConvolutionParameter convolution_param = 106;
   optional DataParameter data_param = 107;
+  optional DataProviderParameter data_provider_param =142;
   optional DropoutParameter dropout_param = 108;
   optional DummyDataParameter dummy_data_param = 109;
   optional EltwiseParameter eltwise_param = 110;
@@ -377,7 +378,7 @@ message LayerParameter {
   optional LRNParameter lrn_param = 118;
   optional MemoryDataParameter memory_data_param = 119;
   optional MVNParameter mvn_param = 120;
-  optional PatchSamplerParameter patch_sampler_pram =140;
+  optional PatchSamplerParameter patch_sampler_param =140;
   optional PoolingParameter pooling_param = 121;
   optional PowerParameter power_param = 122;
   optional PReLUParameter prelu_param = 131;
@@ -1325,3 +1326,25 @@ message TransformationNDParameter {
   // Force the decoded image to have 1 color channels.
   //optional bool force_gray = 7 [default = false];
 }
+message DataProviderParameter{
+    enum DS{
+    LEVELDB = 0;
+    LMDB    = 1;
+    HDF5    = 2;
+    }
+
+    // Specify the data source.
+    optional string hdf5_source = 1;
+    optional string db_source_data =2;
+    optional string db_source_label =3;
+    optional bool hdf5_file_suffle    =4;
+    optional bool  data_shuffle      =5;
+    // Specify the batch size.
+    optional uint32 batch_size = 6;
+    optional DS backend = 7 [default = LEVELDB];
+}
+
+//message PatchDataParameter{
+//    optional PatchSamplerParameter  patch_sampler_param=1;
+//    optional DataProviderParameter  data_provider_param=2;
+//}

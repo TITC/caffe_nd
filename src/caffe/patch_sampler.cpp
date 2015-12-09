@@ -21,7 +21,8 @@ template <typename Dtype>
 PatchSampler<Dtype>::PatchSampler(const LayerParameter& param)
     :param_(param),
     queue_pair_(new QueuePair_Batch<Dtype>(param)),
-    d_provider_(new Data_provider<Dtype>(param)),
+    //d_provider_(new Data_provider<Dtype>(param)),
+    d_provider_(Data_provider<Dtype>::Make_data_provider_instance(param.data_provider_param)),
     data_transformer_nd(new DataTransformerND<Dtype>(param.transform_nd_param()))
 {
   // Get or create a body
@@ -30,12 +31,12 @@ PatchSampler<Dtype>::PatchSampler(const LayerParameter& param)
   weak_ptr<Runner<Dtype> >& weak = runners_[key];
   runner_ = weak.lock();
   if (!runner_) {
-    runner_.reset(new Runner<Dtype>(param));
+    runner_.reset(new Runner<Dtype>(param,this));
     runners_[key] = weak_ptr<Runner<Dtype> >(runner_);
   }
   runner_->new_queue_pairs_.push(queue_pair_);
 
-  patches_per_data_batch_ = param_.patch_sampler_pram().patches_per_data_batch();
+  patches_per_data_batch_ = param_.patch_sampler_param().patches_per_data_batch();
   const unsigned int prefetch_rng_seed = caffe_rng_rand();
   prefetch_rng_.reset(new Caffe::RNG(prefetch_rng_seed));
   patch_count_ =0;
@@ -60,7 +61,7 @@ unsigned int PatchSampler<Dtype>::PrefetchRand(){
 }
 
 template <typename Dtype>
-void PatchSampler<Dtype>::ReadOnePatch( QueuePair_Batch<Dtype>* qb ){
+void PatchSampler<Dtype>::ReadOnePatch(QueuePair_Batch<Dtype>* qb ){
   // load new data to memomry pool
   if(patch_count_%patches_per_data_batch_ ==0)
   {
@@ -98,7 +99,24 @@ void PatchSampler<Dtype>::ReadOnePatch( QueuePair_Batch<Dtype>* qb ){
 
 
   //vector<int>& source_shape =patch_data->data.shape();
-//  qb->full_.push(patch_data);
+  //vector<int> dest_label_shape;
+  dest_label_shape_.clear();
+  dest_data_shape_.clear();
+  dest_label_shape_.push_back(l_num);
+  for(int i=1;i< d_dims;i++){
+    dest_label_shape_.push_back(1);
+  }
+
+  patch_data_label.data.CopyFrom(trans_blob,false,true);
+  patch_data_label.label.ReshapeLike(dest_label_shape_);
+  patch_data_label.label.cpu_data_mutble()[0]=crp_cent_info->value;
+  qb->full_.push_back(patch_data_label);
+  dest_label_shape_=patch_data_label.data.shape();
+   //dest_label_shape.cpu_data_mutable()[0]=crp_cent_info->value;
+   //qb->full_.data.CopyFrom(trans_blob,false,true);
+   //qb->full_.label.Reshape(dest_label_shape);
+   //qb->full_.label.cpu_data_mutble()[0]=crp_cent_info->value;
+
 
   // go to the next iter
   // cursor->Next();
@@ -113,19 +131,19 @@ template <typename Dtype>
 QueuePair_Batch<Dtype>::QueuePair_Batch(const LayerParameter& param) {
   // Initialize the free queue with requested number of blobs
 //  Batch_dat
-  int batch_size = param.patch_sampler_pram().batch_size();
-  int patch_dims = param.patch_sampler_pram().patch_shape().dim_size();
+  int batch_size = param.patch_sampler_param().batch_size();
+  int patch_dims = param.patch_sampler_param().patch_shape().dim_size();
   vector<int> patch_shape, label_shape;
   patch_shape.push_back(batch_size);
   label_shape.push_back(batch_size);
   for(int i=0;i<patch_dims;i++){
-    int dim =param.patch_sampler_pram().patch_shape().dim(i);
+    int dim =param.patch_sampler_param().patch_shape().dim(i);
     patch_shape.push_back(dim);
   }
 
-  bool output_label =param.patch_sampler_pram().has_label_shape();
+  bool output_label =param.patch_sampler_param().has_label_shape();
   if(output_label){
-    int label_dim = param.patch_sampler_pram().label_shape().dim_size();
+    int label_dim = param.patch_sampler_param().label_shape().dim_size();
     for(int i=1;i<label_dim;i++){
        label_shape.push_back(label_dim);
      }
@@ -169,6 +187,8 @@ Runner<Dtype>::~Runner() {
 
 template <typename Dtype>
 void Runner<Dtype>::InternalThreadEntry() {
+    p_sampler_->ReadOnePatch(p_sampler_->new_queue_pairs_.pop());
+
   // shared_ptr<db::DB> db(db::GetDB(param_.data_param().backend()));
   // db->Open(param_.data_param().source(), db::READ);
   // shared_ptr<db::Cursor> cursor(db->NewCursor());

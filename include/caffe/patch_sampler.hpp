@@ -12,14 +12,10 @@
 #include "caffe/util/rng.hpp"
 #include "caffe/util/math_functions.hpp"
 #include "caffe/data_transformerND.hpp"
+#include "caffe/data_provider.hpp"
 namespace caffe {
   template <typename Dtype> class PatchSampler;
-  template <typename Dtype>
-  class Batch_data {
-   public:
-    Blob<Dtype> data_;
-    Blob<Dtype> label_;
-  };
+
  template <typename Dtype>
   class QueuePair_Batch {
    public:
@@ -32,18 +28,18 @@ namespace caffe {
   DISABLE_COPY_AND_ASSIGN(QueuePair_Batch);
   };
 
-  template <typename Dtype>
-  class Data_provider{
-  public:
-    explicit Data_provider(const LayerParameter& param);
-    ~Data_provider();
-    void load_next_batch(int numData);
-    inline int get_current_batch_size(){return num_cur_batch_size;};
-    inline const Batch_data<Dtype>& getOneData(int idx){ return source_data_label_pair_[idx];};
-  protected:
-    int num_cur_batch_size;
-    vector<Batch_data<Dtype> > source_data_label_pair_;
-  };
+  // template <typename Dtype>
+  // class Data_provider{
+  // public:
+  //   explicit Data_provider(const LayerParameter& param);
+  //   ~Data_provider();
+  //   void load_next_batch(int numData);
+  //   inline int get_current_batch_size(){return num_cur_batch_size;};
+  //   inline const Batch_data<Dtype>& getOneData(int idx){ return source_data_label_pair_[idx];};
+  // protected:
+  //   int num_cur_batch_size;
+  //   vector<Batch_data<Dtype> > source_data_label_pair_;
+  // };
 
   // A single body is created per source
   template <typename Dtype>
@@ -80,15 +76,26 @@ class PatchSampler {
   explicit PatchSampler(const LayerParameter& param);
   ~PatchSampler();
 
-  inline BlockingQueue<Blob<Dtype>*>& free() const {
+  inline BlockingQueue<Batch_data<Dtype>*>& free() const {
     return queue_pair_->free_;
   }
-  inline BlockingQueue<Blob<Dtype>*>& full() const {
+  inline BlockingQueue<Batch_data<Dtype>*>& full() const {
     return queue_pair_->full_;
   }
-
+  inline vector<int>& patch_data_shape(){
+    if (dest_data_shape_.size()==0){
+      ReadOnePatch(queue_pair_.get());
+    }
+    return dest_data_shape_;
+  }
+  inline vector<int>& patch_label_shape(){
+    if (dest_label_shape_.size()==0){
+      ReadOnePatch(queue_pair_.get());
+    }
+    return dest_label_shape_;
+  }
  protected:
-   void ReadOnePatch( QueuePair_Batch<Dtype>* qb );
+   void ReadOnePatch(QueuePair_Batch<Dtype>* qb );
    unsigned int PrefetchRand();
   // Queue pairs are shared between a runner and its readers
   //template <typename Dtype>
@@ -107,6 +114,8 @@ class PatchSampler {
   shared_ptr<Caffe::RNG> prefetch_rng_;
   unsigned int patch_count_;
   unsigned int patches_per_data_batch_;
+  vector<int>  dest_label_shape_;
+  vector<int>  dest_data_shape_;
   shared_ptr<DataTransformerND<Dtype> > data_transformer_nd;
   //PeekCropCenterPoint
 
