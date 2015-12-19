@@ -54,13 +54,16 @@ template <typename Dtype>
   }
 
   // Load the first HDF5 file and initialize the line counter.
+  LOG(INFO) << "Loading hdf5 ...  " << hdf5_filenames_[file_permutation_[current_file_]];
   this->LoadHDF5FileData(hdf5_filenames_[file_permutation_[current_file_]].c_str(),0);
   //current_row_ = 0;
+
+  //void loadHDF5FileData(const char* filename, int blob_idx);
 
 }
 
 template <typename Dtype>
-void Data_HDF5_provider<Dtype>::loadHDF5FileData(const char* filename, int blob_idx)
+void Data_HDF5_provider<Dtype>::LoadHDF5FileData(const char* filename, int blob_idx)
 {
   DLOG(INFO) << "Loading HDF5 file: " << filename;
   hid_t file_id = H5Fopen(filename, H5F_ACC_RDONLY, H5P_DEFAULT);
@@ -70,7 +73,7 @@ void Data_HDF5_provider<Dtype>::loadHDF5FileData(const char* filename, int blob_
 
   //int top_size = this->layer_param_.top_size();
   // we assume that each hdf5 file contains one "data" and one "label"
-  Dtype a =Dtype(1);
+  //Dtype a =Dtype(1);
   vector<string> data_set_names;
   data_set_names.push_back("data");
   data_set_names.push_back("label");
@@ -80,49 +83,72 @@ void Data_HDF5_provider<Dtype>::loadHDF5FileData(const char* filename, int blob_
 
   //for (int i = 0; i < data_set_names.size(); ++i) {
     //source_data_label_pair_[blob_idx].data = shared_ptr<Blob<Dtype> >(new Blob<Dtype>());
+    LOG(INFO) << "hdf5_load_nd_dataset ...  " << data_set_names[0];
     hdf5_load_nd_dataset(file_id, data_set_names[0].c_str(),
-        MIN_DATA_DIM, MAX_DATA_DIM, &this->source_data_label_pair_[blob_idx].data);
-
+        MIN_DATA_DIM, MAX_DATA_DIM, this->source_data_label_pair_[blob_idx].data_.get());
+    LOG(INFO) << "hdf5_load_nd_dataset ...  " << data_set_names[1];
     //source_data_label_pair_[blob_idx].label = shared_ptr<Blob<Dtype> >(new Blob<Dtype>());
         hdf5_load_nd_dataset(file_id, data_set_names[1].c_str(),
-            MIN_DATA_DIM, MAX_DATA_DIM, &this->source_data_label_pair_[blob_idx].label);
+            MIN_DATA_DIM, MAX_DATA_DIM, this->source_data_label_pair_[blob_idx].label_.get());
 
 
   //}
-
+   LOG(INFO) << "finished loading hdf5 file ";
   herr_t status = H5Fclose(file_id);
   CHECK_GE(status, 0) << "Failed to close HDF5 file: " << filename;
 
   // MinTopBlobs==1 guarantees at least one top blob
-  CHECK_GE(hdf_blobs_[0]->num_axes(), 1) << "Input must have at least 1 axis.";
-  const int num = hdf_blobs_[0]->shape(0);
-  for (int i = 1; i < num_dataset; ++i) {
-    CHECK_EQ(hdf_blobs_[i]->shape(0), num);
-  }
-  // Default to identity permutation.
-  data_permutation_.clear();
-  data_permutation_.resize(hdf_blobs_[0]->shape(0));
-  for (int i = 0; i < hdf_blobs_[0]->shape(0); i++)
-    data_permutation_[i] = i;
+  CHECK_GE(this->source_data_label_pair_[blob_idx].data_->num_axes(), 1) << "Input must have at least 1 axis.";
+  vector<int> d_shape =this->source_data_label_pair_[blob_idx].data_->shape();
 
-  // Shuffle if needed.
-  if (this->param_.data_shuffle()) {
-    std::random_shuffle(data_permutation_.begin(), data_permutation_.end());
-    DLOG(INFO) << "Successully loaded " << hdf_blobs_[0]->shape(0)
-               << " rows (shuffled)";
-  } else {
-    DLOG(INFO) << "Successully loaded " << hdf_blobs_[0]->shape(0) << " rows";
+  // for (int i=0;i<d_shape.size();++i)
+  //   LOG(INFO)<<"loaded data shape : " <<d_shape[i];
+
+  if(d_shape.size()<=3){
+    //there is no num and channel in data , so appending num and channel to the data
+    d_shape.insert(d_shape.begin(),1);
+    d_shape.insert(d_shape.begin(),1);
+    this->source_data_label_pair_[blob_idx].data_->Reshape(d_shape);
+    this->source_data_label_pair_[blob_idx].label_->Reshape(d_shape);
+    LOG(INFO)<<"Reshapeing the source data blob : adding num 1 and channel 1 : ";
+    //vector<int>::iterator it=
+    //this->source_data_label_pair_[blob_idx].data_
   }
+  //const int num = this->source_data_label_pair_[blob_idx].data_->shape(0);
+  //CHECK_EQ(num,1);// for patching we assumed that very hdf file has onely one large 3D valume.
+  // for (int i = 1; i < num_dataset; ++i) {
+  //   CHECK_EQ(hdf_blobs_[i]->shape(0), num);
+  // }
+  // Default to identity permutation.
+  // data_permutation_.clear();
+  // data_permutation_.resize(hdf_blobs_[0]->shape(0));
+  // for (int i = 0; i < hdf_blobs_[0]->shape(0); i++)
+  //   data_permutation_[i] = i;
+  //
+  // // Shuffle if needed.
+  // if (this->param_.data_shuffle()) {
+  //   std::random_shuffle(data_permutation_.begin(), data_permutation_.end());
+  //   DLOG(INFO) << "Successully loaded " << hdf_blobs_[0]->shape(0)
+  //              << " rows (shuffled)";
+  // } else {
+  //   DLOG(INFO) << "Successully loaded " << hdf_blobs_[0]->shape(0) << " rows";
+  // }
+  LOG(INFO) << "Successully loaded hdf5 file " << filename;
 }
 
 template <typename Dtype>
- void Data_HDF5_provider<Dtype>::load_next_batch(int numData){
-
+ void Data_HDF5_provider<Dtype>::Load_next_batch(int numData){
+    LOG(INFO) <<"loading data index  = "<<numData;
    for(int i=0;i<numData;++i){
      if(current_file_ >=num_files_) {current_file_  =0;}
-     //LoadHDF5FileData(hdf5_filenames_[file_permutation_[current_file_]].c_str(), current_file_);
-     current_file_++;
+       LOG(INFO) <<"loading file  = "<<hdf5_filenames_[file_permutation_[current_file_]];
+       this->LoadHDF5FileData(hdf5_filenames_[file_permutation_[current_file_]].c_str(), current_file_);
+       current_file_++;
     }
  }
+ INSTANTIATE_CLASS(Batch_data);
+ INSTANTIATE_CLASS(Data_HDF5_provider);
+ INSTANTIATE_CLASS(Data_DB_provider);
+ INSTANTIATE_CLASS(Data_provider);
 
  }

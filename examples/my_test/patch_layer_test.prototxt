@@ -1,0 +1,169 @@
+layer {
+  name: "data"
+  type: "PatchData"
+  top: "data"
+  top: "label"
+  # include {
+    # phase: TRAIN
+  # }
+  patch_sampler_param{
+   batch_size: 32
+   patches_per_data_batch: 999999
+   data_source_batch_size: 1
+ }
+  transform_nd_param{
+    mirror: false
+    crop_shape{
+      dim: 19
+      dim: 19
+      dim: 9
+    }
+    padding: true
+    pad_method: ZERO
+  }
+  data_provider_param{
+    # Specify the data source.
+    backend: HDF5
+    batch_size: 2
+    hdf5_file_shuffle: true
+    hdf5_source: "hdf5_file_list.txt"
+  }
+}
+
+layer {
+  name: "conv1"
+  type: "Convolution"
+  bottom: "data"
+  top: "conv1"
+  param {
+    lr_mult: 1
+  }
+  param {
+    lr_mult: 2
+  }
+  convolution_param {
+    num_output: 2
+  # pad: 2
+    kernel_size: 5
+    kernel_size: 5
+    kernel_size: 5
+    stride: 1
+    weight_filler {
+      type: "gaussian"
+      std: 0.0001
+    }
+    bias_filler {
+      type: "constant"
+    }
+  }
+}
+
+layer {
+  name: "conv2"
+  type: "Convolution"
+  bottom: "conv1"
+  top: "conv2"
+  param {
+    lr_mult: 1
+  }
+  param {
+    lr_mult: 2
+  }
+  convolution_param {
+    num_output: 2
+  #pad: 2
+    kernel_size: 5
+    kernel_size: 5
+    kernel_size: 5
+    stride: 1
+    weight_filler {
+      type: "gaussian"
+      std: 0.0001
+    }
+    bias_filler {
+      type: "constant"
+    }
+  }
+}
+
+
+layer {
+  name: "conv3"
+  type: "Convolution"
+  bottom: "conv2"
+  top: "conv3"
+  param {
+    lr_mult: 1
+  }
+  param {
+    lr_mult: 2
+  }
+  convolution_param {
+    num_output: 2
+  #pad: 2
+    kernel_size: 5
+    kernel_size: 5
+    kernel_size: 1
+    stride: 4
+    stride: 4
+    stride: 1
+    weight_filler {
+      type: "gaussian"
+      std: 0.0001
+    }
+    bias_filler {
+      type: "constant"
+    }
+  }
+}
+
+layer {
+  name: "conv4"
+  type: "Convolution"
+  bottom: "conv3"
+  top: "conv4"
+  param {
+    lr_mult: 1
+  }
+  param {
+    lr_mult: 2
+  }
+  convolution_param {
+    num_output: 2
+  #pad: 2
+    kernel_size: 2
+    kernel_size: 2
+    kernel_size: 1
+    stride: 1
+    stride: 1
+    stride: 1
+    weight_filler {
+      type: "gaussian"
+      std: 0.0001
+    }
+    bias_filler {
+      type: "constant"
+    }
+  }
+}
+
+
+#
+# // layer {
+# //   name: "accuracy"
+# //   type: "Accuracy"
+# //   bottom: "conv4"
+# //   bottom: "label"
+# //   top: "accuracy"
+# // }
+layer {
+   # include {
+    # phase: TRAIN
+  # }
+  name: "loss"
+  type: "SoftmaxWithLoss"
+  bottom: "conv4"
+  bottom: "label"
+  top: "loss"
+}
+

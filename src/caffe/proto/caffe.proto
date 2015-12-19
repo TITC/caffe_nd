@@ -1337,7 +1337,7 @@ message DataProviderParameter{
     optional string hdf5_source = 1;
     optional string db_source_data =2;
     optional string db_source_label =3;
-    optional bool hdf5_file_suffle    =4;
+    optional bool hdf5_file_shuffle    =4;
     optional bool  data_shuffle      =5;
     // Specify the batch size.
     optional uint32 batch_size = 6;

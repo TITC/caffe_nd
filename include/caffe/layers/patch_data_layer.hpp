@@ -1,5 +1,5 @@
-#ifndef CAFFE_DATA_LAYER_HPP_
-#define CAFFE_DATA_LAYER_HPP_
+#ifndef CAFFE_PATCH_DATA_LAYER_HPP_
+#define CAFFE_PATCH_DATA_LAYER_HPP_
 
 #include <vector>
 
@@ -24,7 +24,7 @@ class PatchDataLayer : public BasePrefetchingDataLayer<Dtype> {
       const vector<Blob<Dtype>*>& top);
   // DataLayer uses DataReader instead for sharing for parallelism
   virtual inline bool ShareInParallel() const { return false; }
-  virtual inline const char* type() const { return "PatchSampler"; }
+  virtual inline const char* type() const { return "PatchData"; }
   virtual inline int ExactNumBottomBlobs() const { return 0; }
   virtual inline int MinTopBlobs() const { return 1; }
   virtual inline int MaxTopBlobs() const { return 2; }

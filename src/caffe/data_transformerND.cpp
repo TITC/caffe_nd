@@ -20,11 +20,16 @@ DataTransformerND<Dtype>::DataTransformerND(const TransformationNDParameter& par
 }
 
 template<typename Dtype>
-const CropCenterInfo<Dtype>&  DataTransformerND<Dtype>::PeekCropCenterPoint(Blob<Dtype>* input_blob){
+const CropCenterInfo<Dtype>  DataTransformerND<Dtype>::PeekCropCenterPoint(Blob<Dtype>* input_blob){
+  //PeekCropCenterPoint assum that input is a label array, thus it has only one channel.
+
+  //for(int i=0;input_blob->shape().size();++i)
+    //  LOG(INFO)<<"input blob shape size =" <<input_blob->shape().size();
   bool padding =param_.padding();
   bool crop =param_.has_crop_shape();
   int input_shape_dims=input_blob->num_axes();
-  shared_ptr<CropCenterInfo<Dtype> > crop_center_info(new CropCenterInfo<Dtype>);
+  CropCenterInfo<Dtype> crop_center_info;//(new CropCenterInfo<Dtype>);
+  //CropCenterInfo<Dtype> crop_center_info;//(new CropCenterInfo<Dtype>);
   CHECK_GE(input_shape_dims,3);
   const vector<int>& input_shape =input_blob->shape();
   vector<int> tranform_shape;
@@ -34,6 +39,7 @@ const CropCenterInfo<Dtype>&  DataTransformerND<Dtype>::PeekCropCenterPoint(Blob
   CHECK_EQ(input_num,1);
   int crop_shape_dims=param_.crop_shape().dim_size();
   CHECK_EQ(crop_shape_dims,input_shape_dims-2);
+  // assume that the number
   tranform_shape.push_back(1);
   tranform_shape.push_back(1);
   CHECK_EQ(crop_shape_dims,input_shape_dims-2);
@@ -44,21 +50,33 @@ const CropCenterInfo<Dtype>&  DataTransformerND<Dtype>::PeekCropCenterPoint(Blob
 
      for(int i=0;i<nd_off.size();i++){
        if(crop)
-          if(padding)
+          if(padding){
+              CHECK_GE(input_shape[i+2],0);
               nd_off[i] = Rand(input_shape[i+2])-tranform_shape[i]/2;
+            }
           else
+          {
               nd_off[i] = Rand(input_shape[i+2] - tranform_shape[i] + 1);
+              CHECK_GE(input_shape[i+2],0);
+            }
         else
           nd_off[i] = (input_shape[i+2]  - tranform_shape[i]) / 2;
+
+          //for(int i=0;input_blob->shape().size();++i)
+        //LOG(INFO)<<"patch offset  =" <<nd_off[i] ;
       //  w_off = (input_width - crop_size) / 2;
     }
+
+
+
   int center_index=1;
   for (int n=0;n<nd_off.size();++n){
        if(n==0){
-         center_index = input_shape[2+n] *tranform_shape[n];
+         center_index = nd_off[n];
+          // LOG(INFO)<<"n=0 center inx "<<center_index;
        }else{
        center_index*=input_shape[2+n];
-       center_index+=(nd_off[n]+tranform_shape[n]/2);
+       center_index+=nd_off[n];
      }
   }
   int input_count=input_blob->count();
@@ -66,9 +84,11 @@ const CropCenterInfo<Dtype>&  DataTransformerND<Dtype>::PeekCropCenterPoint(Blob
   CHECK_LE(center_index,input_count);
   const Dtype* input_data =input_blob->cpu_data();
   Dtype center_value=input_data[center_index];
-  crop_center_info->nd_off=nd_off;
-  crop_center_info->value =center_value;
-  return *crop_center_info;
+  crop_center_info.nd_off=nd_off;
+  crop_center_info.value =center_value;
+
+  //LOG(INFO)<<"nd_off num_aix ="<<crop_center_info.nd_off.size();
+  return crop_center_info;
   //TransformationNDParameter_PadMethod_ZERO;
 
 }
@@ -76,13 +96,15 @@ const CropCenterInfo<Dtype>&  DataTransformerND<Dtype>::PeekCropCenterPoint(Blob
 template<typename Dtype>
 void DataTransformerND<Dtype>::Transform(Blob<Dtype>* input_blob,
                                                 Blob<Dtype>* transformed_blob){
+//  CropCenterInfo<Dtype> c_info= PeekCropCenterPoint(input_blob);
+
   CropCenterInfo<Dtype> c_info= PeekCropCenterPoint(input_blob);
   Transform(input_blob, transformed_blob,c_info.nd_off);
 
 }
 template<typename Dtype>
 void DataTransformerND<Dtype>::Transform(Blob<Dtype>* input_blob,
-                                       Blob<Dtype>* transformed_blob, vector<int>& off_set) {
+                                       Blob<Dtype>* transformed_blob, const vector<int>& off_set) {
   int input_shape_dims=input_blob->num_axes();
   bool padding =param_.padding();
   int offset_axis = off_set.size();
@@ -109,7 +131,7 @@ void DataTransformerND<Dtype>::Transform(Blob<Dtype>* input_blob,
       transformed_blob->Reshape(input_shape);
     }
   }
-
+ //return ;
   vector<int> new_transform_shape = transformed_blob->shape();
   //const int num = new_transform_shape[0];
   const int channels = new_transform_shape[1];

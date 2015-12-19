@@ -12,6 +12,13 @@ namespace caffe {
 template <typename Dtype>
 class CropCenterInfo{
 public:
+  CropCenterInfo(){};
+  CropCenterInfo(const CropCenterInfo &other)
+ {
+   nd_off = other.nd_off;
+   value = other.value;
+    //std::cout << "Copy constructor was called" << std::endl;
+ }
   vector<int> nd_off;
   Dtype value;
 };
@@ -32,10 +39,17 @@ class DataTransformerND {
   void InitRand();
 
   void Transform(Blob<Dtype>* input_blob, Blob<Dtype>* transformed_blob);
+
+
   void Transform(Blob<Dtype>* input_blob,
-                   Blob<Dtype>*  transformed_blob,
-                   vector<int>& off_set);
-  const CropCenterInfo<Dtype>& PeekCropCenterPoint(Blob<Dtype>* input_blob);
+                                         Blob<Dtype>* transformed_blob,
+                                         const vector<int>& off_set);
+
+  // void Transform(Blob<Dtype>* input_blob,
+  //                  Blob<Dtype>*  transformed_blob,
+  //                  const vector<int>& off_set);
+
+  const CropCenterInfo<Dtype> PeekCropCenterPoint(Blob<Dtype>* input_blob);
   /**
    * @brief Infers the shape of transformed_blob will have when
    *    the transformation is applied to the data.
