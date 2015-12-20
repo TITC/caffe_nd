@@ -55,7 +55,9 @@ template <typename Dtype>
 
   // Load the first HDF5 file and initialize the line counter.
   LOG(INFO) << "Loading hdf5 ...  " << hdf5_filenames_[file_permutation_[current_file_]];
-  this->LoadHDF5FileData(hdf5_filenames_[file_permutation_[current_file_]].c_str(),0);
+  //this->LoadHDF5FileData(hdf5_filenames_[file_permutation_[current_file_]].c_str(),0);
+  //this->Load_next_batch();
+  //this->Load_next_batch();
   //current_row_ = 0;
 
   //void loadHDF5FileData(const char* filename, int blob_idx);
@@ -137,15 +139,31 @@ void Data_HDF5_provider<Dtype>::LoadHDF5FileData(const char* filename, int blob_
 }
 
 template <typename Dtype>
- void Data_HDF5_provider<Dtype>::Load_next_batch(int numData){
-    LOG(INFO) <<"loading data index  = "<<numData;
-   for(int i=0;i<numData;++i){
+ void Data_HDF5_provider<Dtype>::Load_next_batch(int data_idx){
+    //LOG(INFO) <<"loading data index  = "<<numData;
+  // for(int i=0;i<numData;++i){
+     CHECK_GE(data_idx,0);
+     CHECK_LE(data_idx, this->batch_size_-1);
      if(current_file_ >=num_files_) {current_file_  =0;}
-       LOG(INFO) <<"loading file  = "<<hdf5_filenames_[file_permutation_[current_file_]];
-       this->LoadHDF5FileData(hdf5_filenames_[file_permutation_[current_file_]].c_str(), current_file_);
-       current_file_++;
-    }
+     LOG(INFO) <<"loading HDF5 file : "<<"'"<<hdf5_filenames_[file_permutation_[current_file_]]<<"'";
+     this->LoadHDF5FileData(hdf5_filenames_[file_permutation_[current_file_]].c_str(), data_idx);
+     current_file_++;
+  //  }
  }
+
+ template <typename Dtype>
+  void Data_HDF5_provider<Dtype>::Load_next_batch(){
+  //   LOG(INFO) <<"loading next batch hdf5 files = "<<numData;
+    for(int i=0;i<this->batch_size_;++i){
+        Load_next_batch(i);
+      // if(current_file_ >=num_files_) {current_file_  =0;}
+      //   LOG(INFO) <<"loading file  = "<<hdf5_filenames_[file_permutation_[current_file_]];
+      //   this->LoadHDF5FileData(hdf5_filenames_[file_permutation_[current_file_]].c_str(), i);
+      //   current_file_++;
+     }
+  }
+
+
  INSTANTIATE_CLASS(Batch_data);
  INSTANTIATE_CLASS(Data_HDF5_provider);
  INSTANTIATE_CLASS(Data_DB_provider);

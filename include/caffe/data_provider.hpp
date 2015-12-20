@@ -31,7 +31,8 @@ class Data_provider{
 public:
   explicit Data_provider(const DataProviderParameter& param);
   ~Data_provider(){};
-  virtual void Load_next_batch(int numData)=0;
+  virtual void Load_next_batch(int data_blob_idx)=0;
+  virtual void Load_next_batch()=0;
   inline int get_current_batch_size(){return batch_size_;};
   inline const Batch_data<Dtype>& getOneData(int idx){ return source_data_label_pair_[idx];};
 protected:
@@ -47,7 +48,8 @@ class Data_DB_provider:public Data_provider<Dtype>{
 public:
   explicit Data_DB_provider(const DataProviderParameter& param);
   ~Data_DB_provider(){};
-  virtual void Load_next_batch(int numData){};
+  virtual void Load_next_batch(int data_blob_idx){};
+  virtual void Load_next_batch(){};
 };
 
 template <typename Dtype>
@@ -55,7 +57,8 @@ class Data_HDF5_provider:public Data_provider<Dtype>{
 public:
   explicit Data_HDF5_provider(const DataProviderParameter& param);
   ~Data_HDF5_provider(){};
-  virtual void Load_next_batch(int numData);
+  virtual void Load_next_batch(int data_blob_idx);
+  virtual void Load_next_batch();
 protected:
   void LoadHDF5FileData(const char* filename, int blob_idx);
   std::vector<std::string> hdf5_filenames_;

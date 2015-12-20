@@ -83,14 +83,29 @@ vector<int>& PatchSampler<Dtype>::patch_label_shape(){
 template <typename Dtype>
 void PatchSampler<Dtype>::ReadOnePatch(QueuePair_Batch<Dtype>* qb ){
   // load new data to memomry pool
+
+ count_m_mutex_.lock();
   if(patch_count_%patches_per_data_batch_ ==0)
   {
-    d_provider_->Load_next_batch(0);
+
+      LOG(INFO)<<"loading batch patch_count = "<<patch_count_;
+      d_provider_->Load_next_batch();
+
+
   }
+  count_m_mutex_.unlock();
   patch_count_++;
+
+
   int data_idx=PrefetchRand()% d_provider_->get_current_batch_size();
   const Batch_data<Dtype> source_data_label=d_provider_->getOneData(data_idx);
+
+  //LOG(INFO)<<()
+
+
+
   Batch_data<Dtype>* patch_data_label = qb->free_.pop();
+  //LOG(INFO)<< "readone from provider";
   //TODO
   // take input patch_data and then warp a patch and put it to patch_data;
   // the cappablity that address the probability of selecting classe need to be addressed
@@ -140,22 +155,10 @@ void PatchSampler<Dtype>::ReadOnePatch(QueuePair_Batch<Dtype>* qb ){
   patch_data_label->label_->mutable_cpu_data()[0]=crp_cent_info.value;
   qb->full_.push(patch_data_label);
 
-  // LOG(INFO)<<"put q back to quque";
-   dest_label_shape_=patch_data_label->label_->shape();
-   dest_data_shape_=patch_data_label->data_->shape();
-   //LOG(INFO)<<"dest_data_shape_ size = " <<dest_data_shape_.size();
-   //dest_label_shape.cpu_data_mutable()[0]=crp_cent_info->value;
-   //qb->full_.data.CopyFrom(trans_blob,false,true);
-   //qb->full_.label.Reshape(dest_label_shape);
-   //qb->full_.label.cpu_data_mutble()[0]=crp_cent_info->value;
-
-
-  // go to the next iter
-  // cursor->Next();
-  // if (!cursor->valid()) {
-  //   DLOG(INFO) << "Restarting data prefetching from start.";
-  //   cursor->SeekToFirst();
-  // }
+  //LOG(INFO)<<"put q back to quque";
+  // setting patch data and label shape;
+  dest_label_shape_=patch_data_label->label_->shape();
+  dest_data_shape_=patch_data_label->data_->shape();
 
 }
 //
@@ -197,7 +200,7 @@ QueuePair_Batch<Dtype>::QueuePair_Batch(const LayerParameter& param) {
 
 
 
-  for (int i = 0; i < batch_size; ++i) {
+  for (int i = 0; i < batch_size*2; ++i) {
     //Batch_data<Dtype>* b_d =new
     free_.push(new Batch_data<Dtype>);
     Batch_data<Dtype>& b_data = *( free_.peek());
@@ -259,6 +262,7 @@ void Runner<Dtype>::InternalThreadEntry() {
           // To ensure deterministic runs, only start running once all solvers
           // are ready. But solvers need to peek on one item during initialization,
           // so read one item, then wait for the next solver.
+          LOG(INFO)<<"solver_count  = "<<solver_count;
           for (int i = 0; i < solver_count; ++i) {
             shared_ptr<QueuePair_Batch<Dtype> > qp(new_queue_pairs_.pop());
             qps.push_back(qp);

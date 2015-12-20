@@ -8,7 +8,7 @@ layer {
   # }
   patch_sampler_param{
    batch_size: 32
-   patches_per_data_batch: 999999
+   patches_per_data_batch: 99999
    data_source_batch_size: 1
  }
   transform_nd_param{
@@ -24,7 +24,7 @@ layer {
   data_provider_param{
     # Specify the data source.
     backend: HDF5
-    batch_size: 2
+    batch_size: 1
     hdf5_file_shuffle: true
     hdf5_source: "hdf5_file_list.txt"
   }
@@ -47,7 +47,9 @@ layer {
     kernel_size: 5
     kernel_size: 5
     kernel_size: 5
-    stride: 1
+    #stride: 4
+	#stride: 4
+	stride: 1
     weight_filler {
       type: "gaussian"
       std: 0.0001

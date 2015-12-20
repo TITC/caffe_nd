@@ -4,6 +4,7 @@
 #include <map>
 #include <string>
 #include <vector>
+#include <boost/thread.hpp>
 #include "caffe/blob.hpp"
 #include "caffe/common.hpp"
 #include "caffe/internal_thread.hpp"
@@ -96,6 +97,7 @@ class PatchSampler {
   vector<int>  dest_label_shape_;
   vector<int>  dest_data_shape_;
   shared_ptr<DataTransformerND<Dtype> > data_transformer_nd;
+  boost::mutex count_m_mutex_;
   //PeekCropCenterPoint
   //typedef typename template<typename Dtype> map<const string, boost::weak_ptr<Runner<Dtype> > > Run_container;
   static map<const string, boost::weak_ptr<Runner<Dtype> > > runners_;
