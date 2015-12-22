@@ -18,7 +18,34 @@ DataTransformerND<Dtype>::DataTransformerND(const TransformationNDParameter& par
     }
   }
 }
+template<typename Dtype>
+Dtype DataTransformerND<Dtype>::ReadOnePoint(Blob<Dtype>* input_blob, vector<int>& pointCoord){
+  int input_shape_dims=input_blob->num_axes();
+  const vector<int>& input_shape =input_blob->shape();
+  CHECK_GE(input_shape_dims,3);
+  const int input_num = input_shape[0];
+  const int input_channels = input_shape[1];
+  CHECK_EQ(input_channels,1);
+  CHECK_EQ(input_num,1);
+  if(pointCoord.size()!=(input_shape_dims-2) && pointCoord.size()!=input_shape_dims)
+  LOG(ERROR)<<"dim of input point coords must equal to dim of input blob, or 2 dim smaller if num and channel info is ignored";
 
+  int pt_index=1;
+  for (int n=0;n<pointCoord.size();++n){
+       if(n==0){
+         pt_index = pointCoord[n];
+       }else{
+       pt_index*=input_shape[2+n];
+       pt_index+=pointCoord[n];
+     }
+  }
+  int input_count=input_blob->count();
+  CHECK_GE(pt_index,0);
+  CHECK_LE(pt_index,input_count);
+  const Dtype* input_data =input_blob->cpu_data();
+  Dtype pt_value=input_data[pt_index];
+  return pt_value;
+}
 template<typename Dtype>
 const CropCenterInfo<Dtype>  DataTransformerND<Dtype>::PeekCropCenterPoint(Blob<Dtype>* input_blob){
   //PeekCropCenterPoint assum that input is a label array, thus it has only one channel.
@@ -106,7 +133,7 @@ template<typename Dtype>
 void DataTransformerND<Dtype>::Transform(Blob<Dtype>* input_blob,
                                        Blob<Dtype>* transformed_blob, const vector<int>& off_set) {
   int input_shape_dims=input_blob->num_axes();
-  bool padding =param_.padding();
+//  bool padding =param_.padding();
   int offset_axis = off_set.size();
   CHECK_GE(input_shape_dims,3);
   CHECK_EQ(offset_axis,input_shape_dims-2);
@@ -147,8 +174,8 @@ void DataTransformerND<Dtype>::Transform(Blob<Dtype>* input_blob,
 
   const Dtype scale = param_.scale();
   // do mirro for each of dimention respectively
-  const bool do_mirror = param_.mirror() && Rand(crop_shape_dims+1);
-  const bool has_mean_values = mean_values_.size() > 0;
+  //const bool do_mirror = param_.mirror() && Rand(crop_shape_dims+1);
+//  const bool has_mean_values = mean_values_.size() > 0;
 
   //int h_off = 0;
   //int w_off = 0;
@@ -157,44 +184,9 @@ void DataTransformerND<Dtype>::Transform(Blob<Dtype>* input_blob,
   if(crop){
     nd_off=off_set;
   }
-  // if (crop) {
-  //   //CHECK_EQ(crop_size, height);
-  //   //CHECK_EQ(crop_size, width);
-  //   // We only do random crop when we do training.
-  //    for(int i=0;i<nd_off.size();i++){
-  //     nd_off[i] = Rand(input_shape[i+2] - tranform_shape[i] + 1);
-  //   }
-  //   //  w_off = Rand(input_width - crop_size + 1);
-  // } //else {
-    //CHECK_EQ(input_height, height);
-    //CHECK_EQ(input_width, width);
-  //}
-
-  // Dtype* input_data = input_blob->mutable_cpu_data();
-  // if (has_mean_values) {
-  //   CHECK(mean_values_.size() == 1 || mean_values_.size() == input_channels) <<
-  //    "Specify either 1 mean_value or as many as channels: " << input_channels;
-  //   if (mean_values_.size() == 1) {
-  //     caffe_add_scalar(input_blob->count(), -(mean_values_[0]), input_data);
-  //   } else {
-  //     for (int n = 0; n < input_num; ++n) {
-  //       for (int c = 0; c < input_channels; ++c) {
-  //         int offset = input_blob->offset(n, c);
-  //         caffe_add_scalar(input_height * input_width, -(mean_values_[c]),
-  //           input_data + offset);
-  //       }
-  //     }
-  //   }
-  // }
 
   Dtype* transformed_data = transformed_blob->mutable_cpu_data();
-  //tranform_shape
-  //int top_index  =0;
-//  int data_index =0;
-  //int input_num  = input_shape(0);
-  //int channels   = input_shape(1);
-  int start_spatial_aixs =2;
-
+  //int start_spatial_aixs =2;
  for(size_t p=0;p<trans_data_size;++p){
    // revise compute the dat index in the input blob;
    vector<int> nd_point;
@@ -219,8 +211,6 @@ void DataTransformerND<Dtype>::Transform(Blob<Dtype>* input_blob,
        //nd_point.push_back(data_axis_idx);
    }
 
-  // transformed_data[p]=input_blob.data_at();
-   //read the data from the input blob to transformed bloab;
   size_t data_idx=0;
 
    for (int n=0;n<nd_point.size();++n){
@@ -244,66 +234,6 @@ void DataTransformerND<Dtype>::Transform(Blob<Dtype>* input_blob,
 
 
 
-//
-//   vctor<int > cur_point;
-//
-//   vctor<vector<int>> all_points_in_intrans(trans_data_size);
-// //  for(int i=0;i<trans_data_size;++i){
-// //       vector<int> point(tranform_shape.size()) ;
-//       for (int n=0;n<tranform_shape.size();++n){
-//           int size =tranform_shape[n];
-//
-//
-//       }
-//         (all_points_in_intrans[i])[n];
-// //  }
-//   for (int n=0;n<tranform_shape.size();++n){
-//      //if(n==0) data_index = tranform_shape[];
-//      //for(int i=)
-//      //int count_trans =
-//   }
-//
-//
-//   int center_index=1;
-//   for (int n=0;n<nd_off.size();++n){
-//        if(n==0){
-//          center_index = input_shape[2+n] *tranform_shape[n];
-//        }else{
-//        center_index*=input_shape[2+n];
-//        center_index+=(nd_off[n]+tranform_shape[n]/2);
-//      }
-//   }
-//
-//   for (int n = 0; n < input_num; ++n) {
-//     int top_index_n = n * channels;
-//     int data_index_n = n * channels;
-//     for (int c = 0; c < channels; ++c) {
-//       int top_index_c = (top_index_n + c) * height;
-//       int data_index_c = (data_index_n + c) * input_height + h_off;
-//
-//   for (int n = 0; n < input_num; ++n) {
-//     int top_index_n = n * channels;
-//     int data_index_n = n * channels;
-//     for (int c = 0; c < channels; ++c) {
-//       int top_index_c = (top_index_n + c) * height;
-//       int data_index_c = (data_index_n + c) * input_height + h_off;
-//       for (int h = 0; h < height; ++h) {
-//         int top_index_h = (top_index_c + h) * width;
-//         int data_index_h = (data_index_c + h) * input_width + w_off;
-//         if (do_mirror) {
-//           int top_index_w = top_index_h + width - 1;
-//           for (int w = 0; w < width; ++w) {
-//             transformed_data[top_index_w-w] = input_data[data_index_h + w];
-//           }
-//         } else {
-//           for (int w = 0; w < width; ++w) {
-//             transformed_data[top_index_h + w] = input_data[data_index_h + w];
-//           }
-//         }
-//       }
-//     }
-//   }
-
 
 
   if (scale != Dtype(1)) {
@@ -311,42 +241,6 @@ void DataTransformerND<Dtype>::Transform(Blob<Dtype>* input_blob,
     caffe_scal( trans_data_size, scale, transformed_data);
   }
 }
-
-// template<typename Dtype>
-// vector<int> DataTransformer<Dtype>::InferBlobShape(const Datum& datum) {
-//   if (datum.encoded()) {
-// #ifdef USE_OPENCV
-//     CHECK(!(param_.force_color() && param_.force_gray()))
-//         << "cannot set both force_color and force_gray";
-//     cv::Mat cv_img;
-//     if (param_.force_color() || param_.force_gray()) {
-//     // If force_color then decode in color otherwise decode in gray.
-//       cv_img = DecodeDatumToCVMat(datum, param_.force_color());
-//     } else {
-//       cv_img = DecodeDatumToCVMatNative(datum);
-//     }
-//     // InferBlobShape using the cv::image.
-//     return InferBlobShape(cv_img);
-// #else
-//     LOG(FATAL) << "Encoded datum requires OpenCV; compile with USE_OPENCV.";
-// #endif  // USE_OPENCV
-//   }
-//   const int crop_size = param_.crop_size();
-//   const int datum_channels = datum.channels();
-//   const int datum_height = datum.height();
-//   const int datum_width = datum.width();
-//   // Check dimensions.
-//   CHECK_GT(datum_channels, 0);
-//   CHECK_GE(datum_height, crop_size);
-//   CHECK_GE(datum_width, crop_size);
-//   // Build BlobShape.
-//   vector<int> shape(4);
-//   shape[0] = 1;
-//   shape[1] = datum_channels;
-//   shape[2] = (crop_size)? crop_size: datum_height;
-//   shape[3] = (crop_size)? crop_size: datum_width;
-//   return shape;
-// }
 
 template <typename Dtype>
 void DataTransformerND<Dtype>::InitRand() {

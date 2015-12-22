@@ -9,7 +9,7 @@ train_net: "patch_layer_test.prototxt"
 # Carry out testing every 500 training iterations.
 #test_interval: 500
 # The base learning rate, momentum and the weight decay of the network.
-base_lr: 0.00001
+base_lr: 0.001
 momentum: 0.9
 weight_decay: 0.004
 # The learning rate policy

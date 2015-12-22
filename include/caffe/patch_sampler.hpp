@@ -21,7 +21,6 @@ template <typename Dtype> class PatchSampler;
    public:
     explicit QueuePair_Batch(const LayerParameter& param);
     ~QueuePair_Batch();
-
     BlockingQueue<Batch_data<Dtype>*> free_;
     BlockingQueue<Batch_data<Dtype>*> full_;
 
@@ -49,6 +48,31 @@ template <typename Dtype> class PatchSampler;
     friend class PatchSampler<Dtype>;
 
   //DISABLE_COPY_AND_ASSIGN(Runner);
+  };
+
+  template <typename Dtype>
+  class PatchCoordFinder{
+    public:
+      explicit PatchCoordFinder(const LayerParameter& param);
+      ~PatchCoordFinder(){};
+      void SetInputShape(vector<int> input_shape);
+      vector<int> GetRandomPatchCenterCoord();
+      vector<int> GetDataOffeset();
+      vector<int> GetLabelOffeset();
+
+    protected:
+      vector<int> input_shape_;
+      shared_ptr<Caffe::RNG> rng_;
+      void InitRand();
+      int Rand(int n);
+      vector<int> label_shape_offset_;
+      vector<int> data_shape_offset_;
+      vector<int> label_shape_;
+      vector<int> data_shape_;
+      vector<int> label_shape_center_;
+      bool has_label_shape_;
+      const LayerParameter param_;
+
   };
 /**
  * @brief warp patches from a data_reader_general to queues available to PatchSamplerLayer layers.
@@ -92,6 +116,7 @@ class PatchSampler {
   shared_ptr<Runner<Dtype> > runner_;
   shared_ptr<Data_provider<Dtype> > d_provider_;
   shared_ptr<Caffe::RNG> prefetch_rng_;
+  shared_ptr<PatchCoordFinder<Dtype> > patch_coord_finder_;
   unsigned int patch_count_;
   unsigned int patches_per_data_batch_;
   vector<int>  dest_label_shape_;

@@ -24,11 +24,13 @@ PatchSampler<Dtype>::PatchSampler(const LayerParameter& param)
     :param_(param),
     queue_pair_(new QueuePair_Batch<Dtype>(param)),
     d_provider_(Make_data_provider_instance<Dtype>(param.data_provider_param())),
+    patch_coord_finder_(new PatchCoordFinder<Dtype>(param)),
     data_transformer_nd(new DataTransformerND<Dtype>(param.transform_nd_param()))
 {
   // Get or create a body
   boost::mutex::scoped_lock lock(runners_mutex_);
   string key = source_key(param);
+  LOG(INFO)<<"patch sample key = "<<key;
   weak_ptr<Runner<Dtype> >& weak = runners_[key];
   runner_ = weak.lock();
   if (!runner_) {
@@ -83,7 +85,7 @@ vector<int>& PatchSampler<Dtype>::patch_label_shape(){
 template <typename Dtype>
 void PatchSampler<Dtype>::ReadOnePatch(QueuePair_Batch<Dtype>* qb ){
   // load new data to memomry pool
-
+// LOG(INFO)<<"patch read count "<<patch_count_;
  count_m_mutex_.lock();
   if(patch_count_%patches_per_data_batch_ ==0)
   {
@@ -93,8 +95,10 @@ void PatchSampler<Dtype>::ReadOnePatch(QueuePair_Batch<Dtype>* qb ){
 
 
   }
-  count_m_mutex_.unlock();
   patch_count_++;
+  count_m_mutex_.unlock();
+
+
 
 
   int data_idx=PrefetchRand()% d_provider_->get_current_batch_size();
@@ -107,17 +111,29 @@ void PatchSampler<Dtype>::ReadOnePatch(QueuePair_Batch<Dtype>* qb ){
   Batch_data<Dtype>* patch_data_label = qb->free_.pop();
   //LOG(INFO)<< "readone from provider";
   //TODO
-  // take input patch_data and then warp a patch and put it to patch_data;
-  // the cappablity that address the probability of selecting classe need to be addressed
+  // take input patch_data then warp a patch and put it to patch_data;
+  // the function that address the probability of selecting classe need to be addressed
    //CropCenterInfo<Dtype>& PeekCropCenterPoint(Blob<Dtype>* input_blob);
 
   //   const CropCenterInfo<Dtype>& PeekCropCenterPoint(Blob<Dtype>* input_blob);
   //const CropCenterInfo<Dtype>& crp_cent_info=data_transformer_nd->PeekCropCenterPoint(source_data_label.label_.get());
-  CropCenterInfo<Dtype> crp_cent_info=data_transformer_nd->PeekCropCenterPoint(source_data_label.label_.get());
+
+  vector<int> s_data_shape=source_data_label.label_.get()->shape();
+  CHECK_GE(s_data_shape.size(),3);
+  vector<int> real_data_shape(s_data_shape.begin()+2,s_data_shape.end());
+  patch_coord_finder_->SetInputShape(real_data_shape);
+  vector<int> randPt          = patch_coord_finder_->GetRandomPatchCenterCoord();
+  Dtype pt_label_value        = data_transformer_nd->ReadOnePoint(source_data_label.label_.get(), randPt);
+  vector<int> data_offset     = patch_coord_finder_->GetDataOffeset();
+  vector<int> label_offset    = patch_coord_finder_->GetLabelOffeset();
+  //randPt.insert(s_data_shape.begin(),s_data_shape.begin()+2);
+  //CropCenterInfo<Dtype> crp_cent_info=data_transformer_nd->PeekCropCenterPoint(source_data_label.label_.get());
   //LOG(INFO)<<"nd_off num_aix after return  ="<<crp_cent_info.nd_off.size();
   Blob<Dtype> trans_blob;
   //LOG(INFO)<<"start transform";
-  data_transformer_nd->Transform(source_data_label.data_.get(), &trans_blob, crp_cent_info.nd_off);
+//  data_transformer_nd->Transform(source_data_label.data_.get(), &trans_blob, crp_cent_info.nd_off);
+
+  data_transformer_nd->Transform(source_data_label.data_.get(), &trans_blob, data_offset);
 //  LOG(INFO)<<"end transform";
   const vector<int>& source_data_shape =source_data_label.data_->shape();
   const vector<int>& source_label_shape =source_data_label.label_->shape();
@@ -152,9 +168,9 @@ void PatchSampler<Dtype>::ReadOnePatch(QueuePair_Batch<Dtype>* qb ){
  //LOG(INFO)<<"copy blob from trans_blob";
   patch_data_label->data_->CopyFrom(trans_blob,false,true);
   patch_data_label->label_->Reshape(dest_label_shape_);
-  patch_data_label->label_->mutable_cpu_data()[0]=crp_cent_info.value;
+  //patch_data_label->label_->mutable_cpu_data()[0]=crp_cent_info.value;
+  patch_data_label->label_->mutable_cpu_data()[0]=pt_label_value;
   qb->full_.push(patch_data_label);
-
   //LOG(INFO)<<"put q back to quque";
   // setting patch data and label shape;
   dest_label_shape_=patch_data_label->label_->shape();
@@ -238,15 +254,6 @@ Runner<Dtype>::Runner(const LayerParameter& param, PatchSampler<Dtype>& p_sample
 }
 
 
-// template <typename Dtype>
-// Runner<Dtype>::Runner(const LayerParameter& param)
-//     : param_(param),
-//       new_queue_pairs_()
-//       {
-//   StartInternalThread();
-// }
-
-
 template <typename Dtype>
 Runner<Dtype>::~Runner() {
   StopInternalThread();
@@ -262,61 +269,110 @@ void Runner<Dtype>::InternalThreadEntry() {
           // To ensure deterministic runs, only start running once all solvers
           // are ready. But solvers need to peek on one item during initialization,
           // so read one item, then wait for the next solver.
-          LOG(INFO)<<"solver_count  = "<<solver_count;
+          LOG(INFO)<<"solver_count  = "<<solver_count << "  size of queue pairs = "<<new_queue_pairs_.size();
           for (int i = 0; i < solver_count; ++i) {
+            LOG(INFO)<<"new_queue_pairs_.pop() = "<<i;
             shared_ptr<QueuePair_Batch<Dtype> > qp(new_queue_pairs_.pop());
+            LOG(INFO)<<"size of queue  is now = " <<new_queue_pairs_.size();
             qps.push_back(qp);
           }
-
-
           while (!must_stop()) {
+
             for (int i = 0; i < solver_count; ++i) {
-              //read_one(cursor.get(), qps[i].get());
               p_sampler_.ReadOnePatch(qps[i].get());
+
             }
           }
         } catch (boost::thread_interrupted&) {
           // Interrupted exception is expected on shutdown
         }
+   }
 
-  // shared_ptr<db::DB> db(db::GetDB(param_.data_param().backend()));
-  // db->Open(param_.data_param().source(), db::READ);
-  // shared_ptr<db::Cursor> cursor(db->NewCursor());
-  // vector<shared_ptr<QueuePair> > qps;
-  // try {
-  //   int solver_count = param_.phase() == TRAIN ? Caffe::solver_count() : 1;
-  //
-  //   // To ensure deterministic runs, only start running once all solvers
-  //   // are ready. But solvers need to peek on one item during initialization,
-  //   // so read one item, then wait for the next solver.
-  //   for (int i = 0; i < solver_count; ++i) {
-  //     shared_ptr<QueuePair> qp(new_queue_pairs_.pop());
-  //     read_one(cursor.get(), qp.get());
-  //     qps.push_back(qp);
-  //   }
-  //   // Main loop
-  //   while (!must_stop()) {
-  //     for (int i = 0; i < solver_count; ++i) {
-  //       read_one(cursor.get(), qps[i].get());
-  //     }
-  //     // Check no additional readers have been created. This can happen if
-  //     // more than one net is trained at a time per process, whether single
-  //     // or multi solver. It might also happen if two data layers have same
-  //     // name and same source.
-  //     CHECK_EQ(new_queue_pairs_.size(), 0);
-  //   }
-  // } catch (boost::thread_interrupted&) {
-  //   // Interrupted exception is expected on shutdown
-  // }
 
-}
-//template <typename Dtype>
-//static PatchSampler<Dtype>::map<const string, weak_ptr< Runner <Dtype> > > runners_;
-//template class PatchSampler<float>;
-//template class PatchSampler<double>;
-INSTANTIATE_CLASS(Runner);
-INSTANTIATE_CLASS(QueuePair_Batch);
-INSTANTIATE_CLASS(PatchSampler);
-//INSTANTIATE_CLASS(QueuePair_Batch);
+  template <typename Dtype>
+  PatchCoordFinder<Dtype>::PatchCoordFinder(const LayerParameter& param)
+  :param_(param),input_shape_(1,0), has_label_shape_(false)
+  {
+    CHECK(param_.patch_sampler_param().has_data_patch_shape())
+    <<"patch data shape mush be given in prototxt file";
+    has_label_shape_=param_.patch_sampler_param().has_data_patch_shape();
+    int dim_data_size = param_.patch_sampler_param().data_patch_shape().dim_size();
+    if(has_label_shape_){
+      int dim_label_size = param_.patch_sampler_param().label_patch_shape().dim_size();
+      CHECK_EQ(dim_data_size, dim_label_size)
+      <<"patch dimention size of data and label must equal";
+      }
 
-}  // namespace caffe
+    for (int i =0 ;i <dim_data_size;++i){
+      data_shape_.push_back(param_.patch_sampler_param().data_patch_shape().dim(i));
+      if(has_label_shape_){
+        label_shape_.push_back(param_.patch_sampler_param().label_patch_shape().dim(i));
+      }
+    }
+
+    InitRand();
+
+  }
+
+  template <typename Dtype>
+   void PatchCoordFinder<Dtype>::SetInputShape(vector<int> input_shape){
+          input_shape_=input_shape;
+   }
+
+   template <typename Dtype>
+    vector<int> PatchCoordFinder<Dtype>:: GetDataOffeset(){
+     return data_shape_offset_;
+   }
+
+   template <typename Dtype>
+    vector<int> PatchCoordFinder<Dtype>:: GetLabelOffeset(){
+     return label_shape_center_;
+   }
+
+   template <typename Dtype>
+   vector<int>  PatchCoordFinder<Dtype>::GetRandomPatchCenterCoord(){
+     CHECK_GT(input_shape_[0],0)<< "input data shape has not been set, using SetInputShape member function";
+
+     int data_patch_dims  =data_shape_.size();
+     data_shape_offset_.resize(data_patch_dims,0);
+     label_shape_center_.resize(data_patch_dims,0);
+    // vector<int> center_point(data_patch_dims,0);
+     if(has_label_shape_)  label_shape_offset_.resize(data_patch_dims,0);
+
+        for(int i=0;i<data_shape_offset_.size();i++){
+            int min_point    =    label_shape_[i]/2;
+            int max_point    =    input_shape_[i]-label_shape_[i]/2-1;
+            label_shape_center_[i]  =    Rand(max_point-min_point)+min_point;
+            label_shape_offset_[i]  =     label_shape_center_[i] - min_point;
+            data_shape_offset_[i]   =     label_shape_center_[i] - data_shape_[i]/2;
+       }
+       return label_shape_center_;
+   }
+
+  template <typename Dtype>
+  void PatchCoordFinder<Dtype>::InitRand(){
+     const bool needs_rand = param_.patch_sampler_param().has_data_patch_shape();
+    if (needs_rand) {
+      const unsigned int rng_seed = caffe_rng_rand();
+      rng_.reset(new Caffe::RNG(rng_seed));
+    } else {
+      rng_.reset();
+    }
+  }
+
+  template <typename Dtype>
+  int PatchCoordFinder<Dtype>::Rand(int n) {
+    CHECK(rng_);
+    CHECK_GT(n, 0);
+    caffe::rng_t* rng =
+        static_cast<caffe::rng_t*>(rng_->generator());
+    return ((*rng)() % n);
+  }
+
+  INSTANTIATE_CLASS(Runner);
+  INSTANTIATE_CLASS(QueuePair_Batch);
+  INSTANTIATE_CLASS(PatchSampler);
+  INSTANTIATE_CLASS(PatchCoordFinder);
+
+ }
+ // namespace caffe

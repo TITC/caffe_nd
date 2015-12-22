@@ -7,6 +7,16 @@ layer {
     # phase: TRAIN
   # }
   patch_sampler_param{
+   data_patch_shape{
+    dim: 19
+	dim: 19
+	dim: 9
+   }
+   label_patch_shape{
+   dim: 19
+	dim: 19
+	dim: 9
+   }
    batch_size: 32
    patches_per_data_batch: 99999
    data_source_batch_size: 1

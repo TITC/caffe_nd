@@ -50,6 +50,7 @@ class DataTransformerND {
   //                  const vector<int>& off_set);
 
   const CropCenterInfo<Dtype> PeekCropCenterPoint(Blob<Dtype>* input_blob);
+  Dtype ReadOnePoint(Blob<Dtype>* input_blob, vector<int>& pointCoord);
   /**
    * @brief Infers the shape of transformed_blob will have when
    *    the transformation is applied to the data.

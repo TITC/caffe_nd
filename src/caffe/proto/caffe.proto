@@ -1260,8 +1260,8 @@ message PatchSamplerParameter {
   optional uint32 batch_size    = 1;
   // Specify if we would like to randomly crop an image.
   //repeated uint32 crop_shape    = 2;
-  optional PatchShape  patch_shape          =2;
-  optional PatchShape  label_shape          =3;
+  optional PatchShape  data_patch_shape          =2;
+  optional PatchShape  label_patch_shape          =3;
   // Specify if we want to randomly mirror data.
   //optional bool mirror = 3 [default = false];
   //repeated uint32 out_label_shape   =   3;

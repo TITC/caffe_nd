@@ -98,8 +98,6 @@ template class BlockingQueue<Batch_data<float>*>;
 template class BlockingQueue<Batch_data<double>*>;
 template class BlockingQueue<boost::shared_ptr<QueuePair_Batch<double> > >;
 template class BlockingQueue<boost::shared_ptr<QueuePair_Batch<float> > >;
-//template class BlockingQueue<Batch_data<float>*>;
-//template class BlockingQueue<Batch_data<double>*>;
 
 
 }  // namespace caffe
