@@ -61,18 +61,19 @@ template <typename Dtype> class PatchSampler;
       vector<int> GetLabelOffeset();
 
     protected:
+      const LayerParameter param_;
+      bool        has_label_shape_;
       vector<int> input_shape_;
-      shared_ptr<Caffe::RNG> rng_;
-      void InitRand();
-      int Rand(int n);
       vector<int> label_shape_offset_;
       vector<int> data_shape_offset_;
       vector<int> label_shape_;
       vector<int> data_shape_;
       vector<int> label_shape_center_;
-      bool has_label_shape_;
-      const LayerParameter param_;
+      shared_ptr<Caffe::RNG> rng_;
+      void InitRand();
+      int Rand(int n);
 
+      //vector<int> input_shape_;
   };
 /**
  * @brief warp patches from a data_reader_general to queues available to PatchSamplerLayer layers.
@@ -97,8 +98,8 @@ class PatchSampler {
   }
   void ReadOnePatch(QueuePair_Batch<Dtype>* qb );
 
-  vector<int>& patch_data_shape();
-  vector<int>& patch_label_shape();
+  vector<int> patch_data_shape();
+  vector<int> patch_label_shape();
  protected:
    unsigned int PrefetchRand();
   // Queue pairs are shared between a runner and its readers
@@ -123,6 +124,8 @@ class PatchSampler {
   vector<int>  dest_data_shape_;
   shared_ptr<DataTransformerND<Dtype> > data_transformer_nd;
   boost::mutex count_m_mutex_;
+  vector<int>  patch_data_shape_;
+  vector<int>  patch_label_shape_;
   //PeekCropCenterPoint
   //typedef typename template<typename Dtype> map<const string, boost::weak_ptr<Runner<Dtype> > > Run_container;
   static map<const string, boost::weak_ptr<Runner<Dtype> > > runners_;

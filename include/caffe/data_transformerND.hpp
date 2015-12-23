@@ -44,6 +44,11 @@ class DataTransformerND {
   void Transform(Blob<Dtype>* input_blob,
                                          Blob<Dtype>* transformed_blob,
                                          const vector<int>& off_set);
+  void Transform(Blob<Dtype>* input_blob,
+                  Blob<Dtype>* transformed_blob,
+                  const vector<int>& off_set,
+                  const vector<int>& crop_shape);
+
 
   // void Transform(Blob<Dtype>* input_blob,
   //                  Blob<Dtype>*  transformed_blob,

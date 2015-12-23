@@ -41,29 +41,32 @@ void PatchDataLayer<Dtype>::DataLayerSetUp(const vector<Blob<Dtype>*>& bottom,
   //   top_data_shape.push_back(this->layer_param_patch_sample_param().patch_shape(i))
   // }
   LOG(INFO)<<"get shape ";
-  vector<int>& top_data_shape=patch_sampler_.patch_data_shape();
+  vector<int> top_data_shape=patch_sampler_.patch_data_shape();
   top_data_shape[0]=batch_size;
-  for(int i=0;i<top_data_shape.size();i++)
-     LOG(INFO)<<"reshape top  = " << top_data_shape[i];
-  LOG(INFO)<<"reshape top ";
+  for(int i=0;i<top_data_shape.size();++i)
+  LOG(INFO)<<"reshape top data  = " << top_data_shape[i];
   top[0]->Reshape(top_data_shape);
-  LOG(INFO)<<"reshape prefetch_[i].data_ ";
+
   for (int i = 0; i < this->PREFETCH_COUNT; ++i) {
     this->prefetch_[i].data_.Reshape(top_data_shape);
+      LOG(INFO)<<"reshape prefetch_["<<i<<"].data_ ";
+
   }
-  // LOG(INFO) << "output data size: " << top[0]->num() << ","
-  //     << top[0]->channels() << "," << top[0]->height() << ","
-  //     << top[0]->width();
-  // label
-  LOG(INFO)<<"reshape prefetch_[i].label_ ";
+  //LOG(INFO)<<"reshape prefetch_[i].label_ ";
   if (this->output_labels_) {
     vector<int> top_label_shape=patch_sampler_.patch_label_shape();
+    CHECK_EQ(top_data_shape.size(),top_label_shape.size());
     top_label_shape[0]=batch_size;
+    for(int i=0;i<top_data_shape.size();++i)
+    LOG(INFO)<<"reshape top label  = " << top_label_shape[i];
     top[1]->Reshape(top_label_shape);
     for (int i = 0; i < this->PREFETCH_COUNT; ++i) {
       this->prefetch_[i].label_.Reshape(top_label_shape);
     }
+
+      CHECK_EQ(top_data_shape[0],top_label_shape[0]);
   }
+
 }
 
 // This function is called on prefetch thread
@@ -120,7 +123,7 @@ void PatchDataLayer<Dtype>::load_batch(Batch<Dtype>* batch) {
     //this->transformed_data_.set_cpu_data(top_data + offset);
     //this->data_transformer_->Transform(datum, &(this->transformed_data_));
 
-    int d_length =1;
+    //int d_length =1;
     vector<int> d_shape =batch->data_.shape();
     //   LOG(INFO) <<"batch data shape "<<d_shape[0];
     // for(int i=1;i<d_shape.size();i++)

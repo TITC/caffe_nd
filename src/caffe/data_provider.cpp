@@ -79,7 +79,7 @@ void Data_HDF5_provider<Dtype>::LoadHDF5FileData(const char* filename, int blob_
   vector<string> data_set_names;
   data_set_names.push_back("data");
   data_set_names.push_back("label");
-  int num_dataset =data_set_names.size();
+  //int num_dataset =data_set_names.size();
   const int MIN_DATA_DIM = 1;
   const int MAX_DATA_DIM = INT_MAX;
 

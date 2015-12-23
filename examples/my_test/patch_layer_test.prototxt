@@ -13,21 +13,21 @@ layer {
 	dim: 9
    }
    label_patch_shape{
-   dim: 19
-	dim: 19
-	dim: 9
+    dim: 6
+	dim: 6
+	dim: 1
    }
    batch_size: 32
-   patches_per_data_batch: 99999
+   patches_per_data_batch: 899999
    data_source_batch_size: 1
  }
   transform_nd_param{
     mirror: false
-    crop_shape{
-      dim: 19
-      dim: 19
-      dim: 9
-    }
+    # crop_shape{
+      # dim: 19
+      # dim: 19
+      # dim: 9
+    # }
     padding: true
     pad_method: ZERO
   }
@@ -116,8 +116,8 @@ layer {
     kernel_size: 5
     kernel_size: 5
     kernel_size: 1
-    stride: 4
-    stride: 4
+    #stride: 1
+    #stride: 4
     stride: 1
     weight_filler {
       type: "gaussian"
