@@ -20,9 +20,9 @@ template <typename Dtype>
   this->source_data_label_pair_.resize(this->batch_size_);
   //hdf_blobs_.resize(batch_size_);
   // Read the source to parse the filenames.
-  bool has_hdf5_source = this->param_.has_hdf5_source();
+  bool has_hdf5_source = this->param_.has_data_source();
   CHECK(has_hdf5_source)<<"hdf5 data must have a source file ...";
-  const string& hdf5_source = this->param_.hdf5_source();
+  const string& hdf5_source = this->param_.data_source();
   LOG(INFO) << "Loading list of HDF5 filenames from: " << hdf5_source;
   hdf5_filenames_.clear();
   std::ifstream source_file(hdf5_source.c_str());

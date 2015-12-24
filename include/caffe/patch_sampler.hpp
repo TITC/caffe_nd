@@ -75,6 +75,35 @@ template <typename Dtype> class PatchSampler;
 
       //vector<int> input_shape_;
   };
+
+
+  template <typename Dtype>
+  class SampleSelector {
+   public:
+    explicit SampleSelector(const LayerParameter& param);
+    void ProcessLabelSelectParam();
+    void ReadLabelProbMappingFile(const string& file_name);
+    void ComputeLabelSkipRate();
+    bool AcceptGivenLabel(const int label);
+    int  GetConvertedLabel(const int label);
+  protected:
+    void InitRand();
+    unsigned int PrefetchRand();
+    const LayerParameter param_;
+    std::map <int, float> label_prob_map_;
+    std::map <int, unsigned int> label_skip_rate_map_;
+    std::map <int, int> label_mapping_map_;
+    unsigned  int num_labels_;
+    unsigned  int num_labels_with_prob_ ;
+    bool      balancing_label_;
+    unsigned int num_top_label_balance_;
+    bool  rest_of_label_mapping_;
+    bool  map2order_label_;
+    bool  ignore_rest_of_label_;
+    int   rest_of_label_mapping_label_;
+    float rest_of_label_prob_;
+    shared_ptr<Caffe::RNG> rng_;
+  };
 /**
  * @brief warp patches from a data_reader_general to queues available to PatchSamplerLayer layers.
  * A single reading thread is created per source, even if multiple solvers
@@ -110,14 +139,17 @@ class PatchSampler {
   // A source is uniquely identified by its layer name + path, in case
   // the same database is read from two different locations in the net.
   static inline string source_key(const LayerParameter& param) {
-    return param.name() + ":" + param.data_param().source();
+    return param.name() + ":" + param.data_provider_param().data_source();
   }
+
+
   const LayerParameter param_;
   const shared_ptr<QueuePair_Batch<Dtype> > queue_pair_;
   shared_ptr<Runner<Dtype> > runner_;
   shared_ptr<Data_provider<Dtype> > d_provider_;
-  shared_ptr<Caffe::RNG> prefetch_rng_;
   shared_ptr<PatchCoordFinder<Dtype> > patch_coord_finder_;
+  shared_ptr<SampleSelector<Dtype> > sample_selector_;
+  shared_ptr<Caffe::RNG> prefetch_rng_;
   unsigned int patch_count_;
   unsigned int patches_per_data_batch_;
   vector<int>  dest_label_shape_;
@@ -126,12 +158,14 @@ class PatchSampler {
   boost::mutex count_m_mutex_;
   vector<int>  patch_data_shape_;
   vector<int>  patch_label_shape_;
+  //data_patch_shape_
   //PeekCropCenterPoint
   //typedef typename template<typename Dtype> map<const string, boost::weak_ptr<Runner<Dtype> > > Run_container;
   static map<const string, boost::weak_ptr<Runner<Dtype> > > runners_;
   //static Run_container runners_;
 //DISABLE_COPY_AND_ASSIGN(PatchSampler);
 };
+
 
 //  template<typename Dtype>
 //  map<const string, boost::weak_ptr<Runner<Dtype> > > runners_;

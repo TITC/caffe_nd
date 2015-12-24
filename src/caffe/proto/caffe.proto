@@ -1334,14 +1334,13 @@ message DataProviderParameter{
     }
 
     // Specify the data source.
-    optional string hdf5_source = 1;
-    optional string db_source_data =2;
-    optional string db_source_label =3;
-    optional bool hdf5_file_shuffle    =4;
-    optional bool  data_shuffle      =5;
+    optional string data_source = 1;
+    optional string label_source =2;
+    optional bool hdf5_file_shuffle    =3;
+    optional bool  data_shuffle      =4;
     // Specify the batch size.
-    optional uint32 batch_size = 6;
-    optional DS backend = 7 [default = LEVELDB];
+    optional uint32 batch_size = 5;
+    optional DS backend = 6 [default = LEVELDB];
 }
 
 //message PatchDataParameter{

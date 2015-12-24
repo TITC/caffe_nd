@@ -2,7 +2,7 @@
 #include <map>
 #include <string>
 #include <vector>
-
+#include "caffe/util/io.hpp"
 #include "caffe/common.hpp"
 #include "caffe/patch_sampler.hpp"
 #include "caffe/proto/caffe.pb.h"
@@ -25,6 +25,7 @@ PatchSampler<Dtype>::PatchSampler(const LayerParameter& param)
     queue_pair_(new QueuePair_Batch<Dtype>(param)),
     d_provider_(Make_data_provider_instance<Dtype>(param.data_provider_param())),
     patch_coord_finder_(new PatchCoordFinder<Dtype>(param)),
+    sample_selector_(new SampleSelector<Dtype>(param)),
     data_transformer_nd(new DataTransformerND<Dtype>(param.transform_nd_param()))
 {
   // Get or create a body
@@ -36,8 +37,10 @@ PatchSampler<Dtype>::PatchSampler(const LayerParameter& param)
   if (!runner_) {
     runner_.reset(new Runner<Dtype>(param,*this));
     runners_[key] = weak_ptr<Runner<Dtype> >(runner_);
+    LOG(INFO)<<("reset runner ...");
   }
   runner_->new_queue_pairs_.push(queue_pair_);
+  LOG(INFO)<<("runner setup done ...");
 
   patches_per_data_batch_ = param_.patch_sampler_param().patches_per_data_batch();
   data_transformer_nd->InitRand();
@@ -131,11 +134,14 @@ void PatchSampler<Dtype>::ReadOnePatch(QueuePair_Batch<Dtype>* qb ){
   vector<int> real_data_shape(s_data_shape.begin()+2,s_data_shape.end());
   patch_coord_finder_->SetInputShape(real_data_shape);
 
-  vector<int> randPt  = patch_coord_finder_->GetRandomPatchCenterCoord();
+  vector<int> randPt ;
+  Dtype pt_label_value ;
+  do{
+      randPt                = patch_coord_finder_->GetRandomPatchCenterCoord();
+      pt_label_value        = data_transformer_nd->ReadOnePoint(source_data_label.label_.get(), randPt);
+  }while (!sample_selector_->AcceptGivenLabel((int)pt_label_value));
 
-// label value
-//  Dtype pt_label_value        = data_transformer_nd->ReadOnePoint(source_data_label.label_.get(), randPt);
-
+  LOG(INFO)<<"selected Label is "<<pt_label_value;
 
 
   vector<int> data_offset     = patch_coord_finder_->GetDataOffeset();
@@ -143,7 +149,9 @@ void PatchSampler<Dtype>::ReadOnePatch(QueuePair_Batch<Dtype>* qb ){
   //randPt.insert(s_data_shape.begin(),s_data_shape.begin()+2);
   //CropCenterInfo<Dtype> crp_cent_info=data_transformer_nd->PeekCropCenterPoint(source_data_label.label_.get());
   //LOG(INFO)<<"nd_off num_aix after return  ="<<crp_cent_info.nd_off.size();
-  Blob<Dtype> trans_data_blob, trans_label_blob;
+  //Blob<Dtype> &trans_data_blob = *patch_data_label->data_;
+  //Blob<Dtype> &trans_label_blob =*patch_data_label->label_;
+  Blob<Dtype> trans_data_blob,trans_label_blob;
   //LOG(INFO)<<"start transform";
 //  data_transformer_nd->Transform(source_data_label.data_.get(), &trans_data_blob, crp_cent_info.nd_off);
 
@@ -196,6 +204,7 @@ void PatchSampler<Dtype>::ReadOnePatch(QueuePair_Batch<Dtype>* qb ){
 // are  suppose to be 1 as each patch is just one data from the source data valum//
 //====================================================////
  //LOG(INFO)<<"copy blob from trans_data_blob";
+
   patch_data_label->data_->CopyFrom(trans_data_blob,false,true);
   patch_data_label->label_->CopyFrom(trans_label_blob,false,true);
   //patch_data_label->label_->Reshape(dest_label_shape_);
@@ -407,9 +416,190 @@ void Runner<Dtype>::InternalThreadEntry() {
     return ((*rng)() % n);
   }
 
+
+  template <typename Dtype>
+  SampleSelector<Dtype>::SampleSelector(const LayerParameter& param)
+  :param_(param)
+  {
+     InitRand();
+     ProcessLabelSelectParam();
+  }
+
+
+  template <typename Dtype>
+  void SampleSelector<Dtype>::ProcessLabelSelectParam(){
+    if(!param_.patch_sampler_param().has_label_select_param()){
+        balancing_label_ =false;
+        return;
+      }
+    num_labels_      =param_.patch_sampler_param().label_select_param().num_labels() ;
+    balancing_label_ =param_.patch_sampler_param().label_select_param().balance();
+    map2order_label_ =param_.patch_sampler_param().label_select_param().reorder_label();
+    bool has_prob_file=param_.patch_sampler_param().label_select_param().has_class_prob_mapping_file();
+    if(balancing_label_)
+       {
+      CHECK_EQ(balancing_label_,has_prob_file)<<"sample  class blanceing requires a class probability file provided ... ";
+      const string&  label_prob_map_file = param_.patch_sampler_param().label_select_param().class_prob_mapping_file();
+      ReadLabelProbMappingFile(label_prob_map_file);
+      LOG(INFO)<<"Done ReadLabelProbMappingFile";
+      ComputeLabelSkipRate();
+      LOG(INFO)<<"compute_label_skip_rate()";
+      }
+  }
+
+  template <typename Dtype>
+  void SampleSelector<Dtype>::ReadLabelProbMappingFile(const string& source){
+    LabelProbMappingParameter lb_param;
+    ReadProtoFromTextFileOrDie(source, &lb_param);
+    ignore_rest_of_label_ 				= 	lb_param.ignore_rest_of_label();
+    rest_of_label_mapping_ 				= 	lb_param.rest_of_label_mapping();
+    rest_of_label_mapping_label_	=	  lb_param.rest_of_label_mapping_label();
+    rest_of_label_prob_					  =	  lb_param.rest_of_label_prob();
+    num_labels_with_prob_  				= 	lb_param.label_prob_mapping_info_size();
+    if(param_.patch_sampler_param().label_select_param().has_num_top_label_balance())
+      num_top_label_balance_ =param_.patch_sampler_param().label_select_param().num_top_label_balance();
+    else
+      num_top_label_balance_ =  num_labels_with_prob_;
+
+    CHECK_GE(num_top_label_balance_,1);
+    CHECK_GE(num_labels_with_prob_,num_top_label_balance_);
+    CHECK_GE(num_labels_,2);
+    CHECK_GE(num_labels_,num_labels_with_prob_);
+    LOG(INFO)<<"rest_of_label_mapping_  = "<<rest_of_label_mapping_<<" "<<rest_of_label_mapping_label_;
+    label_prob_map_.clear();
+    label_mapping_map_.clear();
+    LOG(INFO)<< "label_prob_map_ size =" <<label_prob_map_.size();
+    for (int i=0;i<num_labels_with_prob_;++i){
+          const LabelProbMapping&   label_prob_mapping_param = lb_param.label_prob_mapping_info(i);
+          int   label 			=	label_prob_mapping_param.label();
+          float lb_prob			=   label_prob_mapping_param.prob();
+          int   mapped_label ;
+          if(label_prob_mapping_param.has_map2label())
+             mapped_label =   label_prob_mapping_param.map2label();
+          else
+            mapped_label = label ;
+            label_prob_map_[label]	=	lb_prob;
+            label_mapping_map_[label]=   mapped_label;
+        }
+   }
+  typedef std::pair<int, float> PAIR;
+  struct CmpByValue {
+    bool operator()(const PAIR& lhs, const PAIR& rhs)
+    {return lhs.second > rhs.second;}
+   };
+
+   template <typename Dtype>
+   void SampleSelector<Dtype>::ComputeLabelSkipRate(){
+        float scale_factor =0;
+        vector<PAIR> label_prob_vec(label_prob_map_.begin(), label_prob_map_.end());
+        sort(label_prob_vec.begin(), label_prob_vec.end(), CmpByValue()); //prob descend order;
+        float bottom_prob=label_prob_vec[num_top_label_balance_-1].second;
+        if(!ignore_rest_of_label_){
+           scale_factor =bottom_prob < rest_of_label_prob_? 1.0/bottom_prob: 1.0/rest_of_label_prob_;
+        }
+        else
+        {
+          scale_factor =1.0/bottom_prob ;
+        }
+        LOG(INFO)<<" scale_factor =  "<< scale_factor;
+        LOG(INFO)<<" bottom_prob =   " << bottom_prob;
+        LOG(INFO)<<"label_prob_vec.size = "<<label_prob_vec.size();
+        label_prob_map_.clear();
+        // remove the class that has prob lower than top k classes;
+        for(int i=0;i<num_top_label_balance_;++i)
+        {
+          int lb= label_prob_vec[i].first;
+          float prob =label_prob_vec[i].second;
+          label_prob_map_[lb]=prob;
+          // mapping the label based on freq
+          if(map2order_label_)
+          {
+           label_mapping_map_[lb]=i;
+          }
+        }
+
+        // Init the rest of label class
+
+        for (int i=0;i<num_labels_ ;++i)
+        {
+            int label =i;
+            if(label_prob_map_.find(label)==label_prob_map_.end())
+               {
+                   if(ignore_rest_of_label_){
+                     label_prob_map_[label]	=	0;
+                     }
+                   else
+                      {
+                      int rest_of_label =(num_labels_-num_top_label_balance_);
+                      if(rest_of_label>0)
+                       label_prob_map_[label]	=	rest_of_label_prob_;///rest_of_label;
+                        //LOG(INFO)<<"rest_of_label_prob["<<label<<"]=" <<label_prob_map_[label];
+                     }
+                   if(rest_of_label_mapping_){
+                     label_mapping_map_[label] =   rest_of_label_mapping_label_;
+                     //LOG(INFO)<<"rest_of_label_mapping_["<<label<<"]=" <<label_mapping_map_[label];
+                     }
+                     else
+                       label_mapping_map_[label] =   label;
+                     // if reorder label is set, override the rest_of_label_mapping_
+                   if(map2order_label_){
+                       label_mapping_map_[label] =   num_top_label_balance_;
+                   }
+              }
+         }
+        //auto iterSkipRate  =label_mapping_map_.begin();
+        std::map<int,float>::iterator iterProb;
+         for (iterProb = label_prob_map_.begin(); iterProb !=label_prob_map_.end(); ++iterProb) {
+           label_skip_rate_map_[iterProb->first] =ceil(iterProb->second*scale_factor);
+           //LOG(INFO)<<"label_skip_rate_map_["<<iterProb->first<<"]=" <<label_skip_rate_map_[iterProb->first];
+          }
+
+   }
+
+   template <typename Dtype>
+   bool SampleSelector<Dtype>::AcceptGivenLabel(const int label){
+           //
+         //balancing_label_
+         if(!balancing_label_)
+             return true;
+         //LOG(INFO)<<"label_skip_rate_map_["<<label<<"] =" <<label_skip_rate_map_[label];
+         if (label_skip_rate_map_[label] ==0)
+            return false;
+         int reminder =PrefetchRand()%label_skip_rate_map_[label];
+         if(reminder ==0)
+             return true;
+         else
+           return false;
+   }
+
+   template <typename Dtype>
+   int SampleSelector<Dtype>::GetConvertedLabel(const int label){
+         if(!balancing_label_)
+         return label;
+      else
+        return label_mapping_map_[label];
+   }
+
+   template <typename Dtype>
+   unsigned int SampleSelector<Dtype>::PrefetchRand(){
+     CHECK(rng_);
+     caffe::rng_t* rng =
+         static_cast<caffe::rng_t*>(rng_->generator());
+     return (*rng)();
+   }
+   template <typename Dtype>
+   void SampleSelector<Dtype>::InitRand(){
+     //if (needs_rand) {
+       const unsigned int rng_seed = caffe_rng_rand();
+          rng_.reset(new Caffe::RNG(rng_seed));
+     //} else {
+      //    rng.reset();
+     //}
+   }
   INSTANTIATE_CLASS(Runner);
   INSTANTIATE_CLASS(QueuePair_Batch);
   INSTANTIATE_CLASS(PatchSampler);
+  INSTANTIATE_CLASS(SampleSelector);
   INSTANTIATE_CLASS(PatchCoordFinder);
 
  }

@@ -3,31 +3,34 @@ layer {
   type: "PatchData"
   top: "data"
   top: "label"
-  # include {
-    # phase: TRAIN
-  # }
+  include {
+    phase: TRAIN
+  }
   patch_sampler_param{
-   data_patch_shape{
-    dim: 19
-	dim: 19
-	dim: 9
-   }
-   label_patch_shape{
-    dim: 6
-	dim: 6
-	dim: 1
-   }
-   batch_size: 32
-   patches_per_data_batch: 899999
-   data_source_batch_size: 1
+	   data_patch_shape{
+		dim: 19
+		dim: 19
+		dim: 9
+	   }
+	   label_patch_shape{
+		dim: 6
+		dim: 6
+		dim: 1
+	   }
+	   batch_size: 64
+	   patches_per_data_batch: 899999
+	   data_source_batch_size: 1
+	   label_select_param{ 
+			balance: true
+			num_labels: 3
+			num_top_label_balance: 2
+			reorder_label: false
+			class_prob_mapping_file: 'label_class_selection.prototxt'
+	   }
+   
  }
   transform_nd_param{
     mirror: false
-    # crop_shape{
-      # dim: 19
-      # dim: 19
-      # dim: 9
-    # }
     padding: true
     pad_method: ZERO
   }
@@ -36,8 +39,55 @@ layer {
     backend: HDF5
     batch_size: 1
     hdf5_file_shuffle: true
-    hdf5_source: "hdf5_file_list.txt"
+    data_source: "hdf5_train_file_list.txt"
   }
+  
+}
+
+
+layer {
+  name: "data"
+  type: "PatchData"
+  top: "data"
+  top: "label"
+  include {
+    phase: TEST
+  }
+  patch_sampler_param{
+	   data_patch_shape{
+		dim: 19
+		dim: 19
+		dim: 9
+	   }
+	   label_patch_shape{
+		dim: 6
+		dim: 6
+		dim: 1
+	   }
+	   batch_size: 32
+	   patches_per_data_batch: 899999
+	   data_source_batch_size: 1
+	   label_select_param{ 
+			   balance: true
+			   num_labels: 3
+			   num_top_label_balance: 2
+			   reorder_label: false
+			   class_prob_mapping_file: 'label_class_selection.prototxt'
+		}
+ }
+  transform_nd_param{
+    mirror: false
+    padding: true
+    pad_method: ZERO
+  }
+  data_provider_param{
+    # Specify the data source.
+    backend: HDF5
+    batch_size: 1
+    hdf5_file_shuffle: true
+    data_source: "hdf5_test_file_list.txt"
+  }
+ 
 }
 
 layer {
@@ -161,17 +211,17 @@ layer {
 
 
 #
-# // layer {
-# //   name: "accuracy"
-# //   type: "Accuracy"
-# //   bottom: "conv4"
-# //   bottom: "label"
-# //   top: "accuracy"
-# // }
+ layer {
+	name: "accuracy"
+	type: "Accuracy"
+	bottom: "conv4"
+	bottom: "label"
+	top: "accuracy"
+  include {
+    phase: TEST
+   }
+}
 layer {
-   # include {
-    # phase: TRAIN
-  # }
   name: "loss"
   type: "SoftmaxWithLoss"
   bottom: "conv4"
