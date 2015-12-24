@@ -8,13 +8,13 @@ layer {
   }
   patch_sampler_param{
 	   data_patch_shape{
-		dim: 55
-		dim: 55
+		dim: 25
+		dim: 25
 		dim: 9
 	   }
 	   label_patch_shape{
-		dim: 42
-		dim: 42
+		dim: 12
+		dim: 12
 		dim: 1
 	   }
 	   batch_size: 16
@@ -55,13 +55,13 @@ layer {
   }
   patch_sampler_param{
 	   data_patch_shape{
-		dim: 55
-		dim: 55
+		dim: 25
+		dim: 25
 		dim: 9
 	   }
 	   label_patch_shape{
-		dim: 42
-		dim: 42
+		dim: 12
+		dim: 12
 		dim: 1
 	   }
 	   batch_size: 32

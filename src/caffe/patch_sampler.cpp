@@ -149,20 +149,33 @@ void PatchSampler<Dtype>::ReadOnePatch(QueuePair_Batch<Dtype>* qb ){
   //randPt.insert(s_data_shape.begin(),s_data_shape.begin()+2);
   //CropCenterInfo<Dtype> crp_cent_info=data_transformer_nd->PeekCropCenterPoint(source_data_label.label_.get());
   //LOG(INFO)<<"nd_off num_aix after return  ="<<crp_cent_info.nd_off.size();
+
+
   //Blob<Dtype> &trans_data_blob = *patch_data_label->data_;
   //Blob<Dtype> &trans_label_blob =*patch_data_label->label_;
-  Blob<Dtype> trans_data_blob,trans_label_blob;
+  //Blob<Dtype> trans_data_blob,trans_label_blob;
+
+
   //LOG(INFO)<<"start transform";
 //  data_transformer_nd->Transform(source_data_label.data_.get(), &trans_data_blob, crp_cent_info.nd_off);
 
-  data_transformer_nd->Transform(source_data_label.data_.get(),
-                                    &trans_data_blob,
-                                    data_offset,
-                                    patch_data_shape_);
-  data_transformer_nd->Transform(source_data_label.label_.get(),
-                                    & trans_label_blob,
-                                    label_offset,
-                                    patch_label_shape_);
+  // data_transformer_nd->Transform(source_data_label.data_.get(),
+  //                                   &trans_data_blob,
+  //                                   data_offset,
+  //                                   patch_data_shape_);
+  // data_transformer_nd->Transform(source_data_label.label_.get(),
+  //                                   &trans_label_blob,
+  //                                   label_offset,
+  //                                   patch_label_shape_);
+
+                                    data_transformer_nd->Transform(source_data_label.data_.get(),
+                                                                      patch_data_label->data_.get(),
+                                                                      data_offset,
+                                                                      patch_data_shape_);
+                                    data_transformer_nd->Transform(source_data_label.label_.get(),
+                                                                      patch_data_label->label_.get(),
+                                                                      label_offset,
+                                                                      patch_label_shape_);
 //  LOG(INFO)<<"end transform";
   const vector<int>& source_data_shape =source_data_label.data_->shape();
   const vector<int>& source_label_shape =source_data_label.label_->shape();
@@ -205,8 +218,10 @@ void PatchSampler<Dtype>::ReadOnePatch(QueuePair_Batch<Dtype>* qb ){
 //====================================================////
  //LOG(INFO)<<"copy blob from trans_data_blob";
 
-  patch_data_label->data_->CopyFrom(trans_data_blob,false,true);
-  patch_data_label->label_->CopyFrom(trans_label_blob,false,true);
+  //patch_data_label->data_->CopyFrom(trans_data_blob,false,true);
+  //patch_data_label->label_->CopyFrom(trans_label_blob,false,true);
+
+
   //patch_data_label->label_->Reshape(dest_label_shape_);
 
   //patch_data_label->label_->mutable_cpu_data()[0]=crp_cent_info.value;
@@ -263,17 +278,23 @@ QueuePair_Batch<Dtype>::QueuePair_Batch(const LayerParameter& param) {
 
   for (int i = 0; i < batch_size*2; ++i) {
     //Batch_data<Dtype>* b_d =new
+  //  Batch_data<Dtype>* b_data =new Batch_data<Dtype>();
     free_.push(new Batch_data<Dtype>);
-    Batch_data<Dtype>& b_data = *( free_.peek());
+    //Batch_data<Dtype>& b_data = *( free_.peek());
+  //  Batch_data<Dtype>& b_data = *( free_.pop());
+
     //  b_data.data_.reset(new Blob<Dtype>);
     //  b_data.label_.reset(new Blob<Dtype>);
   //  LOG(INFO)<<"init queuePair_batch... data reshape dim =" <<patch_shape.size();
-    b_data.data_->Reshape(data_patch_shape);
+    //b_data.data_->Reshape(data_patch_shape);
 
+    //b_data->data_->Reshape(data_patch_shape);
       //LOG(INFO)<<"init queuePair_batch... label reshape dim =" <<patch_shape.size();
-    if(output_label){
-      b_data.label_->Reshape(label_patch_shape);
-    }
+    //if(output_label){
+      //b_data.label_->Reshape(label_patch_shape);
+    //  b_data->label_->Reshape(label_patch_shape);
+    //}
+    //  free_.push(b_data);
   }
 }
 
