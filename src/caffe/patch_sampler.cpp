@@ -141,7 +141,7 @@ void PatchSampler<Dtype>::ReadOnePatch(QueuePair_Batch<Dtype>* qb ){
       pt_label_value        = data_transformer_nd->ReadOnePoint(source_data_label.label_.get(), randPt);
   }while (!sample_selector_->AcceptGivenLabel((int)pt_label_value));
 
-  LOG(INFO)<<"selected Label is "<<pt_label_value;
+  //LOG(INFO)<<"selected Label is "<<pt_label_value;
 
 
   vector<int> data_offset     = patch_coord_finder_->GetDataOffeset();

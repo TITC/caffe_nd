@@ -8,26 +8,26 @@ layer {
   }
   patch_sampler_param{
 	   data_patch_shape{
-		dim: 19
-		dim: 19
+		dim: 55
+		dim: 55
 		dim: 9
 	   }
 	   label_patch_shape{
-		dim: 6
-		dim: 6
+		dim: 42
+		dim: 42
 		dim: 1
 	   }
-	   batch_size: 64
+	   batch_size: 16
 	   patches_per_data_batch: 899999
 	   data_source_batch_size: 1
-	   label_select_param{ 
+	   label_select_param{
 			balance: true
 			num_labels: 3
 			num_top_label_balance: 2
 			reorder_label: false
 			class_prob_mapping_file: 'label_class_selection.prototxt'
 	   }
-   
+
  }
   transform_nd_param{
     mirror: false
@@ -41,7 +41,7 @@ layer {
     hdf5_file_shuffle: true
     data_source: "hdf5_train_file_list.txt"
   }
-  
+
 }
 
 
@@ -55,19 +55,19 @@ layer {
   }
   patch_sampler_param{
 	   data_patch_shape{
-		dim: 19
-		dim: 19
+		dim: 55
+		dim: 55
 		dim: 9
 	   }
 	   label_patch_shape{
-		dim: 6
-		dim: 6
+		dim: 42
+		dim: 42
 		dim: 1
 	   }
 	   batch_size: 32
 	   patches_per_data_batch: 899999
 	   data_source_batch_size: 1
-	   label_select_param{ 
+	   label_select_param{
 			   balance: true
 			   num_labels: 3
 			   num_top_label_balance: 2
@@ -87,7 +87,7 @@ layer {
     hdf5_file_shuffle: true
     data_source: "hdf5_test_file_list.txt"
   }
- 
+
 }
 
 layer {
@@ -228,4 +228,3 @@ layer {
   bottom: "label"
   top: "loss"
 }
-
