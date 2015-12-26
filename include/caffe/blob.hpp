@@ -129,9 +129,9 @@ class Blob {
   }
 
   /// @brief Deprecated legacy shape accessor num: use shape(0) instead.
-  inline int num() const { return LegacyShape(0); }
+  inline int num() const { return num_axes()> 4? shape(0) : LegacyShape(0); }
   /// @brief Deprecated legacy shape accessor channels: use shape(1) instead.
-  inline int channels() const { return LegacyShape(1); }
+  inline int channels() const { return num_axes()> 4? shape(1) : LegacyShape(1); }
   /// @brief Deprecated legacy shape accessor height: use shape(2) instead.
   inline int height() const { return LegacyShape(2); }
   /// @brief Deprecated legacy shape accessor width: use shape(3) instead.

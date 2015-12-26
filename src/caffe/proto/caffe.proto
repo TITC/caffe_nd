@@ -306,7 +306,7 @@ message ParamSpec {
 // NOTE
 // Update the next available ID when you add a new LayerParameter field.
 //
-// LayerParameter next available layer-specific ID: 140 (last added: batch_norm_param)
+// LayerParameter next available layer-specific ID: 143 (last added: data_provider_param)
 message LayerParameter {
   optional string name = 1; // the layer name
   optional string type = 2; // the layer type
@@ -343,6 +343,7 @@ message LayerParameter {
 
   // Parameters for data pre-processing.
   optional TransformationParameter transform_param = 100;
+  optional TransformationNDParameter transform_nd_param = 141;
 
   // Parameters shared by loss layers.
   optional LossParameter loss_param = 101;
@@ -360,6 +361,7 @@ message LayerParameter {
   optional ContrastiveLossParameter contrastive_loss_param = 105;
   optional ConvolutionParameter convolution_param = 106;
   optional DataParameter data_param = 107;
+  optional DataProviderParameter data_provider_param =142;
   optional DropoutParameter dropout_param = 108;
   optional DummyDataParameter dummy_data_param = 109;
   optional EltwiseParameter eltwise_param = 110;
@@ -376,6 +378,7 @@ message LayerParameter {
   optional LRNParameter lrn_param = 118;
   optional MemoryDataParameter memory_data_param = 119;
   optional MVNParameter mvn_param = 120;
+  optional PatchSamplerParameter patch_sampler_param =140;
   optional PoolingParameter pooling_param = 121;
   optional PowerParameter power_param = 122;
   optional PReLUParameter prelu_param = 131;
@@ -428,7 +431,7 @@ message LossParameter {
     // Outputs that receive the ignore label will NOT be ignored in computing
     // the normalization factor.
     FULL = 0;
-    // Divide by the total number of output locations that do not take the 
+    // Divide by the total number of output locations that do not take the
     // ignore_label.  If ignore_label is not set, this behaves like FULL.
     VALID = 1;
     // Divide by the batch size.
@@ -1250,3 +1253,97 @@ message PReLUParameter {
   // Whether or not slope paramters are shared across channels.
   optional bool channel_shared = 2 [default = false];
 }
+
+// Message that stores parameters used by PatchSamplerParameter
+message PatchSamplerParameter {
+  // Specify the batch size.
+  optional uint32 batch_size    = 1;
+  // Specify if we would like to randomly crop an image.
+  //repeated uint32 crop_shape    = 2;
+  optional PatchShape  data_patch_shape          =2;
+  optional PatchShape  label_patch_shape          =3;
+  // Specify if we want to randomly mirror data.
+  //optional bool mirror = 3 [default = false];
+  //repeated uint32 out_label_shape   =   3;
+  optional bool padding             =   4 [default =false];
+  optional LabelSelectParameter  label_select_param =5;
+  optional uint32   patches_per_data_batch = 6;
+  optional uint32   data_source_batch_size =7;
+  //optional uint32 rand_skip = 7 [default = 0];
+  //optional uint32 rand_patch_times = 9  [default = 1];
+}
+
+message LabelSelectParameter{
+ optional bool 		  balance  			        =1 [default =false];
+ optional uint32      num_labels                =2 [default=1000];
+ optional uint32      num_top_label_balance     =3;
+ optional bool        reorder_label             =4 [default=true];
+ optional string      class_prob_mapping_file 	=5;
+}
+message LabelProbMappingParameter{
+ optional bool  ignore_rest_of_label   =      1 [default =true];
+ optional bool  rest_of_label_mapping  =      2 [default =false];
+ optional int32 rest_of_label_mapping_label = 3 [default =1];
+ optional float rest_of_label_prob          = 4 [default = 0];
+ repeated LabelProbMapping label_prob_mapping_info =5;
+}
+message LabelProbMapping{
+optional string  label_name     =1;
+optional int32   label          =2;
+optional float   prob           =3;
+optional int32   map2label      =4;
+}
+
+// Specifies the shape (dimensions) of a Blob
+message PatchShape{
+  repeated int64 dim = 1 [packed = true];
+}
+message TransformationNDParameter {
+  enum PadMethod {
+    MIRRO = 0;
+    ZERO = 1;
+  }
+    // For data pre-processing, we can do simple scaling and subtracting the
+  // data mean, if provided. Note that the mean subtraction is always carried
+  // out before scaling.
+  optional float scale = 1 [default = 1];
+  // Specify if we want to randomly mirror data.
+  optional bool mirror = 2 [default = false];
+  // Specify if we would like to randomly crop an image.
+
+  //optional uint32 crop_size = 3 [default = 0];
+  optional PatchShape crop_shape = 4;
+  // mean_file and mean_value cannot be specified at the same time
+  //optional string mean_file = 5;
+  // if specified can be repeated once (would substract it from all the channels)
+  // or can be repeated the same number of times as channels
+  // (would subtract them from the corresponding channel)
+  repeated float mean_value = 6;
+  optional bool padding  = 7;
+  optional PadMethod pad_method =8 [default = ZERO];
+  // Force the decoded image to have 3 color channels.
+  //optional bool force_color = 6 [default = false];
+  // Force the decoded image to have 1 color channels.
+  //optional bool force_gray = 7 [default = false];
+}
+message DataProviderParameter{
+    enum DS{
+    LEVELDB = 0;
+    LMDB    = 1;
+    HDF5    = 2;
+    }
+
+    // Specify the data source.
+    optional string data_source = 1;
+    optional string label_source =2;
+    optional bool hdf5_file_shuffle    =3;
+    optional bool  data_shuffle      =4;
+    // Specify the batch size.
+    optional uint32 batch_size = 5;
+    optional DS backend = 6 [default = LEVELDB];
+}
+
+//message PatchDataParameter{
+//    optional PatchSamplerParameter  patch_sampler_param=1;
+//    optional DataProviderParameter  data_provider_param=2;
+//}

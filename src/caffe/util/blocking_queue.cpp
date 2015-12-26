@@ -2,6 +2,8 @@
 #include <string>
 
 #include "caffe/data_reader.hpp"
+#include  "caffe/data_provider.hpp"
+#include  "caffe/patch_sampler.hpp"
 #include "caffe/layers/base_data_layer.hpp"
 #include "caffe/parallel.hpp"
 #include "caffe/util/blocking_queue.hpp"
@@ -92,5 +94,10 @@ template class BlockingQueue<Datum*>;
 template class BlockingQueue<shared_ptr<DataReader::QueuePair> >;
 template class BlockingQueue<P2PSync<float>*>;
 template class BlockingQueue<P2PSync<double>*>;
+template class BlockingQueue<Batch_data<float>*>;
+template class BlockingQueue<Batch_data<double>*>;
+template class BlockingQueue<boost::shared_ptr<QueuePair_Batch<double> > >;
+template class BlockingQueue<boost::shared_ptr<QueuePair_Batch<float> > >;
+
 
 }  // namespace caffe
