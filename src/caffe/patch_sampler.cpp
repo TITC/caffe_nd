@@ -266,7 +266,10 @@ QueuePair_Batch<Dtype>::QueuePair_Batch(const LayerParameter& param) {
 
 
   // bool output_label =param.patch_sampler_param().has_label_shape();
-  bool output_label =true;
+  //bool output_label =true;
+
+
+
   // if(output_label){
   //   int label_dim = param.patch_sampler_param().label_shape().dim_size();
   //   for(int i=1;i<label_dim;i++){

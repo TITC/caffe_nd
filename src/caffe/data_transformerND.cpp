@@ -192,8 +192,9 @@ void DataTransformerND<Dtype>::Transform(Blob<Dtype>* input_blob,
    vector<int> nd_point;
    vector<int>::iterator it;
    size_t pre_aixs_len =0;
-   for(int i=transform_shape.size()-1;i>-1;--i){
-      int data_axis_idx =0;
+   int data_axis_idx =0;
+   for(int i=transform_shape.size()-1;i>0;--i){
+
      if(i==transform_shape.size()-1){
         data_axis_idx=p%transform_shape[i]+off_set[i-2];
         //if(do_mirror)
@@ -201,17 +202,20 @@ void DataTransformerND<Dtype>::Transform(Blob<Dtype>* input_blob,
         //nd_point.push_back(data_axis_idx);
         pre_aixs_len=transform_shape[i];
      }else{
-        //if(i-2>=0)
-          data_axis_idx= i-2>=0 ? p/pre_aixs_len +off_set[i-2]:p/pre_aixs_len;
-        //  nd_point.push_back(data_axis_idx);
-          pre_aixs_len*=transform_shape[i];
+       data_axis_idx= i-2>=0 ?
+                               (p/pre_aixs_len)%transform_shape[i] +off_set[i-2]
+                               :(p/pre_aixs_len)%transform_shape[i];
+        pre_aixs_len*=transform_shape[i];
      }
        it =nd_point.begin();
        nd_point.insert(it, data_axis_idx);
        //nd_point.push_back(data_axis_idx);
    }
+  data_axis_idx=p/pre_aixs_len;
+  it =nd_point.begin();
+  nd_point.insert(it, data_axis_idx);
 
-  size_t data_idx=0;
+ size_t data_idx=0;
 
    for (int n=0;n<nd_point.size();++n){
         if(n==0){

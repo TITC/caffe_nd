@@ -13,8 +13,8 @@ layer {
 		dim: 9
 	   }
 	   label_patch_shape{
-		dim: 21
-		dim: 21
+		dim: 8
+		dim: 8
 		dim: 1
 	   }
 	   batch_size: 16
@@ -60,8 +60,8 @@ layer {
 		dim: 9
 	   }
 	   label_patch_shape{
-		dim: 21
-		dim: 21
+		dim: 8
+		dim: 8
 		dim: 1
 	   }
 	   batch_size: 32
@@ -155,23 +155,23 @@ layer {
           reshape_param {  shape { dim:  0  dim: 0 dim: 0 dim: 0} }
        }
 
-# layer {
-  # name: "pool1"
-  # type: "Pooling"
-  # bottom: "conv2"
-  # top: "pool1"
-  # pooling_param {
-    # pool: MAX
-    # kernel_size: 2
-    # stride: 2
-  # }
-# }
+layer {
+  name: "pool1"
+  type: "Pooling"
+  bottom: "conv2"
+  top: "pool1"
+  pooling_param {
+    pool: MAX
+    kernel_size: 2
+    stride: 2
+  }
+}
 
 
 layer {
   name: "conv3"
   type: "Convolution"
-  bottom: "conv2"
+  bottom: "pool1"
   top: "conv3"
   param {
     lr_mult: 1
