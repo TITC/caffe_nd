@@ -13,7 +13,8 @@ using std::max;
 template <typename Dtype>
 void PoolingLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
       const vector<Blob<Dtype>*>& top) {
-        channel_axis_ = bottom[0]->CanonicalAxisIndex(1);
+        PoolingParameter pooling_param =this->layer_param_.pooling_param();
+        channel_axis_ = bottom[0]->CanonicalAxisIndex(pooling_param.channels_axis());
         first_spatial_axis_ = channel_axis_ + 1;
         const int num_axes = bottom[0]->num_axes();
         num_spatial_axes_ = num_axes - first_spatial_axis_;
@@ -29,55 +30,78 @@ template <typename Dtype>
 void PoolingLayer<Dtype>::LayerSetUpND(const vector<Blob<Dtype>*>& bottom,
     const vector<Blob<Dtype>*>& top){
       PoolingParameter pool_param = this->layer_param_.pooling_param();
-      if (pool_param.global_pooling()) {
-        CHECK(!pool_param.has_kernel_shape())
+      global_pooling_ = pool_param.global_pooling();
+      vector<int> bottom_shape=bottom[0]->shape();
+    //  vector<int> spatial_dim_blob_shape(1, std::max(num_spatial_axes_, 1));
+      vector<int> spatial_dim_blob_shape(std::max(num_spatial_axes_, 1),1);
+      // Setup filter kernel dimensions (kernel_shape_).
+      kernel_shape_.Reshape(spatial_dim_blob_shape);
+      stride_shape_.Reshape(spatial_dim_blob_shape);
+      pad_shape_.Reshape(spatial_dim_blob_shape);
+      bottom_d_shape_.Reshape(spatial_dim_blob_shape);
+      int* kernel_shape_data = kernel_shape_.mutable_cpu_data();
+      int* stride_shape_data = stride_shape_.mutable_cpu_data();
+      int* pad_shape_data = pad_shape_.mutable_cpu_data();
+
+      CHECK(!pool_param.has_kernel_size()|| !pool_param.has_kernel_h()||! pool_param.has_kernel_w())
+      <<"With ND input data: kernel_size, kernel_h and kernel_w can't be set";
+      CHECK(!pool_param.has_pad()|| !pool_param.has_pad_h()||!pool_param.has_pad_w())
+      <<"With ND input data: pad, pad_h and pad_w can't be set";
+      CHECK(!pool_param.has_stride()||!pool_param.has_stride_h()||!pool_param.has_stride_w())
+      <<"With ND input data: stride, stride_h and stride_w can't be set";
+
+      if (global_pooling_) {
+        CHECK(!pool_param.kernel_shape_size())
           << "With Global_pooling: true Filter shape cannot specified";
-      } else {
-        CHECK(pool_param.kernel_shape().dim_size() == num_spatial_axes_)
-          << "Filter shape axes has to equal to that of spatial axes of bottom data ";
+          for(int i=0;i<num_spatial_axes_;++i){
+            kernel_shape_data[i]=bottom_shape[first_spatial_axis_+i];
+          }
+        }else{
+          const int num_kernel_dims = pool_param.kernel_shape_size();
+          CHECK(num_kernel_dims == 1 || num_kernel_dims == num_spatial_axes_)
+              << "kernel_size must be specified once, or once per spatial dimension "
+              << "(kernel_size specified " << num_kernel_dims << " times; "
+              << num_spatial_axes_ << " spatial dims);";
+            for (int i = 0; i < num_spatial_axes_; ++i) {
+              kernel_shape_data[i] =
+                  pool_param.kernel_shape((num_kernel_dims == 1) ? 0 : i);
+            }
+        }
+
+      const int num_stride_dims = pool_param.stride_shape_size();
+      CHECK(num_stride_dims == 0 || num_stride_dims == 1 ||
+            num_stride_dims == num_spatial_axes_)
+          << "stride must be specified once, or once per spatial dimension "
+          << "(stride specified " << num_stride_dims << " times; "
+          << num_spatial_axes_ << " spatial dims);";
+      const int kDefaultStride = 1;
+      for (int i = 0; i < num_spatial_axes_; ++i) {
+        stride_shape_data[i] = (num_stride_dims == 0) ? kDefaultStride :
+            pool_param.stride_shape((num_stride_dims == 1) ? 0 : i);
+        CHECK_GT(stride_shape_data[i], 0) << "Stride dimensions must be nonzero.";
       }
 
-      CHECK(!(pool_param.has_pad_shape()) || !(pool_param.pad_shape().dim_size()==num_spatial_axes_))
-          << "pad shape has to equal to that of spatial axes of bottom data";
-      CHECK(!(pool_param.has_stride_shape()) || !(pool_param.stride_shape().dim_size()==num_spatial_axes_))
-          << "Stride hape has to equal to that of spatial axes of bottom data.";
-
-      global_pooling_ = pool_param.global_pooling();
-          if (global_pooling_) {
-            vector<int> bottom_shape = bottom[0]->shape();
-            for(int i=0;i<num_spatial_axes_;++i){
-              kernel_shape_.push_back(bottom_shape[channel_axis_+i+1]);
-            }
-          } else {
-            for(int i=0;i<num_spatial_axes_;++i){
-              kernel_shape_.push_back(pool_param.kernel_shape().dim(i));
-              CHECK_GT(kernel_shape_[i], 0) << "Filter dimensions cannot be zero.";
-            }
+      const int num_pad_dims = pool_param.pad_shape_size();
+      CHECK(num_pad_dims==0|| num_pad_dims==1 || num_pad_dims==num_spatial_axes_)
+            << "pad must be specified once, or once per spatial dimension "
+            << "(pad specified " << num_pad_dims << " times; "
+            << num_spatial_axes_ << " spatial dims);";
+      const int kDefaultPad = 0;
+      for (int i = 0; i < num_spatial_axes_; ++i) {
+            pad_shape_data[i] = (num_pad_dims == 0) ? kDefaultPad :
+            pool_param.pad_shape((num_pad_dims == 1) ? 0 : i);
+            CHECK_LT(pad_shape_data[i], kernel_shape_data[i]);
           }
-
-        if (!pool_param.has_pad_shape()) {
-            pad_shape_.resize(num_spatial_axes_,0);
-          } else {
+      if (global_pooling_) {
              for(int i=0;i<num_spatial_axes_;++i){
-              pad_shape_.push_back(pool_param.pad_shape().dim(i));
-              CHECK_LT(pad_shape_[i], kernel_shape_[i]);
-            }
-          }
-
-          if (!pool_param.has_stride_shape()) {
-            stride_shape_.resize(num_spatial_axes_,1);
-          } else {
-             for(int i=0;i<num_spatial_axes_;++i){
-              stride_shape_.push_back(pool_param.stride_shape().dim(i));
-            }
-          }
-
-          if (global_pooling_) {
-             for(int i=0;i<num_spatial_axes_;++i){
-               CHECK(stride_shape_[i] ==1 && pad_shpe[i]==0)
-                <<<< "With Global_pooling: true; only pad = 0 and stride = 1";
+               CHECK(stride_shape_data[i] ==1 && pad_shape_data[i]==0)
+                << "With Global_pooling: true; only pad = 0 and stride = 1";
              }
-          }
+      }
+      //vector<int> bottom_shape =botttom[0]->shape();
+      int* bottom_d_shape_data =bottom_d_shape_.mutable_cpu_data();
+      for (int i = 0; i < num_spatial_axes_; ++i){
+           bottom_d_shape_data[i]=bottom_shape[first_spatial_axis_+i];}
   }
 
 template <typename Dtype>
@@ -109,7 +133,7 @@ void PoolingLayer<Dtype>::LayerSetUp2D(const vector<Blob<Dtype>*>& bottom,
           kernel_h_ = bottom[0]->height();
           kernel_w_ = bottom[0]->width();
         } else {
-          if (pool_param.has_kernel_size()) {
+          if (pool_param.has_kernel_size()==1) {
             kernel_h_ = kernel_w_ = pool_param.kernel_size();
           } else {
             kernel_h_ = pool_param.kernel_h();
@@ -156,47 +180,55 @@ void PoolingLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
 }
 
 template <typename Dtype>
-void PoolingLayer<Dtype>::void ReshapeND(const vector<Blob<Dtype>*>& bottom,
+void PoolingLayer<Dtype>::ReshapeND(const vector<Blob<Dtype>*>& bottom,
       const vector<Blob<Dtype>*>& top){
       vector<int> bottom_shape = bottom[0]->shape();
-      channels_ = bottom_shape[channel_axis_bottom];
+      channels_ = bottom_shape[channel_axis_];
       int num   = bottom_shape[0];
+      int* kernel_shape_data = kernel_shape_.mutable_cpu_data();
+      const int* stride_shape_data = stride_shape_.cpu_data();
+      const int* pad_shape_data = pad_shape_.cpu_data();
+      vector<int> spatial_dim_blob_shape(std::max(num_spatial_axes_, 1),1);
       if (global_pooling_) {
-        kernel_shape_.clear();
+        kernel_shape_.Reshape(spatial_dim_blob_shape);
+        int* kernel_shape_data = kernel_shape_.mutable_cpu_data();
         for(int i=0;i<num_spatial_axes_;++i){
-          kernel_shape_.push_back(bottom_shape[channel_axis_+i+1]);
+          kernel_shape_data[i]=bottom_shape[first_spatial_axis_+i];
         }
       }
 
-      pooled_shape_.resize(num_spatial_axes_,0);
+      pooled_d_shape_.Reshape(spatial_dim_blob_shape);
+      int* pooled_d_shape_data = pooled_d_shape_.mutable_cpu_data();
+      vector<int>  pooled_shape;
       for(int i=0;i<num_spatial_axes_;++i){
-        pooled_shape_[i] = static_cast<int>(ceil(static_cast<float>(
-          bottom_shape[first_spatial_axis_+i]  + 2 * pad_shape_[i] - kernel_shape[i]) / stride_shape_[i])) + 1;
+      pooled_d_shape_data[i] = static_cast<int>(ceil(static_cast<float>(
+          bottom_shape[first_spatial_axis_+i]  + 2 * pad_shape_data[i] - kernel_shape_data[i]) / stride_shape_data[i])) + 1;
       }
 
-      bool any_axis_pad_not_zero =false;
-      for(int i=0;i<num_spatial_axes_;++i){
-        if(pad_shape_[i]>0){
-           any_axis_pad_noet_zero =true;
-           break;
-         }
-      }
-      if (any_axis_pad_not_zero) {
+      // bool any_axis_pad_not_zero =false;
+      // for(int i=0;i<num_spatial_axes_;++i){
+      //   if(pad_shape_data[i]>0){
+      //      any_axis_pad_not_zero =true;
+      //      break;
+      //    }
+      // }
+      //if (any_axis_pad_not_zero) {
         // If we have padding, ensure that the last pooling starts strictly
         // inside the image (instead of at the padding); otherwise clip the last.
         for(int i=0;i<num_spatial_axes_;++i){
-          if ((pooled_shape[i]_ - 1) * stride_shape_[i] >= bottom_shape[first_spatial_axis_+i] + pad_shape_[i]) {
-            --pooled_shape[i]_;
+          if ((  pooled_d_shape_data[i] - 1) * kernel_shape_data[i] >= bottom_shape[first_spatial_axis_+i] + pad_shape_data[i]) {
+            --pooled_d_shape_data[i];
           }
-          CHECK_LT((pooled_shape_[i] - 1) * stride_shape_[i], bottom_shape[first_spatial_axis_+i] + pad_shape_[i]);
+          CHECK_LT((pooled_d_shape_data[i] - 1) *stride_shape_data[i], bottom_shape[first_spatial_axis_+i] + pad_shape_data[i]);
         }
-      }
+    //  }
 
 
-      vector<int> out_put_shape = pooled_shape_;
+      vector<int> out_put_shape ;//= pooled_shape_;
       pooled_data_length_ =1;
-      for(int i=1;i<pooled_shape_.size();++i){
-        pooled_data_length_*=pooled_shape_[i];
+      for(int i=0;i<num_spatial_axes_;++i){
+        pooled_data_length_*=pooled_d_shape_data[i];
+        out_put_shape.push_back(pooled_d_shape_data[i]);
       }
       out_put_shape.insert(out_put_shape.begin(),channels_);
       out_put_shape.insert(out_put_shape.begin(),num);
@@ -221,7 +253,7 @@ void PoolingLayer<Dtype>::void ReshapeND(const vector<Blob<Dtype>*>& bottom,
 }
 
 template <typename Dtype>
-void PoolingLayer<Dtype>::void Reshape2D(const vector<Blob<Dtype>*>& bottom,
+void PoolingLayer<Dtype>::Reshape2D(const vector<Blob<Dtype>*>& bottom,
       const vector<Blob<Dtype>*>& top){
         CHECK_EQ(4, bottom[0]->num_axes()) << "Input must have 4 axes, "
             << "corresponding to (num, channels, height, width)";
@@ -275,9 +307,9 @@ template <typename Dtype>
 void PoolingLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
   const vector<Blob<Dtype>*>& top) {
     if(num_spatial_axes_ ==2)
-      Forward_cpu2D(bottom, top);
+      Forward_cpu_2D(bottom, top);
     else
-      Forward_cpuND(bottom, top);
+      Forward_cpu_ND(bottom, top);
 }
 
 
@@ -295,6 +327,10 @@ const vector<Blob<Dtype>*>& top){
   int num =bottom_shape[0];
   // Different pooling methods. We explicitly do the switch outside the for
   // loop to save time, although this results in more code.
+  const int* pooled_d_shape_data =pooled_d_shape_.cpu_data();
+  const int* kernel_shape_data = kernel_shape_.mutable_cpu_data();
+  const int* stride_shape_data = stride_shape_.cpu_data();
+  const int* pad_shape_data = pad_shape_.cpu_data();
   switch (this->layer_param_.pooling_param().pool()) {
   case PoolingParameter_PoolMethod_MAX:
     // Initialize
@@ -308,95 +344,95 @@ const vector<Blob<Dtype>*>& top){
     caffe_set(top_count, Dtype(-FLT_MAX), top_data);
     // The main loop
   //  int pooled_size =pooled_shape
-    for (int n = 0; n < num; ++n) {
-      for (int c = 0; c < channels_; ++c) {
-        for(int p=0;p<pooled_data_length_;++p){
-            vector<int> nd_point;
-            vector<int>::iterator it;
-            size_t pre_aixs_len =0;
-            int data_axis_idx =0;
-            // compute corresponding coords in nd space；
-              for(int dim =num_spatial_axes_-1; dim>0; --dim){
-                  if(dim==num_spatial_axes_-1){
-                     data_axis_idx=p%pooled_shape_[dim];
-                     pre_aixs_len=pooled_shape_[dim];
-                  }else{
-                      data_axis_idx=(p/pre_aixs_len)%pooled_shape_[dim];
-                      pre_aixs_len*=pooled_shape_[dim];
+   for (int n = 0; n < num; ++n) {
+     for (int c = 0; c < channels_; ++c) {
+       for(int p=0;p<pooled_data_length_;++p){
+           vector<int> nd_point;
+           vector<int>::iterator it;
+           size_t pre_aixs_len =0;
+           int data_axis_idx =0;
+           // compute corresponding coords in nd space；
+             for(int dim =num_spatial_axes_-1; dim>0; --dim){
+                 if(dim==num_spatial_axes_-1){
+                    data_axis_idx=p%pooled_d_shape_data[dim];
+                    pre_aixs_len=pooled_d_shape_data[dim];
+                 }else{
+                     data_axis_idx=(p/pre_aixs_len)%pooled_d_shape_data[dim];
+                     pre_aixs_len*=pooled_d_shape_data[dim];
+                 }
+                 it =nd_point.begin();
+                 nd_point.insert(it, data_axis_idx);
+               }
+               data_axis_idx=(p/pre_aixs_len);
+               it =nd_point.begin();
+               nd_point.insert(it, data_axis_idx);
+          // compute the bottom pooling coordinate range for each output
+               vector<int> start_aixs_idx, end_aixs_idx;
+               int total_kernel_size  =1;
+               for(int i =0;i<num_spatial_axes_;++i){
+                 start_aixs_idx.push_back(nd_point[i]*stride_shape_data[i]-pad_shape_data[i]);
+                 end_aixs_idx.push_back(min(start_aixs_idx[i] + kernel_shape_data[i],
+                                           bottom_shape[first_spatial_axis_+i]));
+                 start_aixs_idx[i]=max(start_aixs_idx[i],0);
+
+                 total_kernel_size *=(end_aixs_idx[i]-start_aixs_idx[i]+1);
+               }
+
+              for(int i=0;i<total_kernel_size;++i)
+              {
+                vector<int> bottom_k_points;
+                int kernel_dim =start_aixs_idx.size();
+                //compute coordinate of point in the bottom kernel.
+                for(int n =kernel_dim-1; n>0; --n){
+                   int pooled_kernel_size =end_aixs_idx[n]-start_aixs_idx[n]+1;
+                    if(n==kernel_dim-1){
+                       data_axis_idx=p%(pooled_kernel_size)+start_aixs_idx[n];
+                       pre_aixs_len=pooled_kernel_size;
+                    }else{
+                        data_axis_idx=(i/pre_aixs_len)%pooled_kernel_size+start_aixs_idx[n];
+                        pre_aixs_len*=pooled_kernel_size;
+                    }
+                    it =bottom_k_points.begin();
+                    bottom_k_points.insert(it, data_axis_idx);
                   }
-                  it =nd_point.begin();
-                  nd_point.insert(it, data_axis_idx);
-                }
-                data_axis_idx=(p/pre_aixs_len);
-                it =nd_point.begin();
-                nd_point.insert(it, data_axis_idx);
-           // compute the bottom pooling coordinate range for each output
-                vector<int> start_aixs_idx, end_aixs_idx;
-                int total_kernel_size  =1;
-                for(int i =0;i<num_spatial_axes_;++i){
-                  start_aixs_idx.push_back(nd_point[i]*stride_shape_[i]-pad_shape_[i]);
-                  end_aixs_idx.push_back(min(start_aixs_idx[i] + kernel_shape_[i],
-                                            bottom_shape_[first_spatial_axis_+i]));
-                  start_aixs_idx[i]=max(start_aixs_idx[i],0);
+                  data_axis_idx=(i/pre_aixs_len);
+                  it =bottom_k_points.begin();
+                  bottom_k_points.insert(it, data_axis_idx);
+           // convert coordinate to index in the bottom;
 
-                  total_kernel_size *=(end_aixs_idx[i]-start_aixs_idx[i]+1);
-                }
-
-               for(int i=0;i<total_kernel_size;++i)
-               {
-                 vector<int> bottom_k_points;
-                 int kernel_dim =start_aixs_idx.size();
-                 //compute coordinate of point in the bottom kernel.
-                 for(int n =kernel_dim-1; n>0; --n){
-                    int pooled_kernel_size =end_aixs_idx[n]-start_aixs_idx[n]+1;
-                     if(n==kernel_dim-1){
-                        data_axis_idx=p%(pooled_kernel_size)+start_aixs_idx[n];
-                        pre_aixs_len=pooled_kernel_size;
-                     }else{
-                         data_axis_idx=(i/pre_aixs_len)%pooled_kernel_size+start_aixs_idx[n];
-                         pre_aixs_len*=pooled_kernel_size;
-                     }
-                     it =bottom_k_points.begin();
-                     bottom_k_points.insert(it, data_axis_idx);
+                  int data_idx=0;
+                   for (int n=0;n<bottom_k_points.size();++n){
+                        if(n==0){
+                          data_idx = bottom_k_points[n];
+                        }else{
+                          data_idx*=bottom_shape[first_spatial_axis_+n];
+                          data_idx+=bottom_k_points[n];
+                        }
                    }
-                   data_axis_idx=(i/pre_aixs_len);
-                   it =bottom_k_points.begin();
-                   bottom_k_points.insert(it, data_axis_idx);
-            // convert coordinate to index in the bottom;
 
-                   int data_idx=0;
-                    for (int n=0;n<bottom_k_points.size();++n){
-                         if(n==0){
-                           data_idx = bottom_k_points[n];
-                         }else{
-                           data_idx*=bottom_shape_[first_spatial_axis_+n];
-                           data_idx+=bottom_k_points[n];
-                         }
-                    }
-
-                    if (bottom_data[data_idx] > top_data[p]) {
-                      top_data[p] = bottom_data[data_idx];
-                      if (use_top_mask) {
-                        top_mask[p] = static_cast<Dtype>(index);
-                      } else {
-                        mask[p] = data_idx;
-                      }
-                    }
-            }
-        }
-        // compute offset
-        vector<int> offset(2,0);
-        offset[1]=1;
-        bottom_data += bottom[0]->offset(offset);
-        top_data += top[0]->offset(offset);
-        if (use_top_mask) {
-          top_mask += top[0]->offset(offset);
-        } else {
-          mask += top[0]->offset(offset);
-        }
-      }
-    }
-    break;
+                   if (bottom_data[data_idx] > top_data[p]) {
+                     top_data[p] = bottom_data[data_idx];
+                     if (use_top_mask) {
+                       top_mask[p] = static_cast<Dtype>(data_idx);
+                     } else {
+                       mask[p] = data_idx;
+                     }
+                   }
+               }
+       }
+       // compute offset
+       vector<int> offset(2,0);
+       offset[1]=1;
+       bottom_data += bottom[0]->offset(offset);
+       top_data += top[0]->offset(offset);
+       if (use_top_mask) {
+         top_mask += top[0]->offset(offset);
+       } else {
+         mask += top[0]->offset(offset);
+       }
+     }
+   }
+  break;
   case PoolingParameter_PoolMethod_AVE:
     for (int i = 0; i < top_count; ++i) {
       top_data[i] = 0;
@@ -541,12 +577,31 @@ const vector<Blob<Dtype>*>& top){
 }
 
 
+
+
 template <typename Dtype>
 void PoolingLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
+      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom){
+        if (!propagate_down[0]) {
+          return;
+        }
+        if(num_spatial_axes_ ==2)
+          Backward_cpu_2D(top, propagate_down, bottom);
+        else
+          Backward_cpu_ND(top, propagate_down, bottom);
+}
+
+template <typename Dtype>
+void PoolingLayer<Dtype>::Backward_cpu_ND(const vector<Blob<Dtype>*>& top,
       const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom) {
-  if (!propagate_down[0]) {
-    return;
-  }
+
+
+
+}
+template <typename Dtype>
+void PoolingLayer<Dtype>::Backward_cpu_2D(const vector<Blob<Dtype>*>& top,
+      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom) {
+
   const Dtype* top_diff = top[0]->cpu_diff();
   Dtype* bottom_diff = bottom[0]->mutable_cpu_diff();
   // Different pooling methods. We explicitly do the switch outside the for

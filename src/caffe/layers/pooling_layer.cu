@@ -7,27 +7,23 @@
 
 namespace caffe {
 template <typename Dtype, int num_axes>
-__global__ void MaxPoolForward_ND(const int nthread,
+__global__ void MaxPoolForward_ND(const int nthreads,
   const Dtype* const bottom_data, const int num, const int channels,
   const int* bottom_shape, const int* top_shape, const int* kernel,
   const int* stride,const int* pad,
   Dtype* const top_data, int*  mask, Dtype* top_mask){
     int d_top_pt[num_axes];  // NOLINT(runtime/arrays)
-    int d_iter[num_axes];  // NOLINT(runtime/arrays)
+    //int d_iter[num_axes];  // NOLINT(runtime/arrays)
     int d_start_pt[num_axes];
     int d_end_pt[num_axes];
-    int d_bottom_pt[]
+    int d_bottom_pt[num_axes];
     int i,j;
-    CUDA_KERNEL_LOOP(index, nthread) {
-      // Initialize channel_in, computed in the loop below, with intermediate
-      // computations used to compute the spatial indices.
+    CUDA_KERNEL_LOOP(index, nthreads) {
       int channel_in = index;
       int channel_out = 1;
       int n  =0;
       int c =0;
       int kernel_length =1;
-      //d_temp[num_axes-1]=channel_in%top_shape[num_axes-1];
-      //channel_out*=kernel_shape[num_axes-1]
       for (i = num_axes - 1; i >= 0; --i) {
         d_top_pt[i] = channel_in % top_shape[i];
         channel_in /= top_shape[i];
@@ -35,14 +31,12 @@ __global__ void MaxPoolForward_ND(const int nthread,
        }
         c = channel_in%channels;
         n =channel_in/channels;
-      }
-
       for(i=0;i<num_axes;++i){
        kernel_length*=kernel[i];
       }
 
       int nc_len =(n * channels + c);
-      int bottom dim_len=1;
+      int bottom_dim_len=1;
       for(i=0;i<num_axes;++i){
         bottom_dim_len*=bottom_shape[i];
       }
@@ -50,14 +44,14 @@ __global__ void MaxPoolForward_ND(const int nthread,
       Dtype maxval = -FLT_MAX;
       int maxidx = -1;
       const Dtype* const bottom_slice =
-           bottom_data+(n * channels + c) * bottom_dim_len;
+           bottom_data + nc_len * bottom_dim_len;
      int  cur_total_k_size =1;
      for(i=0;i<num_axes;++i){
        d_start_pt[i]=(d_top_pt[i]*stride[i]-pad[i]);
-       d_end_pt[i]=(min(d_start_pt[i] + kernel_[i],
+       d_end_pt[i]=(min(d_start_pt[i] + kernel[i],
                                  bottom_shape[i]));
        d_start_pt[i]=max(d_start_pt[i],0);
-       cur_total_k_size *=(d_end_pt[i]-sd_start_pt[i]+1);
+       cur_total_k_size *=(d_end_pt[i]-d_start_pt[i]+1);
      }
 
      for(i=0;i<cur_total_k_size; ++i){
@@ -65,10 +59,10 @@ __global__ void MaxPoolForward_ND(const int nthread,
        int inner = i;
        for( j=num_axes-1; j>=0; --j){
             int pooled_kernel_size =d_end_pt[j]-d_start_pt[j]+1;
-            d_bottom_pt[j]=inner%pooled_kernel_size+start_aixs_idx[j];
+            d_bottom_pt[j]=inner%pooled_kernel_size+d_start_pt[j];
             inner /=pooled_kernel_size;
           }
-       int data_index =0;
+       int data_idx =0;
        for(j=0; j<num_axes; ++j){
          if(j==0){
            data_idx = d_bottom_pt[j];
@@ -90,10 +84,11 @@ __global__ void MaxPoolForward_ND(const int nthread,
      }
 
   }
+}
 
 
 template <typename Dtype>
-__global__ void MaxPoolForward(const int nthreadspooled_data_length;++i,
+__global__ void MaxPoolForward(const int nthreads,
     const Dtype* const bottom_data, const int num, const int channels,
     const int height, const int width, const int pooled_height,
     const int pooled_width, const int kernel_h, const int kernel_w,
@@ -256,12 +251,57 @@ void PoolingLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
     } else {
       mask = max_idx_.mutable_gpu_data();
     }
+    if(num_spatial_axes_ ==2){
     // NOLINT_NEXT_LINE(whitespace/operators)
     MaxPoolForward<Dtype><<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(
         count, bottom_data, bottom[0]->num(), channels_,
         height_, width_, pooled_height_, pooled_width_, kernel_h_,
         kernel_w_, stride_h_, stride_w_, pad_h_, pad_w_, top_data,
         mask, top_mask);
+    }else{
+
+      const int* top_shape =pooled_d_shape_.gpu_data();
+      const int* bottom_shape =bottom_d_shape_.gpu_data();
+      const int* kernel =kernel_shape_.gpu_data();
+      const int* stride =stride_shape_.gpu_data();
+      const int* pad =pad_shape_.gpu_data();
+      // NOLINT_NEXT_LINE(whitespace/operators)
+      switch(num_spatial_axes_){
+        case 1:
+        MaxPoolForward_ND<Dtype,1 ><<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(count,
+          bottom_data,  bottom[0]->num(), channels_,
+          bottom_shape, top_shape, kernel,
+          stride,pad,top_data,mask,top_mask);
+        break;
+        case 2:
+        MaxPoolForward_ND<Dtype,2><<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(count,
+          bottom_data,  bottom[0]->num(), channels_,
+          bottom_shape, top_shape, kernel,
+          stride,pad,top_data,mask,top_mask);
+        break;
+        case 3:
+        MaxPoolForward_ND<Dtype,3><<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(count,
+          bottom_data,  bottom[0]->num(), channels_,
+          bottom_shape, top_shape, kernel,
+          stride,pad,top_data,mask,top_mask);
+        break;
+        case 4:
+        MaxPoolForward_ND<Dtype,4><<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(count,
+          bottom_data,  bottom[0]->num(), channels_,
+          bottom_shape, top_shape, kernel,
+          stride,pad,top_data,mask,top_mask);
+        break;
+        case 5:
+        MaxPoolForward_ND<Dtype,5><<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(count,
+          bottom_data,  bottom[0]->num(), channels_,
+          bottom_shape, top_shape, kernel,
+          stride,pad,top_data,mask,top_mask);
+        break;
+        default:
+        LOG(FATAL) << "Unsupported pooling dimension.";
+      }
+
+    }
     break;
   case PoolingParameter_PoolMethod_AVE:
     // NOLINT_NEXT_LINE(whitespace/operators)
@@ -303,46 +343,52 @@ template <typename Dtype, int num_axes>
 __global__ void MaxPoolBackward_ND(const int nthreads, const Dtype* const top_diff,
     const int* const mask, const Dtype* const top_mask, const int num,
     const int channels, const int* bottom_shape,
-    const int* top_shape, const int* kernel, const int* pad,
+    const int* top_shape, const int* kernel, const int* stride, const int* pad,
     Dtype* const bottom_diff){
-      int d_top_pt[num_axes];  // NOLINT(runtime/arrays)
-      int d_iter[num_axes];  // NOLINT(runtime/arrays)
+      //int d_top_pt[num_axes];  // NOLINT(runtime/arrays)
+      //int d_iter[num_axes];  // NOLINT(runtime/arrays)
+      int i;
     CUDA_KERNEL_LOOP(index, nthreads) {
 
       int n  =0;
       int c =0;
-      int kernel_length =1;
+      //int kernel_length =1;
+
       //d_temp[num_axes-1]=channel_in%top_shape[num_axes-1];
       //channel_out*=kernel_shape[num_axes-1]
-      for (i = num_axes - 1; i >= 0; --i) {
-        d_top_pt[i] = channel_in % top_shape[i];
-        channel_in /= top_shape[i];
-        channel_out *= kernel[i];
-       }
-        c = channel_in%channels;
-        n =channel_in/channels;
-      }
-      int top_shape_len=1;
-      for(i=0;i<num_axes;++i){
-        top_shape_len*=top_shape[i];
-      }
 
-      int bootom_shape_len=1;
+      //int channel_in = index;
+      //int channel_out = 1;
+      // for (i = num_axes - 1; i >= 0; --i) {
+      //   d_top_pt[i] = channel_in % top_shape[i];
+      //   channel_in /= top_shape[i];
+      //   channel_out *= kernel[i];
+      //  }
+      //   c = channel_in%channels;
+      //   n =channel_in/channels;
+      // int top_shape_len=1;
+      // for(i=0;i<num_axes;++i){
+      //   top_shape_len*=top_shape[i];
+      // }
+
+      int bottom_shape_len=1;
       for(i=0;i<num_axes;++i){
         bottom_shape_len*=bottom_shape[i];
       }
 
       const int offset = (n * channels + c) * bottom_shape_len;
-      const Dtype* bottom_slice =  bottom_diff+offset;
+      Dtype* bottom_slice =  bottom_diff+offset;
 
-      bottom_diff[index] = gradient;
+    //  bottom_diff[index] = gradient;
       if (mask){
           bottom_slice[mask[index]]+=top_shape[index];
       }else{
-          bottom_slice[top_mask[index]]+=top_shape[index];
+         int idx =(int)top_mask[index];
+          bottom_slice[idx]+=top_shape[index];
       }
 
     }
+  }
 
 template <typename Dtype>
 __global__ void MaxPoolBackward(const int nthreads, const Dtype* const top_diff,
@@ -482,7 +528,7 @@ void PoolingLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
     } else {
       mask = max_idx_.gpu_data();
     }
-    int num_axes =bottom[0]->axes;
+    int num_axes =bottom[0]->num_axes();
     if(num_axes==4){
     // NOLINT_NEXT_LINE(whitespace/operators)
     MaxPoolBackward<Dtype><<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(
@@ -491,17 +537,54 @@ void PoolingLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
         kernel_h_, kernel_w_, stride_h_, stride_w_, pad_h_, pad_w_,
         bottom_diff);
     }else{
-       int shape_size =num_axes-2;
        const int top_count =top[0]->count();
-       int* k_shape=kernel_shape_->gpu_data();
-       int* s_shape=stride_->gpu_data();
-       int* t_shpe=pooled_d_shape_->gpu_data();
-       int* b_shape=bottom_d_shape_->gpu_data();
-       int* p_shape=pad_->gpu_data();
-      MaxPoolBackward_ND<Dtype,shape_size><<<CAFFE_GET_BLOCKS(top_count), CAFFE_CUDA_NUM_THREADS>>>(
-          top_count, top_diff, mask, top_mask, top[0]->num(), channels_,
-          b_shape, t_shape,b_shape,k_shape,p_shape, b_shape,
-          bottom_diff);
+       const int* kernel_shape=kernel_shape_.gpu_data();
+       const int* stride_shape=stride_shape_.gpu_data();
+       const int* top_shape=pooled_d_shape_.gpu_data();
+       const int* bottom_shape=bottom_d_shape_.gpu_data();
+       const int* pad_shape=pad_shape_.gpu_data();
+       // NOLINT_NEXT_LINE(whitespace/operators)
+       switch (num_spatial_axes_) {
+         case 1:
+         MaxPoolBackward_ND<Dtype,1><<<CAFFE_GET_BLOCKS(top_count), CAFFE_CUDA_NUM_THREADS>>>(
+             top_count, top_diff, mask,
+             top_mask, top[0]->num(), channels_,
+             bottom_shape, top_shape,kernel_shape,
+             stride_shape,pad_shape, bottom_diff);
+         break;
+         case 2:
+         MaxPoolBackward_ND<Dtype,2><<<CAFFE_GET_BLOCKS(top_count), CAFFE_CUDA_NUM_THREADS>>>(
+             top_count, top_diff, mask,
+             top_mask, top[0]->num(), channels_,
+             bottom_shape, top_shape, kernel_shape,
+             stride_shape,pad_shape, bottom_diff);
+         break;
+         case 3:
+         MaxPoolBackward_ND<Dtype,3><<<CAFFE_GET_BLOCKS(top_count), CAFFE_CUDA_NUM_THREADS>>>(
+             top_count, top_diff, mask,
+             top_mask, top[0]->num(), channels_,
+             bottom_shape, top_shape,kernel_shape,
+             stride_shape, pad_shape, bottom_diff);
+         break;
+         case 4:
+         MaxPoolBackward_ND<Dtype,4><<<CAFFE_GET_BLOCKS(top_count), CAFFE_CUDA_NUM_THREADS>>>(
+             top_count, top_diff, mask,
+             top_mask, top[0]->num(), channels_,
+             bottom_shape, top_shape,kernel_shape,
+             stride_shape,pad_shape, bottom_diff);
+         break;
+         case 5:
+         MaxPoolBackward_ND<Dtype,5><<<CAFFE_GET_BLOCKS(top_count), CAFFE_CUDA_NUM_THREADS>>>(
+             top_count, top_diff, mask,
+             top_mask, top[0]->num(), channels_,
+             bottom_shape, top_shape,kernel_shape,
+             stride_shape,pad_shape, bottom_diff);
+         break;
+         default:
+           LOG(FATAL) << "unsupported pooling dimension.";
+       }
+
+
     }
 
     break;

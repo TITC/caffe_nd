@@ -89,9 +89,9 @@ class PoolingLayer : public Layer<Dtype> {
   /// @brief The spatial dimensions of a filter kernel.
   Blob<int> kernel_shape_;
   /// @brief The spatial dimensions of the stride.
-  Blob<int> stride_;
+  Blob<int> stride_shape_;
   /// @brief The spatial dimensions of the padding.
-  Blob<int> pad_;
+  Blob<int> pad_shape_;
   /// @brief The spatial dimensions of the convolution input.
   Blob<int> pooled_d_shape_;
   Blob<int> bottom_d_shape_;
