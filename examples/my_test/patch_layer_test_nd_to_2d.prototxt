@@ -8,13 +8,13 @@ layer {
   }
   patch_sampler_param{
 	   data_patch_shape{
-		dim: 95
-		dim: 95
-		dim: 5
+		dim: 35
+		dim: 35
+		dim: 9
 	   }
 	   label_patch_shape{
-		dim: 75
-		dim: 75
+		dim: 8
+		dim: 8
 		dim: 1
 	   }
 	   batch_size: 16
@@ -55,13 +55,13 @@ layer {
   }
   patch_sampler_param{
 	   data_patch_shape{
-		dim: 95
-		dim: 95
-		dim: 5
+		dim: 35
+		dim: 35
+		dim: 9
 	   }
 	   label_patch_shape{
-		dim: 75
-		dim: 75
+		dim: 8
+		dim: 8
 		dim: 1
 	   }
 	   batch_size: 32
@@ -90,8 +90,6 @@ layer {
 
 }
 
-
-
 layer {
   name: "conv1"
   type: "Convolution"
@@ -108,7 +106,7 @@ layer {
   # pad: 2
     kernel_size: 5
     kernel_size: 5
-    kernel_size: 4
+    kernel_size: 5
     #stride: 4
 	#stride: 4
 	stride: 1
@@ -122,18 +120,6 @@ layer {
   }
 }
 
-
-
-
- # layer {
-         # type: "Reshape" bottom: "conv1" top: "conv1"
-         # reshape_param {  shape { dim:  0  dim: 0 dim: 0 dim: 0} }
-       # }
- # layer {
-         # type: "Reshape" bottom: "label" top: "label"
-         # reshape_param {  shape { dim:  0  dim: 0 dim: 0 dim: 0} }
-       # }
-	   
 layer {
   name: "conv2"
   type: "Convolution"
@@ -150,7 +136,7 @@ layer {
   #pad: 2
     kernel_size: 5
     kernel_size: 5
-    kernel_size: 1
+    kernel_size: 5
     stride: 1
     weight_filler {
       type: "gaussian"
@@ -164,20 +150,22 @@ layer {
 
 
 
+ layer {
+         type: "Reshape" bottom: "conv2" top: "conv2"
+          reshape_param {  shape { dim:  0  dim: 0 dim: 0 dim: 0} }
+       }
 
 layer {
-   name: "pool1"
-   type: "Pooling"
-   bottom: "conv2"
-   top: "pool1"
-   pooling_param {
+  name: "pool1"
+  type: "Pooling"
+  bottom: "conv2"
+  top: "pool1"
+  pooling_param {
     pool: MAX
-    #kernel_size: 2
-    #stride: 2
-    kernel_shape:2
-    stride_shape:2
-   }
- }
+    kernel_size: 2
+    stride: 2
+  }
+}
 
 
 layer {
@@ -196,7 +184,7 @@ layer {
   #pad: 2
     kernel_size: 5
     kernel_size: 5
-    kernel_size: 1
+    #kernel_size: 1
     #stride: 1
     #stride: 4
     stride: 1
@@ -210,20 +198,6 @@ layer {
   }
 }
 
-# layer {
-  # name: "pool2"
-  # type: "Pooling"
-  # bottom: "conv3"
-  # top: "pool2"
-  # pooling_param {
-   # pool: MAX
-   # #kernel_size: 2
-   # #stride: 2
-   # kernel_shape:2
-   # stride_shape:2
-  # }
-#}
-
 layer {
   name: "conv4"
   type: "Convolution"
@@ -236,88 +210,11 @@ layer {
     lr_mult: 2
   }
   convolution_param {
-    num_output: 64
-  #pad: 2
-    kernel_size: 3
-    kernel_size: 3
-    kernel_size: 1
-    stride: 1
-    #stride: 1
-    #stride: 1
-    weight_filler {
-      type: "gaussian"
-      std: 0.0001
-    }
-    bias_filler {
-      type: "constant"
-    }
-  }
-}
-
-
-layer {
-  name: "decconv1"
-  type: "Deconvolution"
-  bottom: "conv4"
-  top: "deconv1"
-  param {
-    lr_mult: 1
-  }
-  param {
-    lr_mult: 2
-  }
-  convolution_param {
-    num_output: 64
-  #pad: 2
-    kernel_size: 3
-    kernel_size: 3
-    kernel_size: 1
-    stride: 2
-    #stride: 1
-    #stride: 1
-    weight_filler {
-      type: "gaussian"
-      std: 0.0001
-    }
-    bias_filler {
-      type: "constant"
-    }
-  }
-}
-
-
-# layer {
-  # name: "pool3"
-  # type: "Pooling"
-  # bottom: "conv4"
-  # top: "pool3"
-  # pooling_param {
-   # pool: MAX
-   # #kernel_size: 2
-   # #stride: 2
-   # kernel_shape:2
-   # stride_shape:2
-  # }
-# }
-
-
-layer {
-  name: "conv5"
-  type: "Convolution"
-  bottom: "deconv1"
-  top: "conv5"
-  param {
-    lr_mult: 1
-  }
-  param {
-    lr_mult: 2
-  }
-  convolution_param {
     num_output: 2
   #pad: 2
     kernel_size: 3
     kernel_size: 3
-    kernel_size: 1
+    #kernel_size: 1
     stride: 1
     #stride: 1
     #stride: 1
@@ -332,13 +229,11 @@ layer {
 }
 
 
-
-#Deconvolution
 #
  layer {
 	name: "accuracy"
 	type: "Accuracy"
-	bottom: "conv5"
+	bottom: "conv4"
 	bottom: "label"
 	top: "accuracy"
   include {
@@ -348,7 +243,7 @@ layer {
 layer {
   name: "loss"
   type: "SoftmaxWithLoss"
-  bottom: "conv5"
+  bottom: "conv4"
   bottom: "label"
   top: "loss"
 }

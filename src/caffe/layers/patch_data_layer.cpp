@@ -144,6 +144,10 @@ void PatchDataLayer<Dtype>::load_batch(Batch<Dtype>* batch) {
     //CHECK_EQ(d_offset-d_length*item_id,data_label->data_->count());
     const Dtype* source_data  = data_label->data_->cpu_data();
     const Dtype* source_label = data_label->label_->cpu_data();
+    //LOG(INFO)<<"get shape ";
+    vector<int> d_shape_d= data_label->data_->shape();
+    //for(int i=0;i<d_shape_d.size();++i)
+     //LOG(INFO)<<"shape in data layer: "<<d_shape_d[i];
     caffe_copy(data_label->data_->count(), source_data, top_data+d_offset);
     if(this->output_labels_){
       caffe_copy(data_label->label_->count(), source_label, top_label+l_offset);

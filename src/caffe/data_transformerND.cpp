@@ -192,8 +192,9 @@ void DataTransformerND<Dtype>::Transform(Blob<Dtype>* input_blob,
    vector<int> nd_point;
    vector<int>::iterator it;
    size_t pre_aixs_len =0;
-   for(int i=transform_shape.size()-1;i>-1;--i){
-      int data_axis_idx =0;
+   int data_axis_idx =0;
+   for(int i=transform_shape.size()-1;i>0;--i){
+
      if(i==transform_shape.size()-1){
         data_axis_idx=p%transform_shape[i]+off_set[i-2];
         //if(do_mirror)
@@ -201,17 +202,20 @@ void DataTransformerND<Dtype>::Transform(Blob<Dtype>* input_blob,
         //nd_point.push_back(data_axis_idx);
         pre_aixs_len=transform_shape[i];
      }else{
-        //if(i-2>=0)
-          data_axis_idx= i-2>=0 ? p/pre_aixs_len +off_set[i-2]:p/pre_aixs_len;
-        //  nd_point.push_back(data_axis_idx);
-          pre_aixs_len*=transform_shape[i];
+       data_axis_idx= i-2>=0 ?
+                               (p/pre_aixs_len)%transform_shape[i] +off_set[i-2]
+                               :(p/pre_aixs_len)%transform_shape[i];
+        pre_aixs_len*=transform_shape[i];
      }
        it =nd_point.begin();
        nd_point.insert(it, data_axis_idx);
        //nd_point.push_back(data_axis_idx);
    }
+  data_axis_idx=p/pre_aixs_len;
+  it =nd_point.begin();
+  nd_point.insert(it, data_axis_idx);
 
-  size_t data_idx=0;
+ size_t data_idx=0;
 
    for (int n=0;n<nd_point.size();++n){
         if(n==0){
@@ -254,12 +258,14 @@ void DataTransformerND<Dtype>::Transform(Blob<Dtype>* input_blob,
     vector<int> transform_shape;
     const int input_num = input_shape[0];
     const int input_channels = input_shape[1];
+    CHECK_EQ(input_num ,1)<<"num of input must be 1 ";
+    CHECK_EQ(input_channels,1)<<"num of channels must be 1";
     //const int channels = new_transform_shape[1];
     transform_shape =crop_shape;
     transform_shape.insert(transform_shape.begin(),input_channels);
     transform_shape.insert(transform_shape.begin(),input_num);
   //  CHECK_EQ(crop_shape_axis,input_shape_dims-2);
-
+    //LOG(INFO)<<"transform start...";
     if (transformed_blob->count() == 0) {
 
         transformed_blob->Reshape(transform_shape);
@@ -267,7 +273,7 @@ void DataTransformerND<Dtype>::Transform(Blob<Dtype>* input_blob,
     }
 
       const size_t trans_data_size = transformed_blob->count();
-
+    //  LOG(INFO)<<"transform size = "<<trans_data_size;
                                         //CHECK_LE(input_num, num);
       //CHECK_EQ(input_channels, channels);
                                         //CHECK_GE(input_height, height);
@@ -275,66 +281,77 @@ void DataTransformerND<Dtype>::Transform(Blob<Dtype>* input_blob,
 
 
       const Dtype scale = param_.scale();
-                                        // do mirro for each of dimention respectively
-                                        //const bool do_mirror = param_.mirror() && Rand(crop_shape_axis+1);
-                                      //  const bool has_mean_values = mean_values_.size() > 0;
+      // do mirro for each of dimention respectively
+     //const bool do_mirror = param_.mirror() && Rand(crop_shape_axis+1);
+   //  const bool has_mean_values = mean_values_.size() > 0;
     // vector<int> nd_off(crop_shape_axis,0);
-    //
-    //                                     if(crop){
-    //                                       nd_off=off_set;
-    //                                     }
+    Dtype* transformed_data = transformed_blob->mutable_cpu_data();
+    //int start_spatial_aixs =2;
+for(size_t p=0;p<trans_data_size;++p){
+     // revise compute the dat index in the input blob;
+     vector<int> nd_point;
+     vector<int>::iterator it;
+     size_t pre_aixs_len =0;
+     int data_axis_idx =0;
+     //LOG(INFO)<<"transform_shape.size()  = "<< transform_shape.size() ;
+    //  LOG(INFO)<<"off_set shape = "<< off_set.size() ;
+    //  int crop_shape_size  =
+     for(int i=transform_shape.size()-1;i>0;--i){
 
-                                        Dtype* transformed_data = transformed_blob->mutable_cpu_data();
-                                        //int start_spatial_aixs =2;
-                                    for(size_t p=0;p<trans_data_size;++p){
-                                         // revise compute the dat index in the input blob;
-                                         vector<int> nd_point;
-                                         vector<int>::iterator it;
-                                         size_t pre_aixs_len =0;
-                                         for(int i=transform_shape.size()-1;i>-1;--i){
-                                            int data_axis_idx =0;
-                                             if(i==transform_shape.size()-1){
-                                                data_axis_idx=p%transform_shape[i]+off_set[i-2];
-                                                //if(do_mirror)
-                                                //    transform_shape[i]-(data_axis_idx+1);
-                                                //nd_point.push_back(data_axis_idx);
-                                                pre_aixs_len=transform_shape[i];
-                                             }else{
+         if(i==transform_shape.size()-1){
+            data_axis_idx=p%transform_shape[i]+off_set[i-2];
+            //if(do_mirror)
+            //    transform_shape[i]-(data_axis_idx+1);
+            //nd_point.push_back(data_axis_idx);
+            pre_aixs_len=transform_shape[i];
+         }else{
 
-                                                  data_axis_idx= i-2>=0 ? p/pre_aixs_len +off_set[i-2]:p/pre_aixs_len;
-                                                  pre_aixs_len*=transform_shape[i];
-                                             }
-                                             it =nd_point.begin();
-                                             nd_point.insert(it, data_axis_idx);
-                                         }
+              data_axis_idx= i-2>=0 ?
+              (p/pre_aixs_len)%transform_shape[i] +off_set[i-2]
+              :(p/pre_aixs_len)%transform_shape[i];
 
-                                        size_t data_idx=0;
-                                        bool data_in_pad_space =false;
-                                         for (int n=0;n<nd_point.size();++n){
-                                           if(nd_point[n]<0 || nd_point[n]>input_shape[n]-1){
-                                             data_in_pad_space =true;
-                                             break;
-                                           }
-                                              if(n==0){
-                                                data_idx = nd_point[n];
-                                              }else{
-                                                data_idx*=input_shape[n];
-                                                data_idx+=nd_point[n];
-                                              }
-                                         }
+              pre_aixs_len*=transform_shape[i];
+         }
+         it =nd_point.begin();
+         nd_point.insert(it, data_axis_idx);
+        // LOG(INFO)<<"nd_point "<< data_axis_idx;
+     }
+    //LOG(INFO)<<"computed nd_points...";
+     data_axis_idx=(p/pre_aixs_len);
+     it =nd_point.begin();
+     nd_point.insert(it, data_axis_idx);
 
-                                        // size_t input_count=input_blob->count();
-                                         const Dtype* input_data =input_blob->cpu_data();
-                                        // bool data_in_pad_space =(data_idx>=0 && data_idx<input_count);
-                                        if(data_in_pad_space)
-                                           transformed_data[p]=input_data[data_idx];
-                                         else
-                                           transformed_data[p]=0;
-                                       }
-                                        if (scale != Dtype(1)) {
-                                          DLOG(INFO) << "Scale: " << scale;
-                                          caffe_scal( trans_data_size, scale, transformed_data);
-                                        }
+    size_t data_idx=0;
+    bool data_in_pad_space =false;
+     for (int n=0;n<nd_point.size();++n){
+       if(nd_point[n]<0 || nd_point[n]>input_shape[n]-1){
+         data_in_pad_space =true;
+         break;
+       }
+          if(n==0){
+            data_idx = nd_point[n];
+          }else{
+            data_idx*=input_shape[n];
+            data_idx+=nd_point[n];
+          }
+     }
+
+    // size_t input_count=input_blob->count();
+     const Dtype* input_data =input_blob->cpu_data();
+    // bool data_in_pad_space =(data_idx>=0 && data_idx<input_count);
+    if(data_in_pad_space){
+       //LOG(INFO)<<"data at input "<< data_idx <<"  =" <<input_data[data_idx];
+       transformed_data[p]=input_data[data_idx];
+      // LOG(INFO)<<"data put to transformed... ";
+     }
+     else
+       transformed_data[p]=0;
+   }
+    if (scale != Dtype(1)) {
+      DLOG(INFO) << "Scale: " << scale;
+      caffe_scal( trans_data_size, scale, transformed_data);
+    }
+  //  LOG(INFO)<<"transform done..";
 
 }
 
