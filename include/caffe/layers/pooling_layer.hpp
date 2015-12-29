@@ -44,23 +44,58 @@ class PoolingLayer : public Layer<Dtype> {
   virtual void Backward_gpu(const vector<Blob<Dtype>*>& top,
       const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
 
+  int num_spatial_axes_;
+  int channel_axis_;
+  int first_spatial_axis_;
+  bool global_pooling_;
+  Blob<Dtype> rand_idx_;
+  Blob<int> max_idx_;
+
+
+ private:
+   void LayerSetUp2D(const vector<Blob<Dtype>*>& bottom,
+      const vector<Blob<Dtype>*>& top);
+   void Reshape2D(const vector<Blob<Dtype>*>& bottom,
+             const vector<Blob<Dtype>*>& top);
+  void Forward_cpu_2D(const vector<Blob<Dtype>*>& bottom,
+              const vector<Blob<Dtype>*>& top);
+//  void Forward_gpu_2D(const vector<Blob<Dtype>*>& bottom,
+//              const vector<Blob<Dtype>*>& top);
+  void Backward_cpu_2D(const vector<Blob<Dtype>*>& top,
+              const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
+  //void Backward_gpu_2D(const vector<Blob<Dtype>*>& top,
+  //            const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
   int kernel_h_, kernel_w_;
   int stride_h_, stride_w_;
   int pad_h_, pad_w_;
   int channels_;
   int height_, width_;
   int pooled_height_, pooled_width_;
-  bool global_pooling_;
-  Blob<Dtype> rand_idx_;
-  Blob<int> max_idx_;
+
+// ND pooling function
+  void LayerSetUpND(const vector<Blob<Dtype>*>& bottom,
+                    const vector<Blob<Dtype>*>& top);
+  void ReshapeND(const vector<Blob<Dtype>*>& bottom,
+                    const vector<Blob<Dtype>*>& top);
+  void Forward_cpu_ND(const vector<Blob<Dtype>*>& bottom,
+              const vector<Blob<Dtype>*>& top);
+  //void Forward_gpu_ND(const vector<Blob<Dtype>*>& bottom,
+  //            const vector<Blob<Dtype>*>& top);
+  void Backward_cpu_ND(const vector<Blob<Dtype>*>& top,
+              const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
+//  void Backward_gpu_ND(const vector<Blob<Dtype>*>& top,
+  //            const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
+
   /// @brief The spatial dimensions of a filter kernel.
   Blob<int> kernel_shape_;
   /// @brief The spatial dimensions of the stride.
-  Blob<int> stride_;
+  Blob<int> stride_shape_;
   /// @brief The spatial dimensions of the padding.
-  Blob<int> pad_;
+  Blob<int> pad_shape_;
   /// @brief The spatial dimensions of the convolution input.
-  vector<int> pooled_shape_;
+  Blob<int> pooled_d_shape_;
+  Blob<int> bottom_d_shape_;
+  int pooled_data_length_;
 };
 
 }  // namespace caffe

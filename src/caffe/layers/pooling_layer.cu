@@ -6,6 +6,86 @@
 #include "caffe/util/math_functions.hpp"
 
 namespace caffe {
+template <typename Dtype, int num_axes>
+__global__ void MaxPoolForward_ND(const int nthreads,
+  const Dtype* const bottom_data, const int num, const int channels,
+  const int* bottom_shape, const int* top_shape, const int* kernel,
+  const int* stride,const int* pad,
+  Dtype* const top_data, int*  mask, Dtype* top_mask){
+    int d_top_pt[num_axes];  // NOLINT(runtime/arrays)
+    //int d_iter[num_axes];  // NOLINT(runtime/arrays)
+    int d_start_pt[num_axes];
+    int d_end_pt[num_axes];
+    int d_bottom_pt[num_axes];
+    int i,j;
+    CUDA_KERNEL_LOOP(index, nthreads) {
+      int channel_in = index;
+      int channel_out = 1;
+      int n  =0;
+      int c =0;
+      int kernel_length =1;
+      for (i = num_axes - 1; i >= 0; --i) {
+        d_top_pt[i] = channel_in % top_shape[i];
+        channel_in /= top_shape[i];
+        channel_out *= kernel[i];
+       }
+        c = channel_in%channels;
+        n =channel_in/channels;
+      for(i=0;i<num_axes;++i){
+       kernel_length*=kernel[i];
+      }
+
+      int nc_len =(n * channels + c);
+      int bottom_dim_len=1;
+      for(i=0;i<num_axes;++i){
+        bottom_dim_len*=bottom_shape[i];
+      }
+
+      Dtype maxval = -FLT_MAX;
+      int maxidx = -1;
+      const Dtype* const bottom_slice =
+           bottom_data + nc_len * bottom_dim_len;
+     int  cur_total_k_size =1;
+     for(i=0;i<num_axes;++i){
+       d_start_pt[i]=(d_top_pt[i]*stride[i]-pad[i]);
+       d_end_pt[i]=(min(d_start_pt[i] + kernel[i],
+                                 bottom_shape[i]));
+       d_start_pt[i]=max(d_start_pt[i],0);
+       cur_total_k_size *=(d_end_pt[i]-d_start_pt[i]+1);
+     }
+
+     for(i=0;i<cur_total_k_size; ++i){
+       //compute coordinate of point in the bottom kernel.
+       int inner = i;
+       for( j=num_axes-1; j>=0; --j){
+            int pooled_kernel_size =d_end_pt[j]-d_start_pt[j]+1;
+            d_bottom_pt[j]=inner%pooled_kernel_size+d_start_pt[j];
+            inner /=pooled_kernel_size;
+          }
+       int data_idx =0;
+       for(j=0; j<num_axes; ++j){
+         if(j==0){
+           data_idx = d_bottom_pt[j];
+         }else{
+           data_idx*=bottom_shape[j];
+           data_idx+=d_bottom_pt[j];
+         }
+       }
+       if (bottom_slice[ data_idx] > maxval) {
+         maxidx =  data_idx;
+         maxval = bottom_slice[maxidx];
+       }
+     }
+     top_data[index] = maxval;
+     if (mask) {
+       mask[index] = maxidx;
+     } else {
+       top_mask[index] = maxidx;
+     }
+
+  }
+}
+
 
 template <typename Dtype>
 __global__ void MaxPoolForward(const int nthreads,
@@ -164,6 +244,20 @@ void PoolingLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
   const bool use_top_mask = top.size() > 1;
   int* mask = NULL;
   Dtype* top_mask = NULL;
+  const int* kernel=NULL;//kernel_shape_.gpu_data();
+  const int* stride=NULL;//stride_shape_.gpu_data();
+  const int* top_shape=NULL;//pooled_d_shape_.gpu_data();
+  const int* bottom_shape=NULL;//bottom_d_shape_.gpu_data();
+  const int* pad=NULL;//pad_shape_.gpu_data();
+ if(num_spatial_axes_!=2){
+  kernel=kernel_shape_.gpu_data();
+  stride=stride_shape_.gpu_data();
+  top_shape=pooled_d_shape_.gpu_data();
+  bottom_shape=bottom_d_shape_.gpu_data();
+  pad=pad_shape_.gpu_data();
+}
+
+  //LOG(INFO)<<"start gpu pooling forwarding...";
   switch (this->layer_param_.pooling_param().pool()) {
   case PoolingParameter_PoolMethod_MAX:
     if (use_top_mask) {
@@ -171,12 +265,56 @@ void PoolingLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
     } else {
       mask = max_idx_.mutable_gpu_data();
     }
+    if(num_spatial_axes_ ==2){
     // NOLINT_NEXT_LINE(whitespace/operators)
     MaxPoolForward<Dtype><<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(
         count, bottom_data, bottom[0]->num(), channels_,
         height_, width_, pooled_height_, pooled_width_, kernel_h_,
         kernel_w_, stride_h_, stride_w_, pad_h_, pad_w_, top_data,
         mask, top_mask);
+    }else{
+
+
+      // NOLINT_NEXT_LINE(whitespace/operators)
+      //LOG(INFO)<<"start forword ND pooling";
+      switch(num_spatial_axes_){
+        case 1:
+        MaxPoolForward_ND<Dtype,1 ><<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(count,
+          bottom_data,  bottom[0]->num(), channels_,
+          bottom_shape, top_shape, kernel,
+          stride,pad,top_data,mask,top_mask);
+        break;
+        case 2:
+        MaxPoolForward_ND<Dtype,2><<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(count,
+          bottom_data,  bottom[0]->num(), channels_,
+          bottom_shape, top_shape, kernel,
+          stride,pad,top_data,mask,top_mask);
+        break;
+        case 3:
+        MaxPoolForward_ND<Dtype,3><<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(count,
+          bottom_data,  bottom[0]->num(), channels_,
+          bottom_shape, top_shape, kernel,
+          stride,pad,top_data,mask,top_mask);
+        break;
+        case 4:
+        MaxPoolForward_ND<Dtype,4><<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(count,
+          bottom_data,  bottom[0]->num(), channels_,
+          bottom_shape, top_shape, kernel,
+          stride,pad,top_data,mask,top_mask);
+        break;
+        case 5:
+        MaxPoolForward_ND<Dtype,5><<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(count,
+          bottom_data,  bottom[0]->num(), channels_,
+          bottom_shape, top_shape, kernel,
+          stride,pad,top_data,mask,top_mask);
+        break;
+        default:
+        LOG(FATAL) << "Unsupported pooling dimension.";
+      }
+      //LOG(INFO)<<"end forword ND pooling";
+
+    }
+    //  LOG(INFO)<<"end gpu pooling forwarding...";
     break;
   case PoolingParameter_PoolMethod_AVE:
     // NOLINT_NEXT_LINE(whitespace/operators)
@@ -212,6 +350,58 @@ void PoolingLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
   CUDA_POST_KERNEL_CHECK;
 }
 
+
+
+template <typename Dtype, int num_axes>
+__global__ void MaxPoolBackward_ND(const int nthreads, const Dtype* const top_diff,
+    const int* const mask, const Dtype* const top_mask, const int num,
+    const int channels, const int* bottom_shape,
+    const int* top_shape, const int* kernel, const int* stride, const int* pad,
+    Dtype* const bottom_diff){
+      //int d_top_pt[num_axes];  // NOLINT(runtime/arrays)
+      //int d_iter[num_axes];  // NOLINT(runtime/arrays)
+      int i;
+    CUDA_KERNEL_LOOP(index, nthreads) {
+
+      int n  =0;
+      int c =0;
+      //int kernel_length =1;
+
+      //d_temp[num_axes-1]=channel_in%top_shape[num_axes-1];
+      //channel_out*=kernel_shape[num_axes-1]
+
+      //int channel_in = index;
+      //int channel_out = 1;
+      // for (i = num_axes - 1; i >= 0; --i) {
+      //   d_top_pt[i] = channel_in % top_shape[i];
+      //   channel_in /= top_shape[i];
+      //   channel_out *= kernel[i];
+      //  }
+      //   c = channel_in%channels;
+      //   n =channel_in/channels;
+      // int top_shape_len=1;
+      // for(i=0;i<num_axes;++i){
+      //   top_shape_len*=top_shape[i];
+      // }
+
+      int bottom_shape_len=1;
+      for(i=0;i<num_axes;++i){
+        bottom_shape_len*=bottom_shape[i];
+      }
+
+      const int offset = (n * channels + c) * bottom_shape_len;
+      Dtype* bottom_slice =  bottom_diff+offset;
+
+    //  bottom_diff[index] = gradient;
+      if (mask){
+          bottom_slice[mask[index]]+=top_diff[index];
+      }else{
+         int idx =(int)top_mask[index];
+          bottom_slice[idx]+=top_diff[index];
+      }
+
+    }
+  }
 
 template <typename Dtype>
 __global__ void MaxPoolBackward(const int nthreads, const Dtype* const top_diff,
@@ -336,6 +526,8 @@ void PoolingLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
   if (!propagate_down[0]) {
     return;
   }
+//  return;
+//  LOG(INFO)<<"start gpu pooling backwarding...";
   const Dtype* top_diff = top[0]->gpu_diff();
   Dtype* bottom_diff = bottom[0]->mutable_gpu_diff();
   const int count = bottom[0]->count();
@@ -344,6 +536,22 @@ void PoolingLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
   const bool use_top_mask = top.size() > 1;
   const int* mask = NULL;
   const Dtype* top_mask = NULL;
+  const int top_count =top[0]->count();
+
+  const int* kernel_shape=NULL;//kernel_shape_.gpu_data();
+  const int* stride_shape=NULL;//stride_shape_.gpu_data();
+  const int* top_shape=NULL;//pooled_d_shape_.gpu_data();
+  const int* bottom_shape=NULL;//bottom_d_shape_.gpu_data();
+  const int* pad_shape=NULL;//pad_shape_.gpu_data();
+  int num_axes =bottom[0]->num_axes();
+ if(num_axes !=4){
+  kernel_shape=kernel_shape_.gpu_data();
+  stride_shape=stride_shape_.gpu_data();
+  top_shape=pooled_d_shape_.gpu_data();
+  bottom_shape=bottom_d_shape_.gpu_data();
+  pad_shape=pad_shape_.gpu_data();
+}
+
   switch (this->layer_param_.pooling_param().pool()) {
   case PoolingParameter_PoolMethod_MAX:
     if (use_top_mask) {
@@ -351,12 +559,62 @@ void PoolingLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
     } else {
       mask = max_idx_.gpu_data();
     }
+
+    if(num_axes==4){
     // NOLINT_NEXT_LINE(whitespace/operators)
+    //LOG(INFO)<<"Run 2d backward pooling";
     MaxPoolBackward<Dtype><<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(
         count, top_diff, mask, top_mask, top[0]->num(), channels_,
         height_, width_, pooled_height_, pooled_width_,
         kernel_h_, kernel_w_, stride_h_, stride_w_, pad_h_, pad_w_,
         bottom_diff);
+    }else{
+
+       // NOLINT_NEXT_LINE(whitespace/operators)
+  //     LOG(INFO)<<"start backword ND pooling";
+       switch (num_spatial_axes_) {
+         case 1:
+         MaxPoolBackward_ND<Dtype,1><<<CAFFE_GET_BLOCKS(top_count), CAFFE_CUDA_NUM_THREADS>>>(
+             top_count, top_diff, mask,
+             top_mask, top[0]->num(), channels_,
+             bottom_shape, top_shape,kernel_shape,
+             stride_shape,pad_shape, bottom_diff);
+         break;
+         case 2:
+         MaxPoolBackward_ND<Dtype,2><<<CAFFE_GET_BLOCKS(top_count), CAFFE_CUDA_NUM_THREADS>>>(
+             top_count, top_diff, mask,
+             top_mask, top[0]->num(), channels_,
+             bottom_shape, top_shape, kernel_shape,
+             stride_shape,pad_shape, bottom_diff);
+         break;
+         case 3:
+         MaxPoolBackward_ND<Dtype,3><<<CAFFE_GET_BLOCKS(top_count), CAFFE_CUDA_NUM_THREADS>>>(
+             top_count, top_diff, mask,
+             top_mask, top[0]->num(), channels_,
+             bottom_shape, top_shape,kernel_shape,
+             stride_shape, pad_shape, bottom_diff);
+         break;
+         case 4:
+         MaxPoolBackward_ND<Dtype,4><<<CAFFE_GET_BLOCKS(top_count), CAFFE_CUDA_NUM_THREADS>>>(
+             top_count, top_diff, mask,
+             top_mask, top[0]->num(), channels_,
+             bottom_shape, top_shape,kernel_shape,
+             stride_shape,pad_shape, bottom_diff);
+         break;
+         case 5:
+         MaxPoolBackward_ND<Dtype,5><<<CAFFE_GET_BLOCKS(top_count), CAFFE_CUDA_NUM_THREADS>>>(
+             top_count, top_diff, mask,
+             top_mask, top[0]->num(), channels_,
+             bottom_shape, top_shape,kernel_shape,
+             stride_shape,pad_shape, bottom_diff);
+         break;
+         default:
+           LOG(FATAL) << "unsupported pooling dimension.";
+       }
+
+    //      LOG(INFO)<<"end gpu pooling backwarding...";
+    }
+
     break;
   case PoolingParameter_PoolMethod_AVE:
     // NOLINT_NEXT_LINE(whitespace/operators)
