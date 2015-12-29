@@ -258,12 +258,14 @@ void DataTransformerND<Dtype>::Transform(Blob<Dtype>* input_blob,
     vector<int> transform_shape;
     const int input_num = input_shape[0];
     const int input_channels = input_shape[1];
+    CHECK_EQ(input_num ,1)<<"num of input must be 1 ";
+    CHECK_EQ(input_channels,1)<<"num of channels must be 1";
     //const int channels = new_transform_shape[1];
     transform_shape =crop_shape;
     transform_shape.insert(transform_shape.begin(),input_channels);
     transform_shape.insert(transform_shape.begin(),input_num);
   //  CHECK_EQ(crop_shape_axis,input_shape_dims-2);
-
+    //LOG(INFO)<<"transform start...";
     if (transformed_blob->count() == 0) {
 
         transformed_blob->Reshape(transform_shape);
@@ -271,7 +273,7 @@ void DataTransformerND<Dtype>::Transform(Blob<Dtype>* input_blob,
     }
 
       const size_t trans_data_size = transformed_blob->count();
-
+    //  LOG(INFO)<<"transform size = "<<trans_data_size;
                                         //CHECK_LE(input_num, num);
       //CHECK_EQ(input_channels, channels);
                                         //CHECK_GE(input_height, height);
@@ -291,6 +293,9 @@ for(size_t p=0;p<trans_data_size;++p){
      vector<int>::iterator it;
      size_t pre_aixs_len =0;
      int data_axis_idx =0;
+     //LOG(INFO)<<"transform_shape.size()  = "<< transform_shape.size() ;
+    //  LOG(INFO)<<"off_set shape = "<< off_set.size() ;
+    //  int crop_shape_size  =
      for(int i=transform_shape.size()-1;i>0;--i){
 
          if(i==transform_shape.size()-1){
@@ -303,14 +308,15 @@ for(size_t p=0;p<trans_data_size;++p){
 
               data_axis_idx= i-2>=0 ?
               (p/pre_aixs_len)%transform_shape[i] +off_set[i-2]
-              :p/(p/pre_aixs_len)%transform_shape[i];
+              :(p/pre_aixs_len)%transform_shape[i];
 
               pre_aixs_len*=transform_shape[i];
          }
          it =nd_point.begin();
          nd_point.insert(it, data_axis_idx);
+        // LOG(INFO)<<"nd_point "<< data_axis_idx;
      }
-
+    //LOG(INFO)<<"computed nd_points...";
      data_axis_idx=(p/pre_aixs_len);
      it =nd_point.begin();
      nd_point.insert(it, data_axis_idx);
@@ -333,8 +339,11 @@ for(size_t p=0;p<trans_data_size;++p){
     // size_t input_count=input_blob->count();
      const Dtype* input_data =input_blob->cpu_data();
     // bool data_in_pad_space =(data_idx>=0 && data_idx<input_count);
-    if(data_in_pad_space)
+    if(data_in_pad_space){
+       //LOG(INFO)<<"data at input "<< data_idx <<"  =" <<input_data[data_idx];
        transformed_data[p]=input_data[data_idx];
+      // LOG(INFO)<<"data put to transformed... ";
+     }
      else
        transformed_data[p]=0;
    }
@@ -342,7 +351,8 @@ for(size_t p=0;p<trans_data_size;++p){
       DLOG(INFO) << "Scale: " << scale;
       caffe_scal( trans_data_size, scale, transformed_data);
     }
-                                      
+  //  LOG(INFO)<<"transform done..";
+
 }
 
 

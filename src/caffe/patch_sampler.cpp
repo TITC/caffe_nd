@@ -153,6 +153,8 @@ void PatchSampler<Dtype>::ReadOnePatch(QueuePair_Batch<Dtype>* qb ){
 
   //Blob<Dtype> &trans_data_blob = *patch_data_label->data_;
   //Blob<Dtype> &trans_label_blob =*patch_data_label->label_;
+
+
   //Blob<Dtype> trans_data_blob,trans_label_blob;
 
 
@@ -176,7 +178,7 @@ void PatchSampler<Dtype>::ReadOnePatch(QueuePair_Batch<Dtype>* qb ){
                                                                       patch_data_label->label_.get(),
                                                                       label_offset,
                                                                       patch_label_shape_);
-//  LOG(INFO)<<"end transform";
+ //LOG(INFO)<<"end transform";
   const vector<int>& source_data_shape =source_data_label.data_->shape();
   const vector<int>& source_label_shape =source_data_label.label_->shape();
 
@@ -219,7 +221,7 @@ void PatchSampler<Dtype>::ReadOnePatch(QueuePair_Batch<Dtype>* qb ){
  //LOG(INFO)<<"copy blob from trans_data_blob";
 
   //patch_data_label->data_->CopyFrom(trans_data_blob,false,true);
-  //patch_data_label->label_->CopyFrom(trans_label_blob,false,true);
+//  patch_data_label->label_->CopyFrom(trans_label_blob,false,true);
 
 
   //patch_data_label->label_->Reshape(dest_label_shape_);
@@ -340,9 +342,9 @@ void Runner<Dtype>::InternalThreadEntry() {
           // so read one item, then wait for the next solver.
           LOG(INFO)<<"solver_count  = "<<solver_count << "  size of queue pairs = "<<new_queue_pairs_.size();
           for (int i = 0; i < solver_count; ++i) {
-            LOG(INFO)<<"new_queue_pairs_.pop() = "<<i;
+            //LOG(INFO)<<"new_queue_pairs_.pop() = "<<i;
             shared_ptr<QueuePair_Batch<Dtype> > qp(new_queue_pairs_.pop());
-            LOG(INFO)<<"size of queue  is now = " <<new_queue_pairs_.size();
+            //LOG(INFO)<<"size of queue  is now = " <<new_queue_pairs_.size();
             qps.push_back(qp);
           }
           while (!must_stop()) {

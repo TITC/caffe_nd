@@ -59,12 +59,12 @@ class PoolingLayer : public Layer<Dtype> {
              const vector<Blob<Dtype>*>& top);
   void Forward_cpu_2D(const vector<Blob<Dtype>*>& bottom,
               const vector<Blob<Dtype>*>& top);
-  void Forward_gpu_2D(const vector<Blob<Dtype>*>& bottom,
-              const vector<Blob<Dtype>*>& top);
+//  void Forward_gpu_2D(const vector<Blob<Dtype>*>& bottom,
+//              const vector<Blob<Dtype>*>& top);
   void Backward_cpu_2D(const vector<Blob<Dtype>*>& top,
               const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
-  void Backward_gpu_2D(const vector<Blob<Dtype>*>& top,
-              const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
+  //void Backward_gpu_2D(const vector<Blob<Dtype>*>& top,
+  //            const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
   int kernel_h_, kernel_w_;
   int stride_h_, stride_w_;
   int pad_h_, pad_w_;
@@ -79,12 +79,12 @@ class PoolingLayer : public Layer<Dtype> {
                     const vector<Blob<Dtype>*>& top);
   void Forward_cpu_ND(const vector<Blob<Dtype>*>& bottom,
               const vector<Blob<Dtype>*>& top);
-  void Forward_gpu_ND(const vector<Blob<Dtype>*>& bottom,
-              const vector<Blob<Dtype>*>& top);
+  //void Forward_gpu_ND(const vector<Blob<Dtype>*>& bottom,
+  //            const vector<Blob<Dtype>*>& top);
   void Backward_cpu_ND(const vector<Blob<Dtype>*>& top,
               const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
-  void Backward_gpu_ND(const vector<Blob<Dtype>*>& top,
-              const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
+//  void Backward_gpu_ND(const vector<Blob<Dtype>*>& top,
+  //            const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
 
   /// @brief The spatial dimensions of a filter kernel.
   Blob<int> kernel_shape_;

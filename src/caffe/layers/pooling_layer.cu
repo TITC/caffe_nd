@@ -244,6 +244,20 @@ void PoolingLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
   const bool use_top_mask = top.size() > 1;
   int* mask = NULL;
   Dtype* top_mask = NULL;
+  const int* kernel=NULL;//kernel_shape_.gpu_data();
+  const int* stride=NULL;//stride_shape_.gpu_data();
+  const int* top_shape=NULL;//pooled_d_shape_.gpu_data();
+  const int* bottom_shape=NULL;//bottom_d_shape_.gpu_data();
+  const int* pad=NULL;//pad_shape_.gpu_data();
+ if(num_spatial_axes_!=2){
+  kernel=kernel_shape_.gpu_data();
+  stride=stride_shape_.gpu_data();
+  top_shape=pooled_d_shape_.gpu_data();
+  bottom_shape=bottom_d_shape_.gpu_data();
+  pad=pad_shape_.gpu_data();
+}
+
+  //LOG(INFO)<<"start gpu pooling forwarding...";
   switch (this->layer_param_.pooling_param().pool()) {
   case PoolingParameter_PoolMethod_MAX:
     if (use_top_mask) {
@@ -260,12 +274,9 @@ void PoolingLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
         mask, top_mask);
     }else{
 
-      const int* top_shape =pooled_d_shape_.gpu_data();
-      const int* bottom_shape =bottom_d_shape_.gpu_data();
-      const int* kernel =kernel_shape_.gpu_data();
-      const int* stride =stride_shape_.gpu_data();
-      const int* pad =pad_shape_.gpu_data();
+
       // NOLINT_NEXT_LINE(whitespace/operators)
+      //LOG(INFO)<<"start forword ND pooling";
       switch(num_spatial_axes_){
         case 1:
         MaxPoolForward_ND<Dtype,1 ><<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(count,
@@ -300,8 +311,10 @@ void PoolingLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
         default:
         LOG(FATAL) << "Unsupported pooling dimension.";
       }
+      //LOG(INFO)<<"end forword ND pooling";
 
     }
+    //  LOG(INFO)<<"end gpu pooling forwarding...";
     break;
   case PoolingParameter_PoolMethod_AVE:
     // NOLINT_NEXT_LINE(whitespace/operators)
@@ -381,10 +394,10 @@ __global__ void MaxPoolBackward_ND(const int nthreads, const Dtype* const top_di
 
     //  bottom_diff[index] = gradient;
       if (mask){
-          bottom_slice[mask[index]]+=top_shape[index];
+          bottom_slice[mask[index]]+=top_diff[index];
       }else{
          int idx =(int)top_mask[index];
-          bottom_slice[idx]+=top_shape[index];
+          bottom_slice[idx]+=top_diff[index];
       }
 
     }
@@ -513,6 +526,8 @@ void PoolingLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
   if (!propagate_down[0]) {
     return;
   }
+//  return;
+//  LOG(INFO)<<"start gpu pooling backwarding...";
   const Dtype* top_diff = top[0]->gpu_diff();
   Dtype* bottom_diff = bottom[0]->mutable_gpu_diff();
   const int count = bottom[0]->count();
@@ -521,6 +536,22 @@ void PoolingLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
   const bool use_top_mask = top.size() > 1;
   const int* mask = NULL;
   const Dtype* top_mask = NULL;
+  const int top_count =top[0]->count();
+
+  const int* kernel_shape=NULL;//kernel_shape_.gpu_data();
+  const int* stride_shape=NULL;//stride_shape_.gpu_data();
+  const int* top_shape=NULL;//pooled_d_shape_.gpu_data();
+  const int* bottom_shape=NULL;//bottom_d_shape_.gpu_data();
+  const int* pad_shape=NULL;//pad_shape_.gpu_data();
+  int num_axes =bottom[0]->num_axes();
+ if(num_axes !=4){
+  kernel_shape=kernel_shape_.gpu_data();
+  stride_shape=stride_shape_.gpu_data();
+  top_shape=pooled_d_shape_.gpu_data();
+  bottom_shape=bottom_d_shape_.gpu_data();
+  pad_shape=pad_shape_.gpu_data();
+}
+
   switch (this->layer_param_.pooling_param().pool()) {
   case PoolingParameter_PoolMethod_MAX:
     if (use_top_mask) {
@@ -528,22 +559,19 @@ void PoolingLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
     } else {
       mask = max_idx_.gpu_data();
     }
-    int num_axes =bottom[0]->num_axes();
+
     if(num_axes==4){
     // NOLINT_NEXT_LINE(whitespace/operators)
+    //LOG(INFO)<<"Run 2d backward pooling";
     MaxPoolBackward<Dtype><<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(
         count, top_diff, mask, top_mask, top[0]->num(), channels_,
         height_, width_, pooled_height_, pooled_width_,
         kernel_h_, kernel_w_, stride_h_, stride_w_, pad_h_, pad_w_,
         bottom_diff);
     }else{
-       const int top_count =top[0]->count();
-       const int* kernel_shape=kernel_shape_.gpu_data();
-       const int* stride_shape=stride_shape_.gpu_data();
-       const int* top_shape=pooled_d_shape_.gpu_data();
-       const int* bottom_shape=bottom_d_shape_.gpu_data();
-       const int* pad_shape=pad_shape_.gpu_data();
+
        // NOLINT_NEXT_LINE(whitespace/operators)
+  //     LOG(INFO)<<"start backword ND pooling";
        switch (num_spatial_axes_) {
          case 1:
          MaxPoolBackward_ND<Dtype,1><<<CAFFE_GET_BLOCKS(top_count), CAFFE_CUDA_NUM_THREADS>>>(
@@ -584,7 +612,7 @@ void PoolingLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
            LOG(FATAL) << "unsupported pooling dimension.";
        }
 
-
+    //      LOG(INFO)<<"end gpu pooling backwarding...";
     }
 
     break;

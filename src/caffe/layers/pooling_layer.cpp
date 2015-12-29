@@ -33,7 +33,7 @@ void PoolingLayer<Dtype>::LayerSetUpND(const vector<Blob<Dtype>*>& bottom,
       global_pooling_ = pool_param.global_pooling();
       vector<int> bottom_shape=bottom[0]->shape();
     //  vector<int> spatial_dim_blob_shape(1, std::max(num_spatial_axes_, 1));
-      vector<int> spatial_dim_blob_shape(std::max(num_spatial_axes_, 1),1);
+      vector<int> spatial_dim_blob_shape(1,std::max(num_spatial_axes_, 1));
       // Setup filter kernel dimensions (kernel_shape_).
       kernel_shape_.Reshape(spatial_dim_blob_shape);
       stride_shape_.Reshape(spatial_dim_blob_shape);
@@ -188,10 +188,13 @@ void PoolingLayer<Dtype>::ReshapeND(const vector<Blob<Dtype>*>& bottom,
       int* kernel_shape_data = kernel_shape_.mutable_cpu_data();
       const int* stride_shape_data = stride_shape_.cpu_data();
       const int* pad_shape_data = pad_shape_.cpu_data();
-      vector<int> spatial_dim_blob_shape(std::max(num_spatial_axes_, 1),1);
+      vector<int> spatial_dim_blob_shape(1,std::max(num_spatial_axes_, 1));
+      //LOG(INFO)<<"spatial_dim_blob_shape size  ="<<spatial_dim_blob_shape.size();
+
+      //LOG(INFO)<<"kernell_shape_ axes "<< kernel_shape_.count();
+      //int* kernel_shape_data = kernel_shape_.mutable_cpu_data();
       if (global_pooling_) {
         kernel_shape_.Reshape(spatial_dim_blob_shape);
-        int* kernel_shape_data = kernel_shape_.mutable_cpu_data();
         for(int i=0;i<num_spatial_axes_;++i){
           kernel_shape_data[i]=bottom_shape[first_spatial_axis_+i];
         }
