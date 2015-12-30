@@ -8,13 +8,13 @@ layer {
   }
   patch_sampler_param{
 	   data_patch_shape{
-		dim: 95
-		dim: 95
+		dim: 56
+		dim: 56
 		dim: 5
 	   }
 	   label_patch_shape{
-		dim: 75
-		dim: 75
+		dim: 56
+		dim: 56
 		dim: 1
 	   }
 	   batch_size: 16
@@ -55,16 +55,16 @@ layer {
   }
   patch_sampler_param{
 	   data_patch_shape{
-		dim: 95
-		dim: 95
+		dim: 224
+		dim: 224
 		dim: 5
 	   }
 	   label_patch_shape{
-		dim: 75
-		dim: 75
+		dim: 224
+		dim: 224
 		dim: 1
 	   }
-	   batch_size: 32
+	   batch_size: 16
 	   patches_per_data_batch: 899999
 	   data_source_batch_size: 1
 	   label_select_param{
@@ -107,8 +107,11 @@ layer {
     num_output: 32
   # pad: 2
     kernel_size: 5
-    kernel_size: 5
-    kernel_size: 4
+	pad: 2
+	pad: 2
+	pad: 0
+    #kernel_size: 5
+    #kernel_size: 4
     #stride: 4
 	#stride: 4
 	stride: 1
@@ -152,6 +155,9 @@ layer {
     kernel_size: 5
     kernel_size: 1
     stride: 1
+	pad: 2
+	pad: 2
+	pad: 0
     weight_filler {
       type: "gaussian"
       std: 0.0001
@@ -197,6 +203,9 @@ layer {
     kernel_size: 5
     kernel_size: 5
     kernel_size: 1
+	pad: 2
+	pad: 2
+	pad: 0
     #stride: 1
     #stride: 4
     stride: 1
@@ -242,6 +251,9 @@ layer {
     kernel_size: 3
     kernel_size: 1
     stride: 1
+	pad: 1
+	pad: 1
+	pad: 0
     #stride: 1
     #stride: 1
     weight_filler {
@@ -269,10 +281,13 @@ layer {
   convolution_param {
     num_output: 64
   #pad: 2
-    kernel_size: 3
-    kernel_size: 3
+    kernel_size: 2
+    kernel_size: 2
     kernel_size: 1
     stride: 2
+	#pad: 1
+	#pad: 1
+	#pad: 0
     #stride: 1
     #stride: 1
     weight_filler {
@@ -319,6 +334,9 @@ layer {
     kernel_size: 3
     kernel_size: 1
     stride: 1
+	pad: 1
+	pad: 1
+	pad: 0
     #stride: 1
     #stride: 1
     weight_filler {
