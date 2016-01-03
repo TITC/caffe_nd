@@ -45,6 +45,127 @@ class PoolingLayerTest : public MultiDeviceTest<TypeParam> {
   Blob<Dtype>* const blob_top_mask_;
   vector<Blob<Dtype>*> blob_bottom_vec_;
   vector<Blob<Dtype>*> blob_top_vec_;
+  void TestForwardSquare3D(){
+    LayerParameter layer_param;
+    PoolingParameter* pooling_param = layer_param.mutable_pooling_param();
+    pooling_param->add_kernel_shape(2);
+    pooling_param->set_pool(PoolingParameter_PoolMethod_MAX);
+    vector<int> shape;
+    int num = 2;
+   int channels = 3;
+    int height   =3;
+    int width   =3;
+    int depth   =3;
+    shape.push_back(num);
+    shape.push_back(channels);
+    shape.push_back(height);
+    shape.push_back(width);
+    shape.push_back(depth);
+
+    blob_bottom_->Reshape(shape);
+    // Input: 2x 2 channels of:
+    //     [1 2 5] [ 1 2 5] [1 2 5]
+    //     [9 4 1] [9 4 1] [9 4 1]
+    //     [1 2 5] [1 2 5] [1 2 5]
+    for (int i = 0; i < 27 * num * channels; i += 27){
+      blob_bottom_->mutable_cpu_data()[i +  0] = 1;
+      blob_bottom_->mutable_cpu_data()[i +  1] = 1;
+      blob_bottom_->mutable_cpu_data()[i +  2] = 1;
+      blob_bottom_->mutable_cpu_data()[i +  3] = 2;
+      blob_bottom_->mutable_cpu_data()[i +  4] = 2;
+      blob_bottom_->mutable_cpu_data()[i +  5] = 2;
+      blob_bottom_->mutable_cpu_data()[i +  6] = 5;
+      blob_bottom_->mutable_cpu_data()[i +  7] = 5;
+      blob_bottom_->mutable_cpu_data()[i +  8] = 5;
+      blob_bottom_->mutable_cpu_data()[i +  9] = 9;
+      blob_bottom_->mutable_cpu_data()[i + 10] = 9;
+      blob_bottom_->mutable_cpu_data()[i + 11] = 9;
+      blob_bottom_->mutable_cpu_data()[i + 12] = 4;
+      blob_bottom_->mutable_cpu_data()[i + 13] = 4;
+      blob_bottom_->mutable_cpu_data()[i + 14] = 4;
+      blob_bottom_->mutable_cpu_data()[i + 15] = 1;
+      blob_bottom_->mutable_cpu_data()[i + 16] = 1;
+      blob_bottom_->mutable_cpu_data()[i + 17] = 1;
+      blob_bottom_->mutable_cpu_data()[i + 18] = 1;
+      blob_bottom_->mutable_cpu_data()[i + 19] = 1;
+      blob_bottom_->mutable_cpu_data()[i + 20] = 1;
+      blob_bottom_->mutable_cpu_data()[i + 21] = 2;
+      blob_bottom_->mutable_cpu_data()[i + 22] = 2;
+      blob_bottom_->mutable_cpu_data()[i + 23] = 2;
+      blob_bottom_->mutable_cpu_data()[i + 24] = 5;
+      blob_bottom_->mutable_cpu_data()[i + 25] = 5;
+      blob_bottom_->mutable_cpu_data()[i + 26] = 5;
+    }
+
+    PoolingLayer<Dtype> layer(layer_param);
+    layer.SetUp(blob_bottom_vec_, blob_top_vec_);
+    vector<int> top_shape = blob_top_->shape();
+    EXPECT_EQ(blob_top_->num(), num);
+    EXPECT_EQ(blob_top_->channels(), channels);
+    EXPECT_EQ(top_shape[2], 2);
+    EXPECT_EQ(top_shape[3], 2);
+    EXPECT_EQ(top_shape[4], 2);
+    if (blob_top_vec_.size() > 1) {
+      vector<int> top_mask_shape = blob_top_mask_->shape();
+      EXPECT_EQ(blob_top_mask_->num(), num);
+      EXPECT_EQ(blob_top_mask_->channels(), channels);
+      EXPECT_EQ(top_mask_shape[2], 2);
+      EXPECT_EQ(top_mask_shape[3], 2);
+      EXPECT_EQ(top_mask_shape[4], 2);
+    }
+    layer.Forward(blob_bottom_vec_, blob_top_vec_);
+
+    for (int i = 0; i < 8 * num * channels; i += 8) {
+    //cout<<"cpu_data[2] = "<<blob_top_->cpu_data()[2]<<endl;
+      EXPECT_EQ(9,blob_top_->cpu_data()[i + 0]);
+      EXPECT_EQ(9,blob_top_->cpu_data()[i + 1]);
+      EXPECT_EQ(5,blob_top_->cpu_data()[i + 2]);
+      EXPECT_EQ(5,blob_top_->cpu_data()[i + 3]);
+      EXPECT_EQ(9,blob_top_->cpu_data()[i + 4]);
+      EXPECT_EQ(9,blob_top_->cpu_data()[i + 5]);
+      EXPECT_EQ(5,blob_top_->cpu_data()[i + 6]);
+      EXPECT_EQ(5,blob_top_->cpu_data()[i + 7]);
+    }
+
+
+    if (blob_top_vec_.size() > 1) {
+      // Expected mask output: 2x 2 channels of:
+      //     [9  5 ] [9 5]
+      //     [9 5 ]  [9 5]
+      for (int i = 0; i < 8 * num * channels; i += 8) {
+        EXPECT_EQ(blob_top_mask_->cpu_data()[i + 0],  9);
+        EXPECT_EQ(blob_top_mask_->cpu_data()[i + 1],  9);
+        EXPECT_EQ(blob_top_mask_->cpu_data()[i + 2],  5);
+        EXPECT_EQ(blob_top_mask_->cpu_data()[i + 3],  5);
+        EXPECT_EQ(blob_top_mask_->cpu_data()[i + 4],  9);
+        EXPECT_EQ(blob_top_mask_->cpu_data()[i + 5], 9);
+        EXPECT_EQ(blob_top_mask_->cpu_data()[i + 6], 5);
+        EXPECT_EQ(blob_top_mask_->cpu_data()[i + 7],  5);
+      }
+    }
+     pooling_param->add_stride_shape(2);
+
+     height   =4;
+     width   =4;
+     depth   =4;
+     //shape.push_back(num);
+     //shape.push_back(channels);
+     shape[2]=height;
+     shape[3]=width;
+     shape[4]=depth;
+     PoolingLayer<Dtype> layer_2(layer_param);
+     blob_bottom_->Reshape(shape);
+     layer_2.SetUp(blob_bottom_vec_, blob_top_vec_);
+     //vector<int> top_shape = blob_top_->shape();
+     EXPECT_EQ(blob_top_->num(), num);
+     EXPECT_EQ(blob_top_->channels(), channels);
+     EXPECT_EQ(top_shape[2], 2);
+     EXPECT_EQ(top_shape[3], 2);
+     EXPECT_EQ(top_shape[4], 2);
+
+
+  }
+
   // Test for 2x 2 square pooling layer
   void TestForwardSquare() {
     LayerParameter layer_param;
@@ -403,6 +524,31 @@ TYPED_TEST(PoolingLayerTest, TestSetupPadded) {
   EXPECT_EQ(this->blob_top_->width(), 3);
 }
 
+TYPED_TEST(PoolingLayerTest, TestSetupPadded3D) {
+  typedef typename TypeParam::Dtype Dtype;
+  LayerParameter layer_param;
+  PoolingParameter* pooling_param = layer_param.mutable_pooling_param();
+  pooling_param->add_kernel_shape(3);
+  pooling_param->add_stride_shape(2);
+  pooling_param->add_pad_shape(1);
+  pooling_param->set_pool(PoolingParameter_PoolMethod_MAX);
+  PoolingLayer<Dtype> layer(layer_param);
+  vector<int> blob_shape =this->blob_bottom_->shape();
+  blob_shape.push_back(5);
+  this->blob_bottom_->Reshape(blob_shape);
+  //blob_bottom_->Reshape(2, 3, 6, 5);
+  layer.SetUp(this->blob_bottom_vec_, this->blob_top_vec_);
+  vector<int> top_shape =this->blob_top_->shape();
+  EXPECT_EQ(this->blob_top_->num_axes(),5);
+  EXPECT_EQ(this->blob_top_->num(), this->blob_bottom_->num());
+  EXPECT_EQ(this->blob_top_->channels(), this->blob_bottom_->channels());
+  EXPECT_EQ(top_shape[2], 4);
+  EXPECT_EQ(top_shape[3], 3);
+  EXPECT_EQ(top_shape[4], 3);
+}
+
+
+
 TYPED_TEST(PoolingLayerTest, TestSetupGlobalPooling) {
   typedef typename TypeParam::Dtype Dtype;
   LayerParameter layer_param;
@@ -445,6 +591,7 @@ TYPED_TEST(PoolingLayerTest, PrintBackward) {
 
 TYPED_TEST(PoolingLayerTest, TestForwardMax) {
   this->TestForwardSquare();
+  this->TestForwardSquare3D();
   this->TestForwardRectHigh();
   this->TestForwardRectWide();
 }
@@ -467,10 +614,41 @@ TYPED_TEST(PoolingLayerTest, TestGradientMax) {
       pooling_param->set_stride(2);
       pooling_param->set_pad(1);
       pooling_param->set_pool(PoolingParameter_PoolMethod_MAX);
+      this->blob_bottom_->Reshape(2,2,5,7);
       PoolingLayer<Dtype> layer(layer_param);
       GradientChecker<Dtype> checker(1e-4, 1e-2);
       checker.CheckGradientExhaustive(&layer, this->blob_bottom_vec_,
           this->blob_top_vec_);
+    }
+  }
+}
+
+TYPED_TEST(PoolingLayerTest, TestGradientMax3D) {
+  typedef typename TypeParam::Dtype Dtype;
+  for (int kernel_h = 2; kernel_h <= 3; kernel_h++) {
+    for (int kernel_w = 2; kernel_w <= 3; kernel_w++) {
+      for (int kernel_d = 2; kernel_d<= 3; kernel_d++){
+      LayerParameter layer_param;
+      PoolingParameter* pooling_param = layer_param.mutable_pooling_param();
+      vector<int> shape;
+      shape.push_back(1);
+      shape.push_back(2);
+      shape.push_back(4);
+      shape.push_back(3);
+      shape.push_back(3);
+      this->blob_bottom_->Reshape(shape);
+      pooling_param->add_kernel_shape(kernel_h);
+      pooling_param->add_kernel_shape(kernel_w);
+      pooling_param->add_kernel_shape(kernel_d);
+      //pooling_param->set_kernel_w(kernel_w);
+      pooling_param->add_stride_shape(2);
+      pooling_param->add_pad_shape(1);
+      pooling_param->set_pool(PoolingParameter_PoolMethod_MAX);
+      PoolingLayer<Dtype> layer(layer_param);
+      GradientChecker<Dtype> checker(1e-4, 1e-2);
+      checker.CheckGradientExhaustive(&layer, this->blob_bottom_vec_,
+          this->blob_top_vec_);
+        }
     }
   }
 }

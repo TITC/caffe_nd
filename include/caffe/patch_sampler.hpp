@@ -57,8 +57,8 @@ template <typename Dtype> class PatchSampler;
       ~PatchCoordFinder(){};
       void SetInputShape(vector<int> input_shape);
       vector<int> GetRandomPatchCenterCoord();
-      vector<int> GetDataOffeset();
-      vector<int> GetLabelOffeset();
+      vector<int> GetDataOffset();
+      vector<int> GetLabelOffset();
 
     protected:
       const LayerParameter param_;

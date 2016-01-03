@@ -51,14 +51,14 @@ __global__ void MaxPoolForward_ND(const int nthreads,
        d_end_pt[i]=(min(d_start_pt[i] + kernel[i],
                                  bottom_shape[i]));
        d_start_pt[i]=max(d_start_pt[i],0);
-       cur_total_k_size *=(d_end_pt[i]-d_start_pt[i]+1);
+       cur_total_k_size *=(d_end_pt[i]-d_start_pt[i]);
      }
 
      for(i=0;i<cur_total_k_size; ++i){
        //compute coordinate of point in the bottom kernel.
        int inner = i;
        for( j=num_axes-1; j>=0; --j){
-            int pooled_kernel_size =d_end_pt[j]-d_start_pt[j]+1;
+            int pooled_kernel_size =d_end_pt[j]-d_start_pt[j];
             d_bottom_pt[j]=inner%pooled_kernel_size+d_start_pt[j];
             inner /=pooled_kernel_size;
           }
@@ -353,52 +353,114 @@ void PoolingLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
 
 
 template <typename Dtype, int num_axes>
-__global__ void MaxPoolBackward_ND(const int nthreads, const Dtype* const top_diff,
-    const int* const mask, const Dtype* const top_mask, const int num,
+__global__ void MaxPoolBackward_ND(const int nthreads, const Dtype*  top_diff,
+    const int*  mask, const Dtype* top_mask, const int num,
     const int channels, const int* bottom_shape,
     const int* top_shape, const int* kernel, const int* stride, const int* pad,
     Dtype* const bottom_diff){
       //int d_top_pt[num_axes];  // NOLINT(runtime/arrays)
       //int d_iter[num_axes];  // NOLINT(runtime/arrays)
-      int i;
+      //int i;
     CUDA_KERNEL_LOOP(index, nthreads) {
+      int depth =bottom_shape[2];
+      int width= bottom_shape[1];
+      int height=bottom_shape[0];
+      int kernel_h=kernel[0];
+      int kernel_w=kernel[1];
+      int kernel_d=kernel[2];
+      int pad_h=pad[0];
+      int pad_w=pad[1];
+      int pad_d=pad[2];
+      int pooled_height =top_shape[0];
+      int pooled_width =top_shape[1];
+      int pooled_depth =top_shape[2];
+      int stride_h =stride[0];
+      int stride_w =stride[1];
+      int stride_d =stride[2];
+  int d = index % depth;
+  int w = (index / depth) % width;
+  int h = (index / depth / width) % height;
+  int c = (index / depth / width / height) % channels;
+  int n = index / depth / width / height / channels;
+  int phstart =
+      (h + pad_h < kernel_h) ? 0 : (h + pad_h - kernel_h) / stride_h + 1;
+  int phend = min((h + pad_h) / stride_h + 1, pooled_height);
+  int pwstart =
+      (w + pad_w < kernel_w) ? 0 : (w + pad_w - kernel_w) / stride_w + 1;
+  int pwend = min((w + pad_w) / stride_w + 1, pooled_width);
 
-      int n  =0;
-      int c =0;
-      //int kernel_length =1;
-
-      //d_temp[num_axes-1]=channel_in%top_shape[num_axes-1];
-      //channel_out*=kernel_shape[num_axes-1]
-
-      //int channel_in = index;
-      //int channel_out = 1;
-      // for (i = num_axes - 1; i >= 0; --i) {
-      //   d_top_pt[i] = channel_in % top_shape[i];
-      //   channel_in /= top_shape[i];
-      //   channel_out *= kernel[i];
-      //  }
-      //   c = channel_in%channels;
-      //   n =channel_in/channels;
-      // int top_shape_len=1;
-      // for(i=0;i<num_axes;++i){
-      //   top_shape_len*=top_shape[i];
-      // }
-
-      int bottom_shape_len=1;
-      for(i=0;i<num_axes;++i){
-        bottom_shape_len*=bottom_shape[i];
+int pdstart =
+      (d + pad_d < kernel_d) ? 0 : (d + pad_d - kernel_d) / stride_d + 1;
+  int pdend = min((d + pad_d) / stride_d + 1, pooled_depth);
+//
+  Dtype gradient = 0;
+  int offset = (n * channels + c) * pooled_height * pooled_width * pooled_depth;
+  top_diff += offset;
+  if (mask) {
+    mask += offset;
+    for (int ph = phstart; ph < phend; ++ph) {
+      for (int pw = pwstart; pw < pwend; ++pw) {
+        for (int pd = pdstart; pd < pdend; ++pd) {
+          if (mask[(ph * pooled_width + pw) * pooled_depth + pd] == (h * width + w) * depth +d) {
+            gradient += top_diff[(ph * pooled_width + pw) * pooled_depth + pd];
+          }
+        }
       }
-
-      const int offset = (n * channels + c) * bottom_shape_len;
-      Dtype* bottom_slice =  bottom_diff+offset;
-
-    //  bottom_diff[index] = gradient;
-      if (mask){
-          bottom_slice[mask[index]]+=top_diff[index];
-      }else{
-         int idx =(int)top_mask[index];
-          bottom_slice[idx]+=top_diff[index];
+    }
+  } else {
+    top_mask += offset;
+    for (int ph = phstart; ph < phend; ++ph) {
+      for (int pw = pwstart; pw < pwend; ++pw) {
+        for (int pd = pdstart; pd < pdend; ++pd){
+          if (top_mask[(ph * pooled_width + pw) * pooled_depth + pd] == (h * width + w) * depth +d) {
+              gradient += top_diff[(ph * pooled_width + pw) * pooled_depth + pd];
+            }
+          }
       }
+    }
+  }
+  bottom_diff[index] = gradient;
+
+
+
+
+
+    //   int n  =0;
+    //   int c =0;
+    //   //int kernel_length =1;
+    //
+    //   //d_temp[num_axes-1]=channel_in%top_shape[num_axes-1];
+    //   //channel_out*=kernel_shape[num_axes-1]
+    //
+    //   //int channel_in = index;
+    //   //int channel_out = 1;
+    //   // for (i = num_axes - 1; i >= 0; --i) {
+    //   //   d_top_pt[i] = channel_in % top_shape[i];
+    //   //   channel_in /= top_shape[i];
+    //   //   channel_out *= kernel[i];
+    //   //  }
+    //   //   c = channel_in%channels;
+    //   //   n =channel_in/channels;
+    //   // int top_shape_len=1;
+    //   // for(i=0;i<num_axes;++i){
+    //   //   top_shape_len*=top_shape[i];
+    //   // }
+    //
+    //   int bottom_shape_len=1;
+    //   for(i=0;i<num_axes;++i){
+    //     bottom_shape_len*=bottom_shape[i];
+    //   }
+    //
+    //   const int offset = (n * channels + c) * bottom_shape_len;
+    //   Dtype* bottom_slice =  bottom_diff+offset;
+    //
+    // //  bottom_diff[index] = gradient;
+    //   if (mask){
+    //       bottom_slice[mask[index]]+=top_diff[index];
+    //   }else{
+    //      int idx =(int)top_mask[index];
+    //       bottom_slice[idx]+=top_diff[index];
+    //   }
 
     }
   }
@@ -574,36 +636,36 @@ void PoolingLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
   //     LOG(INFO)<<"start backword ND pooling";
        switch (num_spatial_axes_) {
          case 1:
-         MaxPoolBackward_ND<Dtype,1><<<CAFFE_GET_BLOCKS(top_count), CAFFE_CUDA_NUM_THREADS>>>(
-             top_count, top_diff, mask,
+         MaxPoolBackward_ND<Dtype,1><<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(
+             count, top_diff, mask,
              top_mask, top[0]->num(), channels_,
              bottom_shape, top_shape,kernel_shape,
              stride_shape,pad_shape, bottom_diff);
          break;
          case 2:
-         MaxPoolBackward_ND<Dtype,2><<<CAFFE_GET_BLOCKS(top_count), CAFFE_CUDA_NUM_THREADS>>>(
+         MaxPoolBackward_ND<Dtype,2><<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(
              top_count, top_diff, mask,
              top_mask, top[0]->num(), channels_,
              bottom_shape, top_shape, kernel_shape,
              stride_shape,pad_shape, bottom_diff);
          break;
          case 3:
-         MaxPoolBackward_ND<Dtype,3><<<CAFFE_GET_BLOCKS(top_count), CAFFE_CUDA_NUM_THREADS>>>(
-             top_count, top_diff, mask,
+         MaxPoolBackward_ND<Dtype,3><<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(
+             count, top_diff, mask,
              top_mask, top[0]->num(), channels_,
              bottom_shape, top_shape,kernel_shape,
              stride_shape, pad_shape, bottom_diff);
          break;
          case 4:
-         MaxPoolBackward_ND<Dtype,4><<<CAFFE_GET_BLOCKS(top_count), CAFFE_CUDA_NUM_THREADS>>>(
-             top_count, top_diff, mask,
+         MaxPoolBackward_ND<Dtype,4><<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(
+             count, top_diff, mask,
              top_mask, top[0]->num(), channels_,
              bottom_shape, top_shape,kernel_shape,
              stride_shape,pad_shape, bottom_diff);
          break;
          case 5:
-         MaxPoolBackward_ND<Dtype,5><<<CAFFE_GET_BLOCKS(top_count), CAFFE_CUDA_NUM_THREADS>>>(
-             top_count, top_diff, mask,
+         MaxPoolBackward_ND<Dtype,5><<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(
+            count, top_diff, mask,
              top_mask, top[0]->num(), channels_,
              bottom_shape, top_shape,kernel_shape,
              stride_shape,pad_shape, bottom_diff);

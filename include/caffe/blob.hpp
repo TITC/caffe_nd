@@ -72,7 +72,7 @@ class Blob {
     return shape_[CanonicalAxisIndex(index)];
   }
   inline int num_axes() const { return shape_.size(); }
-  inline int count() const { return count_; }
+  inline size_t count() const { return count_; }
 
   /**
    * @brief Compute the volume of a slice; i.e., the product of dimensions
@@ -82,7 +82,7 @@ class Blob {
    *
    * @param end_axis The first axis to exclude from the slice.
    */
-  inline int count(int start_axis, int end_axis) const {
+  inline size_t count(int start_axis, int end_axis) const {
     CHECK_LE(start_axis, end_axis);
     CHECK_GE(start_axis, 0);
     CHECK_GE(end_axis, 0);
@@ -90,7 +90,7 @@ class Blob {
     CHECK_LE(end_axis, num_axes());
     int count = 1;
     for (int i = start_axis; i < end_axis; ++i) {
-      count *= shape(i);
+      count *= (size_t)shape(i);
     }
     return count;
   }
@@ -100,7 +100,7 @@ class Blob {
    *
    * @param start_axis The first axis to include in the slice.
    */
-  inline int count(int start_axis) const {
+  inline size_t count(int start_axis) const {
     return count(start_axis, num_axes());
   }
 
@@ -163,15 +163,28 @@ class Blob {
     return ((n * channels() + c) * height() + h) * width() + w;
   }
 
-  inline int offset(const vector<int>& indices) const {
+  // inline int offset(const vector<int>& indices) const {
+  //   CHECK_LE(indices.size(), num_axes());
+  //   int offset = 0;
+  //   for (int i = 0; i < num_axes(); ++i) {
+  //     offset *= shape(i);
+  //     if (indices.size() > i) {
+  //       CHECK_GE(indices[i], 0);
+  //       CHECK_LT(indices[i], shape(i));
+  //       offset += indices[i];
+  //     }
+  //   }
+  //   return offset;
+  // }
+  inline size_t offset(const vector<int>& indices) const {
     CHECK_LE(indices.size(), num_axes());
-    int offset = 0;
+    size_t offset = 0;
     for (int i = 0; i < num_axes(); ++i) {
-      offset *= shape(i);
+      offset *=(size_t) shape(i);
       if (indices.size() > i) {
         CHECK_GE(indices[i], 0);
         CHECK_LT(indices[i], shape(i));
-        offset += indices[i];
+        offset +=(size_t) indices[i];
       }
     }
     return offset;
@@ -215,6 +228,8 @@ class Blob {
     CHECK(diff_);
     return diff_;
   }
+
+
 
   const Dtype* cpu_data() const;
   void set_cpu_data(Dtype* data);
@@ -270,9 +285,10 @@ class Blob {
   shared_ptr<SyncedMemory> diff_;
   shared_ptr<SyncedMemory> shape_data_;
   vector<int> shape_;
-  int count_;
-  int capacity_;
-
+  //int count_;
+  //int capacity_;
+  size_t count_;
+  size_t capacity_;
   DISABLE_COPY_AND_ASSIGN(Blob);
 };  // class Blob
 

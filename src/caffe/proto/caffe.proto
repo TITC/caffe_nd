@@ -252,6 +252,7 @@ message SolverState {
 enum Phase {
    TRAIN = 0;
    TEST = 1;
+   PREDICT =2;
 }
 
 message NetState {
@@ -828,7 +829,7 @@ message PoolingParameter {
   // kernel_h = bottom->height and kernel_w = bottom->width
   optional bool global_pooling = 12 [default = false];
 
-  optional uint32 channels_axis = 16 [default = 1]; 
+  optional uint32 channels_axis = 16 [default = 1];
 }
 
 message PowerParameter {

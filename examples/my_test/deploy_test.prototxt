@@ -1,0 +1,278 @@
+name: "BIG_N_TEST"
+input: "data"
+input_shape{ 
+dim:1
+dim: 1
+dim:  640
+dim:  640
+dim:  29
+}
+
+
+
+layer {
+  name: "conv1"
+  type: "Convolution"
+  bottom: "data"
+  top: "conv1"
+  param {
+    lr_mult: 1
+  }
+  param {
+    lr_mult: 2
+  }
+  convolution_param {
+    num_output: 32
+  # pad: 2
+    kernel_size: 5
+	pad: 2
+	pad: 2
+	pad: 0
+    #kernel_size: 5
+    #kernel_size: 4
+    #stride: 4
+	#stride: 4
+	stride: 1
+  }
+  phase: PREDICT
+}
+
+layer {
+  name: "relu1"
+  type: "ReLU"
+  bottom: "conv1"
+  top: "conv1"
+}
+
+
+ # layer {
+         # type: "Reshape" bottom: "conv1" top: "conv1"
+         # reshape_param {  shape { dim:  0  dim: 0 dim: 0 dim: 0} }
+       # }
+ # layer {
+         # type: "Reshape" bottom: "label" top: "label"
+         # reshape_param {  shape { dim:  0  dim: 0 dim: 0 dim: 0} }
+       # }
+	   
+layer {
+  name: "conv2"
+  type: "Convolution"
+  bottom: "conv1"
+  top: "conv2"
+  param {
+    lr_mult: 1
+  }
+  param {
+    lr_mult: 2
+  }
+  phase: PREDICT
+  convolution_param {
+    num_output: 64
+  #pad: 2
+    kernel_size: 5
+    kernel_size: 5
+    kernel_size: 1
+    stride: 1
+	pad: 2
+	pad: 2
+	pad: 0
+  }
+}
+
+
+layer {
+  name: "relu1"
+  type: "ReLU"
+  bottom: "conv2"
+  top: "conv2"
+}
+
+
+layer {
+   name: "pool1"
+   type: "Pooling"
+   bottom: "conv2"
+   top: "pool1"
+   pooling_param {
+    pool: MAX
+    #kernel_size: 2
+    #stride: 2
+    kernel_shape:2
+    stride_shape:2
+   }
+ }
+
+
+layer {
+  name: "conv3"
+  type: "Convolution"
+  bottom: "pool1"
+  top: "conv3"
+  param {
+    lr_mult: 1
+  }
+  param {
+    lr_mult: 2
+  }
+  convolution_param {
+    num_output: 64
+  #pad: 2
+    kernel_size: 5
+    kernel_size: 5
+    kernel_size: 1
+	pad: 2
+	pad: 2
+	pad: 0
+    #stride: 1
+    #stride: 4
+    stride: 1
+
+  }
+  phase: PREDICT
+}
+
+
+layer {
+  name: "relu1"
+  type: "ReLU"
+  bottom: "conv3"
+  top: "conv3"
+}
+# layer {
+  # name: "pool2"
+  # type: "Pooling"
+  # bottom: "conv3"
+  # top: "pool2"
+  # pooling_param {
+   # pool: MAX
+   # #kernel_size: 2
+   # #stride: 2
+   # kernel_shape:2
+   # stride_shape:2
+  # }
+#}
+
+layer {
+  name: "conv4"
+  type: "Convolution"
+  bottom: "conv3"
+  top: "conv4"
+  param {
+    lr_mult: 1
+  }
+  param {
+    lr_mult: 2
+  }
+  convolution_param {
+    num_output: 64
+  #pad: 2
+    kernel_size: 3
+    kernel_size: 3
+    kernel_size: 1
+    stride: 1
+	pad: 1
+	pad: 1
+	pad: 0
+    #stride: 1
+    #stride: 1
+  }
+  phase: PREDICT
+}
+
+
+layer {
+  name: "relu1"
+  type: "ReLU"
+  bottom: "conv4"
+  top: "conv4"
+}
+
+layer {
+  name: "decconv1"
+  type: "Deconvolution"
+  bottom: "conv4"
+  top: "deconv1"
+  param {
+    lr_mult: 1
+  }
+  param {
+    lr_mult: 2
+  }
+  convolution_param {
+    num_output: 64
+  #pad: 2
+    kernel_size: 2
+    kernel_size: 2
+    kernel_size: 1
+    stride: 2
+	#pad: 1
+	#pad: 1
+	#pad: 0
+    #stride: 1
+    #stride: 1
+
+  }
+  phase: PREDICT
+}
+
+
+layer {
+  name: "relu1"
+  type: "ReLU"
+  bottom: "deconv1"
+  top: "deconv1"
+}
+
+# layer {
+  # name: "pool3"
+  # type: "Pooling"
+  # bottom: "conv4"
+  # top: "pool3"
+  # pooling_param {
+   # pool: MAX
+   # #kernel_size: 2
+   # #stride: 2
+   # kernel_shape:2
+   # stride_shape:2
+  # }
+# }
+
+
+layer {
+  name: "conv5"
+  type: "Convolution"
+  bottom: "deconv1"
+  top: "conv5"
+  param {
+    lr_mult: 1
+  }
+  param {
+    lr_mult: 2
+  }
+  convolution_param {
+    num_output: 2
+  #pad: 2
+    kernel_size: 3
+    kernel_size: 3
+    kernel_size: 1
+    stride: 1
+	pad: 1
+	pad: 1
+	pad: 0
+    #stride: 1
+    #stride: 1
+  }
+  phase: PREDICT
+}
+
+
+
+#Deconvolution
+#
+
+layer {
+  name: "output"
+  type: "Softmax"
+  bottom: "conv5"
+  top: "output"
+}

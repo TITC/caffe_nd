@@ -30,8 +30,9 @@ void Blob<Dtype>::Reshape(const vector<int>& shape) {
   int* shape_data = static_cast<int*>(shape_data_->mutable_cpu_data());
   for (int i = 0; i < shape.size(); ++i) {
     CHECK_GE(shape[i], 0);
-    CHECK_LE(shape[i], INT_MAX / count_) << "blob size exceeds INT_MAX";
-    count_ *= shape[i];
+  //  CHECK_LE(shape[i], INT_MAX / count_) << "blob size exceeds INT_MAX";
+    CHECK_LE(shape[i], SIZE_MAX / count_) << "blob size exceeds SIZE_MAX";
+    count_ *= (size_t)shape[i];
     shape_[i] = shape[i];
     shape_data[i] = shape[i];
   }
@@ -492,7 +493,6 @@ void Blob<Dtype>::FromProto(const BlobProto& proto, bool reshape) {
     }
   }
 }
-
 template <>
 void Blob<double>::ToProto(BlobProto* proto, bool write_diff) const {
   proto->clear_shape();
@@ -533,9 +533,10 @@ void Blob<float>::ToProto(BlobProto* proto, bool write_diff) const {
   }
 }
 
+
+
 INSTANTIATE_CLASS(Blob);
 template class Blob<int>;
 template class Blob<unsigned int>;
 
 }  // namespace caffe
-

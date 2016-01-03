@@ -41,7 +41,7 @@ void PoolingLayer<Dtype>::LayerSetUpND(const vector<Blob<Dtype>*>& bottom,
       bottom_d_shape_.Reshape(spatial_dim_blob_shape);
       int* kernel_shape_data = kernel_shape_.mutable_cpu_data();
       int* stride_shape_data = stride_shape_.mutable_cpu_data();
-      int* pad_shape_data = pad_shape_.mutable_cpu_data();
+      int* pad_shape_data    = pad_shape_.mutable_cpu_data();
 
       CHECK(!pool_param.has_kernel_size()|| !pool_param.has_kernel_h()||! pool_param.has_kernel_w())
       <<"With ND input data: kernel_size, kernel_h and kernel_w can't be set";
@@ -195,6 +195,7 @@ void PoolingLayer<Dtype>::ReshapeND(const vector<Blob<Dtype>*>& bottom,
       //int* kernel_shape_data = kernel_shape_.mutable_cpu_data();
       if (global_pooling_) {
         kernel_shape_.Reshape(spatial_dim_blob_shape);
+        kernel_shape_data = kernel_shape_.mutable_cpu_data();
         for(int i=0;i<num_spatial_axes_;++i){
           kernel_shape_data[i]=bottom_shape[first_spatial_axis_+i];
         }
@@ -206,25 +207,28 @@ void PoolingLayer<Dtype>::ReshapeND(const vector<Blob<Dtype>*>& bottom,
       for(int i=0;i<num_spatial_axes_;++i){
       pooled_d_shape_data[i] = static_cast<int>(ceil(static_cast<float>(
           bottom_shape[first_spatial_axis_+i]  + 2 * pad_shape_data[i] - kernel_shape_data[i]) / stride_shape_data[i])) + 1;
+
+        //  static_cast<int>(ceil(static_cast<float>(
+        //      height_ + 2 * pad_h_ - kernel_h_) / stride_h_)) + 1;
       }
 
-      // bool any_axis_pad_not_zero =false;
-      // for(int i=0;i<num_spatial_axes_;++i){
-      //   if(pad_shape_data[i]>0){
-      //      any_axis_pad_not_zero =true;
-      //      break;
-      //    }
-      // }
-      //if (any_axis_pad_not_zero) {
+      bool any_axis_pad_not_zero =false;
+      for(int i=0;i<num_spatial_axes_;++i){
+        if(pad_shape_data[i]>0){
+           any_axis_pad_not_zero =true;
+           break;
+         }
+      }
+      if (any_axis_pad_not_zero) {
         // If we have padding, ensure that the last pooling starts strictly
         // inside the image (instead of at the padding); otherwise clip the last.
         for(int i=0;i<num_spatial_axes_;++i){
-          if ((  pooled_d_shape_data[i] - 1) * kernel_shape_data[i] >= bottom_shape[first_spatial_axis_+i] + pad_shape_data[i]) {
+          if ((  pooled_d_shape_data[i] - 1) * stride_shape_data[i] >= bottom_shape[first_spatial_axis_+i] + pad_shape_data[i]) {
             --pooled_d_shape_data[i];
           }
           CHECK_LT((pooled_d_shape_data[i] - 1) *stride_shape_data[i], bottom_shape[first_spatial_axis_+i] + pad_shape_data[i]);
         }
-    //  }
+     }
 
 
       vector<int> out_put_shape ;//= pooled_shape_;
@@ -232,6 +236,7 @@ void PoolingLayer<Dtype>::ReshapeND(const vector<Blob<Dtype>*>& bottom,
       for(int i=0;i<num_spatial_axes_;++i){
         pooled_data_length_*=pooled_d_shape_data[i];
         out_put_shape.push_back(pooled_d_shape_data[i]);
+          //std::cout<<"poold_d_shape ="<<pooled_d_shape_data[i]<<std::endl;
       }
       out_put_shape.insert(out_put_shape.begin(),channels_);
       out_put_shape.insert(out_put_shape.begin(),num);
@@ -309,6 +314,7 @@ void PoolingLayer<Dtype>::Reshape2D(const vector<Blob<Dtype>*>& bottom,
 template <typename Dtype>
 void PoolingLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
   const vector<Blob<Dtype>*>& top) {
+     //LOG(INFO)<<"start forward "<< this->layer_param_.name();
     if(num_spatial_axes_ ==2)
       Forward_cpu_2D(bottom, top);
     else
@@ -372,13 +378,17 @@ const vector<Blob<Dtype>*>& top){
           // compute the bottom pooling coordinate range for each output
                vector<int> start_aixs_idx, end_aixs_idx;
                int total_kernel_size  =1;
+              // std::cout<<"---"<<std::endl;
                for(int i =0;i<num_spatial_axes_;++i){
+                // std::cout<<"nd_point ["<<i<<"] = "<<nd_point[i] <<std::endl;
                  start_aixs_idx.push_back(nd_point[i]*stride_shape_data[i]-pad_shape_data[i]);
                  end_aixs_idx.push_back(min(start_aixs_idx[i] + kernel_shape_data[i],
                                            bottom_shape[first_spatial_axis_+i]));
                  start_aixs_idx[i]=max(start_aixs_idx[i],0);
 
-                 total_kernel_size *=(end_aixs_idx[i]-start_aixs_idx[i]+1);
+                 total_kernel_size *=(end_aixs_idx[i]-start_aixs_idx[i]);
+                // std::cout<<"start_idx ["<<i<<"] = "<<start_aixs_idx[i] <<std::endl;
+                 //std::cout<<"end_idx ["<<i<<"] = "<<end_aixs_idx[i] <<std::endl;
                }
 
               for(int i=0;i<total_kernel_size;++i)
@@ -387,7 +397,7 @@ const vector<Blob<Dtype>*>& top){
                 int kernel_dim =start_aixs_idx.size();
                 //compute coordinate of point in the bottom kernel.
                 for(int n =kernel_dim-1; n>0; --n){
-                   int pooled_kernel_size =end_aixs_idx[n]-start_aixs_idx[n]+1;
+                   int pooled_kernel_size =end_aixs_idx[n]-start_aixs_idx[n];
                     if(n==kernel_dim-1){
                        data_axis_idx=p%(pooled_kernel_size)+start_aixs_idx[n];
                        pre_aixs_len=pooled_kernel_size;
@@ -425,7 +435,9 @@ const vector<Blob<Dtype>*>& top){
        }
        // compute offset
        vector<int> offset(2,0);
+       offset[0]=0;
        offset[1]=1;
+       //offset[2]=1;
        bottom_data += bottom[0]->offset(offset);
        top_data += top[0]->offset(offset);
        if (use_top_mask) {
@@ -597,7 +609,70 @@ void PoolingLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
 template <typename Dtype>
 void PoolingLayer<Dtype>::Backward_cpu_ND(const vector<Blob<Dtype>*>& top,
       const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom) {
+        const Dtype* top_diff = top[0]->cpu_diff();
+          Dtype* bottom_diff = bottom[0]->mutable_cpu_diff();
+          // Different pooling methods. We explicitly do the switch outside the for
+          // loop to save time, although this results in more codes.
+          caffe_set(bottom[0]->count(), Dtype(0), bottom_diff);
+          // We'll output the mask to top[1] if it's of size >1.
+          const bool use_top_mask = top.size() > 1;
+          const int* mask = NULL;  // suppress warnings about uninitialized variables
+          const Dtype* top_mask = NULL;
 
+          const int * pooled_d_shape=pooled_d_shape_.cpu_data();
+          int pooled_height_ =pooled_d_shape[0];
+          int pooled_width_ =pooled_d_shape[1];
+          int pooled_depth_ =pooled_d_shape[2];
+          //std::cout<<"p_h ="<<pooled_height_<<std::endl;
+        //  std::cout<<"p_w ="<<pooled_width_<<std::endl;
+          //std::cout<<"p_d ="<<pooled_depth_<<std::endl;
+
+          switch (this->layer_param_.pooling_param().pool()) {
+          case PoolingParameter_PoolMethod_MAX:
+            // The main loop
+            if (use_top_mask) {
+              top_mask = top[1]->cpu_data();
+            } else {
+              mask = max_idx_.cpu_data();
+            }
+
+
+            for (int n = 0; n < top[0]->num(); ++n) {
+              for (int c = 0; c < channels_; ++c) {
+                for (int ph = 0; ph < pooled_height_; ++ph) {
+                  for (int pw = 0; pw < pooled_width_; ++pw) {
+                			for (int pd = 0; pd < pooled_depth_; ++pd) {
+                				const int index = (ph * pooled_width_ + pw) * pooled_depth_ + pd;
+                				const int bottom_index =
+                					use_top_mask ? top_mask[index] : mask[index];
+                				   bottom_diff[bottom_index] += top_diff[index];
+                          // std::cout<<"top index ="<<index<<std::endl;
+                           //std::cout<<"diff["<<bottom_index <<"]"<<	bottom_diff[bottom_index] <<std::endl;
+                				}
+        			      }
+                  }
+                vector<int> offset_v;
+                offset_v.push_back(0);
+                offset_v.push_back(1);
+                bottom_diff += bottom[0]->offset(offset_v);
+                top_diff += top[0]->offset(offset_v);
+                //std::cout<<"bottom[0]->offset(offset_v)  =" <<bottom[0]->offset(offset_v)<<std::endl;
+                if (use_top_mask) {
+                  top_mask += top[0]->offset(offset_v);
+                } else {
+                  mask += top[0]->offset(offset_v);
+                }
+              }
+            }
+            break;
+        case PoolingParameter_PoolMethod_AVE:
+          break;
+        case PoolingParameter_PoolMethod_STOCHASTIC:
+            NOT_IMPLEMENTED;
+            break;
+          default:
+            LOG(FATAL) << "Unknown pooling method.";
+          }
 
 
 }
