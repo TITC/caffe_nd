@@ -108,7 +108,6 @@ void PatchSampler<Dtype>::ReadOnePatch(QueuePair_Batch<Dtype>* qb ){
 
   }
   patch_count_++;
-  count_m_mutex_.unlock();
 
 
 
@@ -141,11 +140,17 @@ void PatchSampler<Dtype>::ReadOnePatch(QueuePair_Batch<Dtype>* qb ){
       pt_label_value        = data_transformer_nd->ReadOnePoint(source_data_label.label_.get(), randPt);
   }while (!sample_selector_->AcceptGivenLabel((int)pt_label_value));
 
-  //LOG(INFO)<<"selected Label is "<<pt_label_value;
+  //LOG(INFO)<<"selected Label = "<<pt_label_value;
 
 
-  vector<int> data_offset     = patch_coord_finder_->GetDataOffeset();
-  vector<int> label_offset    = patch_coord_finder_->GetLabelOffeset();
+  vector<int> data_offset     = patch_coord_finder_->GetDataOffset();
+  vector<int> label_offset    = patch_coord_finder_->GetLabelOffset();
+  // for(int i=0;i<randPt.size();++i){
+  //   LOG(INFO)<<"randPt "<<"["<<i<<"] = "<<  randPt[i];
+  //   LOG(INFO)<<"label_offset  "<<"["<<i<<"] = "<<  label_offset[i];
+  //   LOG(INFO)<<"data_offset  "<<"["<<i<<"] = "<<  data_offset[i];
+  // }
+
   //randPt.insert(s_data_shape.begin(),s_data_shape.begin()+2);
   //CropCenterInfo<Dtype> crp_cent_info=data_transformer_nd->PeekCropCenterPoint(source_data_label.label_.get());
   //LOG(INFO)<<"nd_off num_aix after return  ="<<crp_cent_info.nd_off.size();
@@ -155,7 +160,7 @@ void PatchSampler<Dtype>::ReadOnePatch(QueuePair_Batch<Dtype>* qb ){
   //Blob<Dtype> &trans_label_blob =*patch_data_label->label_;
 
 
-  //Blob<Dtype> trans_data_blob,trans_label_blob;
+//Blob<Dtype> trans_data_blob,trans_label_blob;
 
 
   //LOG(INFO)<<"start transform";
@@ -184,10 +189,17 @@ void PatchSampler<Dtype>::ReadOnePatch(QueuePair_Batch<Dtype>* qb ){
 
 
 
+
+  int new_label=(int)  patch_data_label->label_.get()->cpu_data()[0];
+  if(patch_data_label->label_.get()->count()==1)
+  {CHECK_EQ(new_label,pt_label_value);}
+
+  count_m_mutex_.unlock();
+
   int d_dims  =source_data_shape.size();
   int l_dims  =source_label_shape.size();
   //LOG(INFO)<<"data size = "<<d_dims;
-  //LOG(INFO)<<"label size = "<<l_dims;
+  //LOG(INFO)<<"label in blob = "<<patch_data_label->label_.get()->cpu_data()[0];
 
   int d_num   =source_data_shape[0];
   int l_num   =source_label_shape[0];
@@ -220,7 +232,7 @@ void PatchSampler<Dtype>::ReadOnePatch(QueuePair_Batch<Dtype>* qb ){
 //====================================================////
  //LOG(INFO)<<"copy blob from trans_data_blob";
 
-  //patch_data_label->data_->CopyFrom(trans_data_blob,false,true);
+//  patch_data_label->data_->CopyFrom(trans_data_blob,false,true);
 //  patch_data_label->label_->CopyFrom(trans_label_blob,false,true);
 
 
@@ -233,6 +245,7 @@ void PatchSampler<Dtype>::ReadOnePatch(QueuePair_Batch<Dtype>* qb ){
   // setting patch data and label shape;
   dest_label_shape_=patch_data_label->label_->shape();
   dest_data_shape_=patch_data_label->data_->shape();
+
 
 }
 //
@@ -396,13 +409,13 @@ void Runner<Dtype>::InternalThreadEntry() {
    }
 
    template <typename Dtype>
-    vector<int> PatchCoordFinder<Dtype>:: GetDataOffeset(){
+    vector<int> PatchCoordFinder<Dtype>:: GetDataOffset(){
      return data_shape_offset_;
    }
 
    template <typename Dtype>
-    vector<int> PatchCoordFinder<Dtype>:: GetLabelOffeset(){
-     return label_shape_center_;
+    vector<int> PatchCoordFinder<Dtype>:: GetLabelOffset(){
+     return label_shape_offset_;
    }
 
    template <typename Dtype>

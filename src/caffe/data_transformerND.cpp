@@ -44,6 +44,7 @@ Dtype DataTransformerND<Dtype>::ReadOnePoint(Blob<Dtype>* input_blob, vector<int
   CHECK_LE(pt_index,input_count);
   const Dtype* input_data =input_blob->cpu_data();
   Dtype pt_value=input_data[pt_index];
+  //LOG(INFO)<<"center reding idex =" <<pt_index;
   return pt_value;
 }
 template<typename Dtype>
@@ -287,7 +288,8 @@ void DataTransformerND<Dtype>::Transform(Blob<Dtype>* input_blob,
     // vector<int> nd_off(crop_shape_axis,0);
     Dtype* transformed_data = transformed_blob->mutable_cpu_data();
     //int start_spatial_aixs =2;
-for(size_t p=0;p<trans_data_size;++p){
+  //  LOG(INFO)<<"trans_data_size = "<<trans_data_size;
+    for(size_t p=0;p<trans_data_size;++p){
      // revise compute the dat index in the input blob;
      vector<int> nd_point;
      vector<int>::iterator it;
@@ -300,6 +302,7 @@ for(size_t p=0;p<trans_data_size;++p){
 
          if(i==transform_shape.size()-1){
             data_axis_idx=p%transform_shape[i]+off_set[i-2];
+            //LOG(INFO)<<"  data_axis_idx ="<<data_axis_idx<<"  off_set[i-2]="<<off_set[i-2];
             //if(do_mirror)
             //    transform_shape[i]-(data_axis_idx+1);
             //nd_point.push_back(data_axis_idx);
@@ -314,7 +317,7 @@ for(size_t p=0;p<trans_data_size;++p){
          }
          it =nd_point.begin();
          nd_point.insert(it, data_axis_idx);
-        // LOG(INFO)<<"nd_point "<< data_axis_idx;
+         //LOG(INFO)<<"nd_point = "<< data_axis_idx;
      }
     //LOG(INFO)<<"computed nd_points...";
      data_axis_idx=(p/pre_aixs_len);
@@ -334,12 +337,16 @@ for(size_t p=0;p<trans_data_size;++p){
             data_idx*=input_shape[n];
             data_idx+=nd_point[n];
           }
+
+          //LOG(INFO)<<"nd_point = "<<"["<<n<<"]"<< nd_point[n];
+
      }
+       //LOG(INFO)<<"data index in soure ="<<   data_idx;
 
     // size_t input_count=input_blob->count();
      const Dtype* input_data =input_blob->cpu_data();
     // bool data_in_pad_space =(data_idx>=0 && data_idx<input_count);
-    if(data_in_pad_space){
+    if(!data_in_pad_space){
        //LOG(INFO)<<"data at input "<< data_idx <<"  =" <<input_data[data_idx];
        transformed_data[p]=input_data[data_idx];
       // LOG(INFO)<<"data put to transformed... ";

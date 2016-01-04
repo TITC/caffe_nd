@@ -103,8 +103,8 @@ void Data_HDF5_provider<Dtype>::LoadHDF5FileData(const char* filename, int blob_
   CHECK_GE(this->source_data_label_pair_[blob_idx].data_->num_axes(), 1) << "Input must have at least 1 axis.";
   vector<int> d_shape =this->source_data_label_pair_[blob_idx].data_->shape();
 
-  // for (int i=0;i<d_shape.size();++i)
-  //   LOG(INFO)<<"loaded data shape : " <<d_shape[i];
+  for (int i=0;i<d_shape.size();++i)
+     LOG(INFO)<<"loaded data shape : " <<d_shape[i];
 
   if(d_shape.size()<=3){
     //there is no num and channel in data , so appending num and channel to the data
@@ -112,7 +112,7 @@ void Data_HDF5_provider<Dtype>::LoadHDF5FileData(const char* filename, int blob_
     d_shape.insert(d_shape.begin(),1);
     this->source_data_label_pair_[blob_idx].data_->Reshape(d_shape);
     this->source_data_label_pair_[blob_idx].label_->Reshape(d_shape);
-    LOG(INFO)<<"Reshapeing the source data blob : adding num 1 and channel 1 : ";
+    //LOG(INFO)<<"Reshapeing the source data blob : adding num 1 and channel 1 : ";
     //vector<int>::iterator it=
     //this->source_data_label_pair_[blob_idx].data_
   }
