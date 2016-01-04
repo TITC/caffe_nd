@@ -19,7 +19,7 @@ layer {
 	   }
 	   batch_size: 128
 	   patches_per_data_batch: 899999
-	   data_source_batch_size: 1
+	   data_source_batch_size: 3
 	   label_select_param{
 			balance: true
 			num_labels: 3
@@ -66,7 +66,7 @@ layer {
 	   }
 	   batch_size: 50
 	   patches_per_data_batch: 899999
-	   data_source_batch_size: 1
+	   data_source_batch_size: 3
 	   label_select_param{
 			   balance: true
 			   num_labels: 3

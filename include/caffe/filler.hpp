@@ -246,19 +246,36 @@ class BilinearFiller : public Filler<Dtype> {
   explicit BilinearFiller(const FillerParameter& param)
       : Filler<Dtype>(param) {}
   virtual void Fill(Blob<Dtype>* blob) {
-    CHECK_EQ(blob->num_axes(), 4) << "Blob must be 4 dim.";
-    CHECK_EQ(blob->width(), blob->height()) << "Filter must be square";
-    Dtype* data = blob->mutable_cpu_data();
-    int f = ceil(blob->width() / 2.);
-    float c = (2 * f - 1 - f % 2) / (2. * f);
-    for (int i = 0; i < blob->count(); ++i) {
-      float x = i % blob->width();
-      float y = (i / blob->width()) % blob->height();
-      data[i] = (1 - fabs(x / f - c)) * (1 - fabs(y / f - c));
+    //CHECK_EQ(blob->num_axes(), 4) << "Blob must be 4 dim.";
+    if(blob->num_axes()==4){
+      CHECK_EQ(blob->width(), blob->height()) << "Filter must be square";
+      Dtype* data = blob->mutable_cpu_data();
+      int f = ceil(blob->width() / 2.);
+      float c = (2 * f - 1 - f % 2) / (2. * f);
+      for (int i = 0; i < blob->count(); ++i) {
+        float x = i % blob->width();
+        float y = (i / blob->width()) % blob->height();
+        data[i] = (1 - fabs(x / f - c)) * (1 - fabs(y / f - c));
+      }
+    }else if(blob->num_axes()==5){
+      int h,w,d;
+      vector<int> shape =blob->shape();
+       h=shape[2]; w=shape[3];d=shape[4];
+       CHECK_EQ(d,1) << "Filter must be square";
+       Dtype* data = blob->mutable_cpu_data();
+       int f = ceil(w / 2.);
+       float c = (2 * f - 1 - f % 2) / (2. * f);
+       for (int i = 0; i < blob->count(); ++i) {
+         float x = i % w;
+         float y = (i / w) % h;
+         data[i] = (1 - fabs(x / f - c)) * (1 - fabs(y / f - c));
+       }
+
     }
-    CHECK_EQ(this->filler_param_.sparse(), -1)
-         << "Sparsity not supported by this Filler.";
-  }
+      CHECK_EQ(this->filler_param_.sparse(), -1)
+           << "Sparsity not supported by this Filler.";
+    }
+
 };
 
 /**
