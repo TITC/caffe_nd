@@ -548,6 +548,7 @@ layer {
     }
   }
 }
+
 layer {
   name: "relu3d"
   type: "ReLU"
@@ -785,57 +786,10 @@ layer {
 }
 
 
-
-layer {
-  name: "fc6"
-  type: "Convolution"
-  bottom: "pool4"
-  top: "fc6"
-  param {
-    lr_mult: 1
-  }
-  param {
-    lr_mult: 2
-  }
-  convolution_param {
-    num_output: 128
-	kernel_size: 3
-	kernel_size: 3
-	kernel_size: 1
-	pad:1
-	pad:1
-	pad:0
-    weight_filler {
-      type: "gaussian"
-      std: 0.005
-    }
-    bias_filler {
-      type: "constant"
-      value: 1
-    }
-  }
-}
-layer {
-  name: "relu6"
-  type: "ReLU"
-  bottom: "fc6"
-  top: "fc6"
-}
-layer{
-  name: "drop6"
-  type: "Dropout"
-  bottom: "fc6"
-  top: "fc6"
-  dropout_param {
-    dropout_ratio: 0.5
-  }
-}
-
-
 layer{
 name: "deconv3"
   type: "Deconvolution"
-  bottom: "fc6"
+  bottom: "pool4"
   top: "deconv3"
  param {
     lr_mult: 1
@@ -860,6 +814,217 @@ name: "deconv3"
   }
 }
 
+layer {
+  name: "conv5a"
+  type: "Convolution"
+  bottom: "pool4"
+  top: "conv5a"
+   param {
+    lr_mult: 1
+  }
+  param {
+    lr_mult: 2
+  }
+  convolution_param {
+    num_output: 512
+    kernel_size: 3
+	kernel_size: 3
+	kernel_size: 1
+	pad:1
+	pad:1
+	pad:0
+    weight_filler {
+      type: "gaussian"
+      std: 0.01
+    }
+    bias_filler {
+      type: "constant"
+      value: 1
+    }
+  }
+}
+
+
+
+
+
+layer {
+  name: "relu5a"
+  type: "ReLU"
+  bottom: "conv5a"
+  top: "conv5a"
+}
+
+layer {
+  name: "conv5b"
+  type: "Convolution"
+  bottom: "conv5a"
+  top: "conv5b"
+   param {
+    lr_mult: 1
+  }
+  param {
+    lr_mult: 2
+  }
+  convolution_param {
+    num_output: 512
+    kernel_size: 3
+	kernel_size: 3
+	kernel_size: 1
+	pad:1
+	pad:1
+	pad:0
+    weight_filler {
+      type: "gaussian"
+      std: 0.01
+    }
+    bias_filler {
+      type: "constant"
+      value: 1
+    }
+  }
+}
+layer {
+  name: "relu5b"
+  type: "ReLU"
+  bottom: "conv5b"
+  top: "conv5b"
+}
+
+layer {
+  name: "conv5c"
+  type: "Convolution"
+  bottom: "conv5b"
+  top: "conv5c"
+   param {
+    lr_mult: 1
+  }
+  param {
+    lr_mult: 2
+  }
+  convolution_param {
+    num_output: 512
+    kernel_size: 3
+	kernel_size: 3
+	kernel_size: 1
+	pad:1
+	pad:1
+	pad:0
+    weight_filler {
+      type: "gaussian"
+      std: 0.01
+    }
+    bias_filler {
+      type: "constant"
+      value: 1
+    }
+  }
+}
+layer {
+  name: "relu5c"
+  type: "ReLU"
+  bottom: "conv5c"
+  top: "conv5c"
+}
+
+
+layer {
+  name: "conv5d"
+  type: "Convolution"
+  bottom: "conv5c"
+  top: "conv5d"
+   param {
+    lr_mult: 1
+  }
+  param {
+    lr_mult: 2
+  }
+  convolution_param {
+    num_output: 512
+    kernel_size: 3
+	kernel_size: 3
+	kernel_size: 1
+	pad:1
+	pad:1
+	pad:0
+    weight_filler {
+      type: "gaussian"
+      std: 0.01
+    }
+    bias_filler {
+      type: "constant"
+      value: 1
+    }
+  }
+}
+layer {
+  name: "relu5d"
+  type: "ReLU"
+  bottom: "conv5d"
+  top: "conv5d"
+}
+
+
+layer{
+name: "conv5sum"
+type:  "Eltwise"
+bottom:"conv5a"
+bottom:"conv5d"
+top:"conv5_sum"
+eltwise_param{
+operation: SUM
+}
+}
+
+
+layer {
+  name: "pool5"
+  type: "Pooling"
+  bottom: "conv5_sum"
+  top: "pool5"
+  pooling_param {
+    pool: MAX
+    kernel_shape: 2
+	kernel_shape: 2
+	kernel_shape: 1
+    stride_shape: 2
+	stride_shape: 2
+	stride_shape: 1
+  }
+}
+
+layer{
+name: "deconv4"
+  type: "Deconvolution"
+  bottom: "pool5"
+  top: "deconv4"
+ param {
+    lr_mult: 1
+  }
+  param {
+    lr_mult: 2
+  }
+  convolution_param {
+    num_output: 128
+    kernel_size: 32
+	kernel_size: 32
+	kernel_size: 1
+	stride: 16
+	stride: 16
+	stride: 16
+	pad:8
+	pad:8
+	pad:0
+   weight_filler {
+      type: "bilinear"
+    }
+  }
+}
+
+
+
+
+
 
 layer{
 name: "deconv_sum"
@@ -867,6 +1032,7 @@ type:  "Eltwise"
 bottom:"deconv1"
 bottom:"deconv2"
 bottom:"deconv3"
+bottom:"deconv4"
 top:"upsample"
 eltwise_param{
 operation: SUM
@@ -1036,6 +1202,9 @@ layer {
   bottom: "fc9"
   bottom: "label"
   top: "loss"
+  loss_param{
+  ignore_label:3
+  }
 }
 
 layer{
@@ -1044,6 +1213,9 @@ layer{
      bottom: "fc9"
      bottom: "label" 
 	 top: "accuracy"
+	 accuracy_param{
+	 ignore_label:3
+	 }
 	 include {
     phase: TEST
    }

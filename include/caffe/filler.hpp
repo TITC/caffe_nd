@@ -258,10 +258,18 @@ class BilinearFiller : public Filler<Dtype> {
         data[i] = (1 - fabs(x / f - c)) * (1 - fabs(y / f - c));
       }
     }else if(blob->num_axes()==5){
-      int h,w,d;
+      int h,w;
+      h=w=0;
+      int height,width,depth;
       vector<int> shape =blob->shape();
-       h=shape[2]; w=shape[3];d=shape[4];
-       CHECK_EQ(d,1) << "Filter must be square";
+       height=shape[2]; width=shape[3];depth=shape[4];
+       CHECK(height==1||width==1||depth==1) << "one of axis must be 1";
+       if(width==1&&height==depth&&height>1)
+         w=h=height;
+       else if(height==1&&width>1&&width==depth)
+         w=h=width;
+       else if(depth==1&&width==height&&height>1)
+          w=h=width;
        Dtype* data = blob->mutable_cpu_data();
        int f = ceil(w / 2.);
        float c = (2 * f - 1 - f % 2) / (2. * f);
