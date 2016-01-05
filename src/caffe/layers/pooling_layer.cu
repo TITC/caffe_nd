@@ -465,6 +465,16 @@ int pdstart =
     }
   }
 
+
+  template <typename Dtype>
+  __global__ void AvePoolBackward_ND(const int nthreads, const Dtype* const top_diff,
+      const int num, const int channels, const int height,
+      const int width, const int* bottom_shape,
+      const int* kernel, const int* stride, const int* pad,
+      Dtype* const bottom_diff) {
+ }
+   
+
 template <typename Dtype>
 __global__ void MaxPoolBackward(const int nthreads, const Dtype* const top_diff,
     const int* const mask, const Dtype* const top_mask, const int num,

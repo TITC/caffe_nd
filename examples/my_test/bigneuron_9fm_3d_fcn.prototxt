@@ -1023,6 +1023,54 @@ name: "deconv4"
 
 
 
+layer {
+  name: "deconv1_norm"
+  type: "Normalize"
+  bottom: "deconv1"
+  top: "deconv1"
+  norm_param {
+    scale_filler {
+      type: "constant"
+      value: 10
+    }
+    across_spatial: false
+    channel_shared: false
+    fix_scale: false
+  }
+}
+
+layer {
+  name: "deconv1_norm"
+  type: "Normalize"
+  bottom: "deconv2"
+  top: "deconv2"
+  norm_param {
+    scale_filler {
+      type: "constant"
+      value: 10
+    }
+    across_spatial: false
+    channel_shared: false
+    fix_scale: false
+  }
+}
+
+layer {
+  name: "deconv1_norm"
+  type: "Normalize"
+  bottom: "deconv3"
+  top: "deconv3"
+  norm_param {
+    scale_filler {
+      type: "constant"
+      value: 10
+    }
+    across_spatial: false
+    channel_shared: false
+    fix_scale: false
+  }
+}
+
 
 
 

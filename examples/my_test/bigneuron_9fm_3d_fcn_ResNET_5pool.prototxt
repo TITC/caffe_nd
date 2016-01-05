@@ -17,7 +17,7 @@ layer {
 		dim: 224
 		dim: 1
 	   }
-	   batch_size: 1
+	   batch_size: 2
 	   patches_per_data_batch: 899999
 	   data_source_batch_size: 1
 	   label_select_param{
@@ -83,7 +83,7 @@ layer {
   data_provider_param{
     # Specify the data source.
     backend: HDF5
-    batch_size: 1
+    batch_size: 2
     hdf5_file_shuffle: true
     data_source: "hdf5_test_file_list.txt"
   }
@@ -160,7 +160,7 @@ layer {
     lr_mult: 2
   }
   convolution_param {
-    num_output: 256
+    num_output: 128
     kernel_size: 1
     weight_filler {
       type: "gaussian"
@@ -187,7 +187,7 @@ layer {
     lr_mult: 2
   }
   convolution_param {
-    num_output: 64
+    num_output: 32
     kernel_size: 1
     weight_filler {
       type: "gaussian"
@@ -218,7 +218,7 @@ layer {
     lr_mult: 2
   }
   convolution_param {
-    num_output: 64
+    num_output: 32
     kernel_size: 3
 	kernel_size: 3
 	kernel_size: 1
@@ -254,7 +254,7 @@ layer {
     lr_mult: 2
   }
   convolution_param {
-    num_output: 256
+    num_output: 128
 	kernel_size: 1
     weight_filler {
       type: "gaussian"
@@ -301,7 +301,7 @@ layer {
     lr_mult: 2
   }
   convolution_param {
-    num_output: 64
+    num_output: 32
     kernel_size: 1
     weight_filler {
       type: "gaussian"
@@ -332,7 +332,7 @@ layer {
     lr_mult: 2
   }
   convolution_param {
-    num_output: 64
+    num_output: 32
     kernel_size: 3
 	kernel_size: 3
 	kernel_size: 1
@@ -368,7 +368,7 @@ layer {
     lr_mult: 2
   }
   convolution_param {
-    num_output: 256
+    num_output: 128
 	kernel_size: 1
     weight_filler {
       type: "gaussian"
@@ -411,7 +411,7 @@ layer {
     lr_mult: 2
   }
   convolution_param {
-    num_output: 64
+    num_output: 32
     kernel_size: 1
     weight_filler {
       type: "gaussian"
@@ -442,7 +442,7 @@ layer {
     lr_mult: 2
   }
   convolution_param {
-    num_output: 64
+    num_output: 32
     kernel_size: 3
 	kernel_size: 3
 	kernel_size: 1
@@ -478,7 +478,7 @@ layer {
     lr_mult: 2
   }
   convolution_param {
-    num_output: 256
+    num_output: 128
 	kernel_size: 1
     weight_filler {
       type: "gaussian"
@@ -525,7 +525,7 @@ layer {
     lr_mult: 2
   }
   convolution_param {
-    num_output: 512
+    num_output: 256
     kernel_size: 3
 	kernel_size: 3
 	kernel_size: 1
@@ -559,7 +559,7 @@ layer {
     lr_mult: 2
   }
   convolution_param {
-    num_output: 128
+    num_output: 64
     kernel_size: 1
     weight_filler {
       type: "gaussian"
@@ -590,7 +590,7 @@ layer {
     lr_mult: 2
   }
   convolution_param {
-    num_output: 128
+    num_output: 64
     kernel_size: 3
 	kernel_size: 3
 	kernel_size: 1
@@ -626,7 +626,7 @@ layer {
     lr_mult: 2
   }
   convolution_param {
-    num_output: 512
+    num_output: 256
 	kernel_size: 1
     weight_filler {
       type: "gaussian"
@@ -671,7 +671,7 @@ layer {
     lr_mult: 2
   }
   convolution_param {
-    num_output: 128
+    num_output: 64
     kernel_size: 1
     weight_filler {
       type: "gaussian"
@@ -702,7 +702,7 @@ layer {
     lr_mult: 2
   }
   convolution_param {
-    num_output: 128
+    num_output: 64
     kernel_size: 3
 	kernel_size: 3
 	kernel_size: 1
@@ -738,7 +738,7 @@ layer {
     lr_mult: 2
   }
   convolution_param {
-    num_output: 512
+    num_output: 256
 	kernel_size: 1
     weight_filler {
       type: "gaussian"
@@ -782,7 +782,7 @@ layer {
     lr_mult: 2
   }
   convolution_param {
-    num_output: 128
+    num_output: 64
     kernel_size: 1
     weight_filler {
       type: "gaussian"
@@ -813,7 +813,7 @@ layer {
     lr_mult: 2
   }
   convolution_param {
-    num_output: 128
+    num_output: 64
     kernel_size: 3
 	kernel_size: 3
 	kernel_size: 1
@@ -849,7 +849,7 @@ layer {
     lr_mult: 2
   }
   convolution_param {
-    num_output: 512
+    num_output: 256
 	kernel_size: 1
     weight_filler {
       type: "gaussian"
@@ -894,7 +894,7 @@ layer {
     lr_mult: 2
   }
   convolution_param {
-    num_output: 1024
+    num_output: 512
     kernel_size: 3
 	kernel_size: 3
 	kernel_size: 1
@@ -927,7 +927,7 @@ layer {
     lr_mult: 2
   }
   convolution_param {
-    num_output: 256
+    num_output: 128
     kernel_size: 1
     weight_filler {
       type: "gaussian"
@@ -958,7 +958,7 @@ layer {
     lr_mult: 2
   }
   convolution_param {
-    num_output: 256
+    num_output: 128
     kernel_size: 3
 	kernel_size: 3
 	kernel_size: 1
@@ -994,7 +994,7 @@ layer {
     lr_mult: 2
   }
   convolution_param {
-    num_output: 1024
+    num_output: 512
 	kernel_size: 1
     weight_filler {
       type: "gaussian"
@@ -1039,7 +1039,7 @@ layer {
     lr_mult: 2
   }
   convolution_param {
-    num_output: 256
+    num_output: 128
     kernel_size: 1
     weight_filler {
       type: "gaussian"
@@ -1070,7 +1070,7 @@ layer {
     lr_mult: 2
   }
   convolution_param {
-    num_output: 256
+    num_output: 128
     kernel_size: 3
 	kernel_size: 3
 	kernel_size: 1
@@ -1106,7 +1106,7 @@ layer {
     lr_mult: 2
   }
   convolution_param {
-    num_output: 1024
+    num_output: 512
 	kernel_size: 1
     weight_filler {
       type: "gaussian"
@@ -1150,7 +1150,7 @@ layer {
     lr_mult: 2
   }
   convolution_param {
-    num_output: 256
+    num_output: 128
     kernel_size: 1
     weight_filler {
       type: "gaussian"
@@ -1181,7 +1181,7 @@ layer {
     lr_mult: 2
   }
   convolution_param {
-    num_output: 256
+    num_output: 128
     kernel_size: 3
 	kernel_size: 3
 	kernel_size: 1
@@ -1217,7 +1217,7 @@ layer {
     lr_mult: 2
   }
   convolution_param {
-    num_output: 1024
+    num_output: 512
 	kernel_size: 1
     weight_filler {
       type: "gaussian"
@@ -1247,14 +1247,735 @@ layer {
   bottom: "conv4x_3_sum"
   top: "conv4x_3_sum"
   }
+  # --------------block layers_4_4_-------------------------
+  layer {
+  name: "conv4x_4_1"
+  type: "Convolution"
+  bottom: "conv4x_3_sum"
+  top: "conv4x_4_1"
+  param {
+    lr_mult: 1
+  }
+  param {
+    lr_mult: 2
+  }
+  convolution_param {
+    num_output: 128
+    kernel_size: 1
+    weight_filler {
+      type: "gaussian"
+	  std: 0.01
+    }
+    bias_filler {
+      type: "constant"
+      value: 0
+    }
+  }
+}
+
+layer {
+  name: "relu4x_4_1"
+  type: "ReLU"
+  bottom: "conv4x_4_1"
+  top: "conv4x_4_1"
+}
+layer {
+  name: "conv4x_4_2"
+  type: "Convolution"
+  bottom: "conv4x_4_1"
+  top: "conv4x_4_2"
+  param {
+    lr_mult: 1
+  }
+  param {
+    lr_mult: 2
+  }
+  convolution_param {
+    num_output: 128
+    kernel_size: 3
+	kernel_size: 3
+	kernel_size: 1
+	pad:1
+	pad:1
+	pad:0
+    weight_filler {
+      type: "gaussian"
+	  std: 0.01
+    }
+    bias_filler {
+      type: "constant"
+      value: 0
+    }
+  }
+}
+
+layer {
+  name: "relu4x_4_2"
+  type: "ReLU"
+  bottom: "conv4x_4_2"
+  top: "conv4x_4_2"
+}
+layer {
+  name: "conv4x_4_3"
+  type: "Convolution"
+  bottom: "conv4x_4_2"
+  top: "conv4x_4_3"
+  param {
+    lr_mult: 1
+  }
+  param {
+    lr_mult: 2
+  }
+  convolution_param {
+    num_output: 512
+	kernel_size: 1
+    weight_filler {
+      type: "gaussian"
+	  std: 0.01
+    }
+    bias_filler {
+      type: "constant"
+      value: 0
+    }
+  }
+}
+
+layer{
+name: "conv4x_4_sum"
+type:  "Eltwise"
+bottom:"conv4x_3_sum"
+bottom:"conv4x_4_3"
+top:"conv4x_4_sum"
+eltwise_param{
+operation: SUM
+}
+}
+
+layer {
+  name: "relu4x_4_sum"
+  type: "ReLU"
+  bottom: "conv4x_4_sum"
+  top: "conv4x_4_sum"
+  }
   
+ #----------block layers 4x_5-------------------------------
+ layer {
+  name: "conv4x_5_1"
+  type: "Convolution"
+  bottom: "conv4x_4_sum"
+  top: "conv4x_5_1"
+  param {
+    lr_mult: 1
+  }
+  param {
+    lr_mult: 2
+  }
+  convolution_param {
+    num_output: 128
+    kernel_size: 1
+    weight_filler {
+      type: "gaussian"
+	  std: 0.01
+    }
+    bias_filler {
+      type: "constant"
+      value: 0
+    }
+  }
+}
+
+layer {
+  name: "relu4x_5_1"
+  type: "ReLU"
+  bottom: "conv4x_5_1"
+  top: "conv4x_5_1"
+}
+layer {
+  name: "conv4x_5_2"
+  type: "Convolution"
+  bottom: "conv4x_5_1"
+  top: "conv4x_5_2"
+  param {
+    lr_mult: 1
+  }
+  param {
+    lr_mult: 2
+  }
+  convolution_param {
+    num_output: 128
+    kernel_size: 3
+	kernel_size: 3
+	kernel_size: 1
+	pad:1
+	pad:1
+	pad:0
+    weight_filler {
+      type: "gaussian"
+	  std: 0.01
+    }
+    bias_filler {
+      type: "constant"
+      value: 0
+    }
+  }
+}
+
+layer {
+  name: "relu4x_5_2"
+  type: "ReLU"
+  bottom: "conv4x_5_2"
+  top: "conv4x_5_2"
+}
+layer {
+  name: "conv4x_5_3"
+  type: "Convolution"
+  bottom: "conv4x_5_2"
+  top: "conv4x_5_3"
+  param {
+    lr_mult: 1
+  }
+  param {
+    lr_mult: 2
+  }
+  convolution_param {
+    num_output: 512
+	kernel_size: 1
+    weight_filler {
+      type: "gaussian"
+	  std: 0.01
+    }
+    bias_filler {
+      type: "constant"
+      value: 0
+    }
+  }
+}
+
+layer{
+name: "conv4x_5_sum"
+type:  "Eltwise"
+bottom:"conv4x_4_sum"
+bottom:"conv4x_5_3"
+top:"conv4x_5_sum"
+eltwise_param{
+operation: SUM
+}
+}
+
+layer {
+  name: "relu4x_5_sum"
+  type: "ReLU"
+  bottom: "conv4x_5_sum"
+  top: "conv4x_5_sum"
+  }
+  
+ #--------------------------block_layers  4x_6---------------- 
+ layer {
+  name: "conv4x_6_1"
+  type: "Convolution"
+  bottom: "conv4x_5_sum"
+  top: "conv4x_6_1"
+  param {
+    lr_mult: 1
+  }
+  param {
+    lr_mult: 2
+  }
+  convolution_param {
+    num_output: 128
+    kernel_size: 1
+    weight_filler {
+      type: "gaussian"
+	  std: 0.01
+    }
+    bias_filler {
+      type: "constant"
+      value: 0
+    }
+  }
+}
+
+layer {
+  name: "relu4x_6_1"
+  type: "ReLU"
+  bottom: "conv4x_6_1"
+  top: "conv4x_6_1"
+}
+layer {
+  name: "conv4x_6_2"
+  type: "Convolution"
+  bottom: "conv4x_6_1"
+  top: "conv4x_6_2"
+  param {
+    lr_mult: 1
+  }
+  param {
+    lr_mult: 2
+  }
+  convolution_param {
+    num_output: 128
+    kernel_size: 3
+	kernel_size: 3
+	kernel_size: 1
+	pad:1
+	pad:1
+	pad:0
+    weight_filler {
+      type: "gaussian"
+	  std: 0.01
+    }
+    bias_filler {
+      type: "constant"
+      value: 0
+    }
+  }
+}
+
+layer {
+  name: "relu4x_6_2"
+  type: "ReLU"
+  bottom: "conv4x_6_2"
+  top: "conv4x_6_2"
+}
+layer {
+  name: "conv4x_6_3"
+  type: "Convolution"
+  bottom: "conv4x_6_2"
+  top: "conv4x_6_3"
+  param {
+    lr_mult: 1
+  }
+  param {
+    lr_mult: 2
+  }
+  convolution_param {
+    num_output: 512
+	kernel_size: 1
+    weight_filler {
+      type: "gaussian"
+	  std: 0.01
+    }
+    bias_filler {
+      type: "constant"
+      value: 0
+    }
+  }
+}
+
+layer{
+name: "conv4x_6_sum"
+type:  "Eltwise"
+bottom:"conv4x_5_sum"
+bottom:"conv4x_6_3"
+top:"conv4x_6_sum"
+eltwise_param{
+operation: SUM
+}
+}
+
+layer {
+  name: "relu4x_6_sum"
+  type: "ReLU"
+  bottom: "conv4x_6_sum"
+  top: "conv4x_6_sum"
+  }
+  
+  
+ #----------------------conv5x----------------------------------------------------------------------------------------------------
+ #---------------conv5_top------------------
+ layer {
+  name: "conv5x_top"
+  type: "Convolution"
+  bottom: "conv4x_6_sum"
+  top: "conv5x_top"
+  param {
+    lr_mult: 1
+  }
+  param {
+    lr_mult: 2
+  }
+  convolution_param {
+    num_output: 1024
+    kernel_size: 3
+	kernel_size: 3
+	kernel_size: 1
+	stride :2
+	stride :2
+	stride :1
+	pad :1
+	pad :1
+	pad :0
+    weight_filler {
+      type: "gaussian"
+	  std: 0.01
+    }
+    bias_filler {
+      type: "constant"
+      value: 0
+    }
+  }
+ }
+  
+  
+  
+ #---------------conv5x_1------------------------------
+layer {
+  name: "conv5x_1_1"
+  type: "Convolution"
+  bottom: "conv5x_top"
+  top: "conv5x_1_1"
+  param {
+    lr_mult: 1
+  }
+  param {
+    lr_mult: 2
+  }
+  convolution_param {
+    num_output: 256
+    kernel_size: 1
+    weight_filler {
+      type: "gaussian"
+	  std: 0.01
+    }
+    bias_filler {
+      type: "constant"
+      value: 0
+    }
+  }
+}
+
+layer {
+  name: "relu5x_1_1"
+  type: "ReLU"
+  bottom: "conv5x_1_1"
+  top: "conv5x_1_1"
+}
+layer {
+  name: "conv5x_1_2"
+  type: "Convolution"
+  bottom: "conv5x_1_1"
+  top: "conv5x_1_2"
+  param {
+    lr_mult: 1
+  }
+  param {
+    lr_mult: 2
+  }
+  convolution_param {
+    num_output: 256
+    kernel_size: 3
+	kernel_size: 3
+	kernel_size: 1
+	pad:1
+	pad:1
+	pad:0
+    weight_filler {
+      type: "gaussian"
+	  std: 0.01
+    }
+    bias_filler {
+      type: "constant"
+      value: 0
+    }
+  }
+}
+
+layer {
+  name: "relu5x_1_2"
+  type: "ReLU"
+  bottom: "conv5x_1_2"
+  top: "conv5x_1_2"
+}
+layer {
+  name: "conv5x_1_3"
+  type: "Convolution"
+  bottom: "conv5x_1_2"
+  top: "conv5x_1_3"
+  param {
+    lr_mult: 1
+  }
+  param {
+    lr_mult: 2
+  }
+  convolution_param {
+    num_output: 1024
+	kernel_size: 1
+    weight_filler {
+      type: "gaussian"
+	  std: 0.01
+    }
+    bias_filler {
+      type: "constant"
+      value: 0
+    }
+  }
+}
+
+layer{
+name: "conv5x_1_sum"
+type:  "Eltwise"
+bottom:"conv5x_top"
+bottom:"conv5x_1_3"
+top:"conv5x_1_sum"
+eltwise_param{
+operation: SUM
+}
+}
+
+layer {
+  name: "relu5x_1_sum"
+  type: "ReLU"
+  bottom: "conv5x_1_sum"
+  top: "conv5x_1_sum"
+  }
+ #----------------------conv5x_2------------------------------
+ layer {
+  name: "conv5x_2_1"
+  type: "Convolution"
+  bottom: "conv5x_1_sum"
+  top: "conv5x_2_1"
+  param {
+    lr_mult: 1
+  }
+  param {
+    lr_mult: 2
+  }
+  convolution_param {
+    num_output: 256
+    kernel_size: 1
+    weight_filler {
+      type: "gaussian"
+	  std: 0.01
+    }
+    bias_filler {
+      type: "constant"
+      value: 0
+    }
+  }
+}
+
+layer {
+  name: "relu5x_2_1"
+  type: "ReLU"
+  bottom: "conv5x_2_1"
+  top: "conv5x_2_1"
+}
+layer {
+  name: "conv5x_2_2"
+  type: "Convolution"
+  bottom: "conv5x_2_1"
+  top: "conv5x_2_2"
+  param {
+    lr_mult: 1
+  }
+  param {
+    lr_mult: 2
+  }
+  convolution_param {
+    num_output: 256
+    kernel_size: 3
+	kernel_size: 3
+	kernel_size: 1
+	pad:1
+	pad:1
+	pad:0
+    weight_filler {
+      type: "gaussian"
+	  std: 0.01
+    }
+    bias_filler {
+      type: "constant"
+      value: 0
+    }
+  }
+}
+
+layer {
+  name: "relu5x_2_2"
+  type: "ReLU"
+  bottom: "conv5x_2_2"
+  top: "conv5x_2_2"
+}
+layer {
+  name: "conv5x_2_3"
+  type: "Convolution"
+  bottom: "conv5x_2_2"
+  top: "conv5x_2_3"
+  param {
+    lr_mult: 1
+  }
+  param {
+    lr_mult: 2
+  }
+  convolution_param {
+    num_output: 1024
+	kernel_size: 1
+    weight_filler {
+      type: "gaussian"
+	  std: 0.01
+    }
+    bias_filler {
+      type: "constant"
+      value: 0
+    }
+  }
+}
+
+layer{
+name: "conv5x_2_sum"
+type:  "Eltwise"
+bottom:"conv5x_1_sum"
+bottom:"conv5x_2_3"
+top:"conv5x_2_sum"
+eltwise_param{
+operation: SUM
+}
+}
+
+layer {
+  name: "relu5x_2_sum"
+  type: "ReLU"
+  bottom: "conv5x_2_sum"
+  top: "conv5x_2_sum"
+  }
+ 
+ 
  #---------------------------deconv--------------------------- 
 
 layer{
-name: "deconv1"
-  type: "Deconvolution"
+name: "deconv1_1x"
+  type: "Convolution"
   bottom: "conv2x_3_sum"
-  top: "deconv1"
+  top: "deconv1_1x"
+ param {
+    lr_mult: 1
+  }
+  param {
+    lr_mult: 2
+  }
+  convolution_param {
+    num_output: 128
+    kernel_size: 1
+	kernel_size: 1
+	kernel_size: 1
+	stride: 1
+	stride: 1
+	stride: 1
+	pad:0
+	pad:0
+	pad:0
+   #weight_filler {
+    #  type: "bilinear"
+    #}
+	weight_filler {
+      type: "gaussian"
+	  std: 0.01
+    }
+    bias_filler {
+      type: "constant"
+      value: 0
+    }
+  }
+}
+
+layer{
+name: "deconv2_1x"
+  type: "Convolution"
+  bottom: "conv3x_3_sum"
+  top: "deconv2_1x"
+ param {
+    lr_mult: 1
+  }
+  param {
+    lr_mult: 2
+  }
+  convolution_param {
+    num_output: 128
+    kernel_size: 1
+	kernel_size: 1
+	kernel_size: 1
+	stride: 1
+	stride: 1
+	stride: 1
+   weight_filler {
+      type: "gaussian"
+	  std: 0.01
+    }
+    bias_filler {
+      type: "constant"
+      value: 0
+    }
+  }
+}
+
+layer{
+name: "deconv3_1x"
+  type: "Convolution"
+  bottom: "conv4x_6_sum"
+  top: "deconv3_1x"
+ param {
+    lr_mult: 1
+  }
+  param {
+    lr_mult: 2
+  }
+  convolution_param {
+    num_output: 128
+    kernel_size: 1
+	kernel_size: 1
+	kernel_size: 1
+	stride: 1
+	stride: 1
+	stride: 1
+   weight_filler {
+      type: "gaussian"
+	  std: 0.01
+    }
+    bias_filler {
+      type: "constant"
+      value: 0
+    }
+  }
+}
+
+layer{
+name: "deconv4_1x"
+  type: "Convolution"
+  bottom: "conv5x_2_sum"
+  top: "deconv4_1x"
+ param {
+    lr_mult: 1
+  }
+  param {
+    lr_mult: 2
+  }
+  convolution_param {
+    num_output: 128
+    kernel_size: 1
+	kernel_size: 1
+	kernel_size: 1
+	stride: 1
+	stride: 1
+	stride: 1
+   weight_filler {
+      type: "gaussian"
+	  std: 0.01
+    }
+    bias_filler {
+      type: "constant"
+      value: 0
+    }
+  }
+}
+
+
+
+
+layer{
+name: "deconv4_2x"
+  type: "Deconvolution"
+  bottom: "deconv4_1x"
+  top: "deconv4_2x"
  param {
     lr_mult: 0
   }
@@ -1262,7 +1983,132 @@ name: "deconv1"
     lr_mult: 0
   }
   convolution_param {
-    num_output: 256
+    num_output: 128
+    kernel_size: 4
+	kernel_size: 4
+	kernel_size: 1
+	stride: 2
+	stride: 2
+	stride: 1
+	pad:1
+	pad:1
+	pad:0
+   weight_filler {
+      type: "bilinear"
+    }
+  }
+}
+
+
+layer{
+name: "deconv_sum_43"
+type:  "Eltwise"
+bottom:"deconv4_2x"
+bottom:"deconv3_1x"
+top:"upsample43"
+eltwise_param{
+operation: SUM
+}
+}
+
+
+
+layer{
+name: "upsample43_2x"
+  type: "Deconvolution"
+  bottom: "upsample43"
+  top: "upsample43_2x"
+ param {
+    lr_mult: 0
+  }
+  param {
+    lr_mult: 0
+  }
+  convolution_param {
+    num_output: 128
+    kernel_size: 4
+	kernel_size: 4
+	kernel_size: 1
+	stride: 2
+	stride: 2
+	stride: 1
+	pad:1
+	pad:1
+	pad:0
+	group: 2
+   weight_filler {
+      type: "bilinear"
+    }
+  }
+}
+
+
+layer{
+name: "deconv_sum_432"
+type:  "Eltwise"
+bottom:"upsample43_2x"
+bottom:"deconv2_1x"
+top:"upsample432"
+eltwise_param{
+operation: SUM
+}
+}
+
+
+layer{
+name: "upsample432_2x"
+  type: "Deconvolution"
+  bottom: "upsample432"
+  top: "upsample432_2x"
+ param {
+    lr_mult: 0
+  }
+  param {
+    lr_mult: 0
+  }
+  convolution_param {
+    num_output: 128
+    kernel_size: 4
+	kernel_size: 4
+	kernel_size: 1
+	stride: 2
+	stride: 2
+	stride: 1
+	pad:1
+	pad:1
+	pad:0
+	group: 2
+   weight_filler {
+      type: "bilinear"
+    }
+  }
+}
+
+layer{
+name: "deconv_sum_4321"
+type:  "Eltwise"
+bottom:"upsample432_2x"
+bottom:"deconv1_1x"
+top:"upsample4321"
+eltwise_param{
+operation: SUM
+}
+}
+
+
+layer{
+name: "upsample4321_2x"
+  type: "Deconvolution"
+  bottom: "upsample4321"
+  top: "upsample4321_2x"
+ param {
+    lr_mult: 0
+  }
+  param {
+    lr_mult: 0
+  }
+  convolution_param {
+    num_output: 128
     kernel_size: 8
 	kernel_size: 8
 	kernel_size: 1
@@ -1279,81 +2125,39 @@ name: "deconv1"
   }
 }
 
-layer{
-name: "deconv2"
-  type: "Deconvolution"
-  bottom: "conv3x_3_sum"
-  top: "deconv2"
- param {
-    lr_mult: 0
-  }
-  param {
-    lr_mult: 0
-  }
-  convolution_param {
-    num_output: 256
-    kernel_size: 16
-	kernel_size: 16
-	kernel_size: 1
-	stride: 8
-	stride: 8
-	stride: 1
-	pad:4
-	pad:4
-	pad:0
-	group: 2
-   weight_filler {
-      type: "bilinear"
-    }
-  }
-}
 
-layer{
-name: "deconv3"
-  type: "Deconvolution"
-  bottom: "conv4x_3_sum"
-  top: "deconv3"
- param {
-    lr_mult: 0
-  }
-  param {
-    lr_mult: 0
-  }
-  convolution_param {
-    num_output: 256
-    kernel_size: 32
-	kernel_size: 32
-	kernel_size: 1
-	stride: 16
-	stride: 16
-	stride: 1
-	pad:8
-	pad:8
-	pad:0
-	group: 2
-   weight_filler {
-      type: "bilinear"
-    }
-  }
-}
+# layer{
+# name: "deconv_sum"
+# type:  "Eltwise"
+# bottom:"deconv4_2x"
+# bottom:"deconv3"
+# bottom:"deconv3"
+# bottom:"deconv4"
+# top:"upsample"
+# eltwise_param{
+# operation: SUM
+# }
+# }
 
 
-layer{
-name: "deconv_sum"
-type:  "Eltwise"
-bottom:"deconv1"
-bottom:"deconv2"
-bottom:"deconv3"
-top:"upsample"
-eltwise_param{
-operation: SUM
-}
-}
+
+# layer{
+# name: "deconv_sum"
+# type:  "Eltwise"
+# bottom:"deconv1"
+# bottom:"deconv2"
+# bottom:"deconv3"
+# bottom:"deconv4"
+# top:"upsample"
+# eltwise_param{
+# operation: SUM
+# }
+# }
 
 layer {
   name: "fc8"
   type: "Convolution"
-  bottom: "upsample"
+  bottom: "upsample4321_2x"
   top: "fc8"
   param {
     lr_mult: 1
@@ -1362,7 +2166,7 @@ layer {
     lr_mult: 2
   }
   convolution_param {
-    num_output: 256
+    num_output: 128
 	kernel_size: 3
 	kernel_size: 3
 	kernel_size: 1
@@ -1399,7 +2203,7 @@ layer {
     lr_mult: 2
   }
   convolution_param {
-    num_output: 256
+    num_output: 128
 	kernel_size: 3
 	kernel_size: 3
 	kernel_size: 1
@@ -1436,7 +2240,7 @@ layer {
     lr_mult: 2
   }
   convolution_param {
-    num_output: 256
+    num_output: 128
 	kernel_size: 3
 	kernel_size: 3
 	kernel_size: 1
@@ -1454,25 +2258,20 @@ layer {
   }
 }
 
-layer {
-  name: "relu7-3"
-  type: "ReLU"
-  bottom: "fc8-3"
-  top: "fc8-3"
-}
-layer{
-  name: "drop7"
-  type: "Dropout"
-  bottom: "fc8-3"
-  top: "fc8-3"
-  dropout_param {
-    dropout_ratio: 0.5
-  }
-}
+
+# layer{
+  # name: "drop7"
+  # type: "Dropout"
+  # bottom: "fc8-3"
+  # top: "fc8-3"
+  # dropout_param {
+    # dropout_ratio: 0.5
+  # }
+# }
 layer{
 name: "deconv_sum"
 type:  "Eltwise"
-bottom:"upsample"
+bottom:"upsample4321_2x"
 bottom:"fc8-3"
 top:"fc8-4"
 eltwise_param{
@@ -1480,6 +2279,12 @@ operation: SUM
 }
 }
 
+layer {
+   name: "relu8-3"
+   type: "ReLU"
+   bottom: "fc8-4"
+   top: "fc8-4"
+}
 
 
 

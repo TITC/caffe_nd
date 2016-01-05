@@ -1,3 +1,15 @@
+name: "BIG_N_TEST"
+input: "data"
+input_shape{ 
+dim:1
+dim: 1
+dim:  640
+dim:  640
+dim:  29
+}
+
+
+
 layer {
   name: "data"
   type: "PatchData"
@@ -559,7 +571,7 @@ layer {
     lr_mult: 2
   }
   convolution_param {
-    num_output: 128
+    num_output: 512
     kernel_size: 1
     weight_filler {
       type: "gaussian"
@@ -590,7 +602,7 @@ layer {
     lr_mult: 2
   }
   convolution_param {
-    num_output: 128
+    num_output: 512
     kernel_size: 3
 	kernel_size: 3
 	kernel_size: 1
@@ -671,7 +683,7 @@ layer {
     lr_mult: 2
   }
   convolution_param {
-    num_output: 128
+    num_output: 512
     kernel_size: 1
     weight_filler {
       type: "gaussian"
@@ -702,7 +714,7 @@ layer {
     lr_mult: 2
   }
   convolution_param {
-    num_output: 128
+    num_output: 512
     kernel_size: 3
 	kernel_size: 3
 	kernel_size: 1
@@ -782,7 +794,7 @@ layer {
     lr_mult: 2
   }
   convolution_param {
-    num_output: 128
+    num_output: 512
     kernel_size: 1
     weight_filler {
       type: "gaussian"
@@ -813,7 +825,7 @@ layer {
     lr_mult: 2
   }
   convolution_param {
-    num_output: 128
+    num_output: 512
     kernel_size: 3
 	kernel_size: 3
 	kernel_size: 1
@@ -927,7 +939,7 @@ layer {
     lr_mult: 2
   }
   convolution_param {
-    num_output: 256
+    num_output: 1024
     kernel_size: 1
     weight_filler {
       type: "gaussian"
@@ -958,7 +970,7 @@ layer {
     lr_mult: 2
   }
   convolution_param {
-    num_output: 256
+    num_output: 1024
     kernel_size: 3
 	kernel_size: 3
 	kernel_size: 1
@@ -1039,7 +1051,7 @@ layer {
     lr_mult: 2
   }
   convolution_param {
-    num_output: 256
+    num_output: 1024
     kernel_size: 1
     weight_filler {
       type: "gaussian"
@@ -1070,7 +1082,7 @@ layer {
     lr_mult: 2
   }
   convolution_param {
-    num_output: 256
+    num_output: 1024
     kernel_size: 3
 	kernel_size: 3
 	kernel_size: 1
@@ -1150,7 +1162,7 @@ layer {
     lr_mult: 2
   }
   convolution_param {
-    num_output: 256
+    num_output: 1024
     kernel_size: 1
     weight_filler {
       type: "gaussian"
@@ -1181,7 +1193,7 @@ layer {
     lr_mult: 2
   }
   convolution_param {
-    num_output: 256
+    num_output: 1024
     kernel_size: 3
 	kernel_size: 3
 	kernel_size: 1
@@ -1255,12 +1267,6 @@ name: "deconv1"
   type: "Deconvolution"
   bottom: "conv2x_3_sum"
   top: "deconv1"
- param {
-    lr_mult: 0
-  }
-  param {
-    lr_mult: 0
-  }
   convolution_param {
     num_output: 256
     kernel_size: 8
@@ -1277,6 +1283,7 @@ name: "deconv1"
       type: "bilinear"
     }
   }
+  phase: PREDICT
 }
 
 layer{
@@ -1284,12 +1291,6 @@ name: "deconv2"
   type: "Deconvolution"
   bottom: "conv3x_3_sum"
   top: "deconv2"
- param {
-    lr_mult: 0
-  }
-  param {
-    lr_mult: 0
-  }
   convolution_param {
     num_output: 256
     kernel_size: 16
@@ -1306,6 +1307,7 @@ name: "deconv2"
       type: "bilinear"
     }
   }
+  phase: PREDICT
 }
 
 layer{
@@ -1313,12 +1315,6 @@ name: "deconv3"
   type: "Deconvolution"
   bottom: "conv4x_3_sum"
   top: "deconv3"
- param {
-    lr_mult: 0
-  }
-  param {
-    lr_mult: 0
-  }
   convolution_param {
     num_output: 256
     kernel_size: 32
@@ -1335,6 +1331,7 @@ name: "deconv3"
       type: "bilinear"
     }
   }
+  phase: PREDICT
 }
 
 
@@ -1369,14 +1366,7 @@ layer {
 	pad: 1
 	pad: 1
 	pad: 0
-    weight_filler {
-      type: "gaussian"
-      std: 0.005
-    }
-    bias_filler {
-      type: "constant"
-      value: 1
-    }
+	phase: PREDICT
   }
 }
 
@@ -1392,12 +1382,6 @@ layer {
   type: "Convolution"
   bottom: "fc8"
   top: "fc8-2"
-  param {
-    lr_mult: 1
-  }
-  param {
-    lr_mult: 2
-  }
   convolution_param {
     num_output: 256
 	kernel_size: 3
@@ -1406,15 +1390,8 @@ layer {
 	pad: 1
 	pad: 1
 	pad: 0
-    weight_filler {
-      type: "gaussian"
-      std: 0.005
-    }
-    bias_filler {
-      type: "constant"
-      value: 1
-    }
   }
+  phase: PREDICT
 }
 
 layer {
@@ -1429,12 +1406,6 @@ layer {
   type: "Convolution"
   bottom: "fc8-2"
   top: "fc8-3"
-  param {
-    lr_mult: 1
-  }
-  param {
-    lr_mult: 2
-  }
   convolution_param {
     num_output: 256
 	kernel_size: 3
@@ -1443,15 +1414,8 @@ layer {
 	pad: 1
 	pad: 1
 	pad: 0
-    weight_filler {
-      type: "gaussian"
-      std: 0.005
-    }
-    bias_filler {
-      type: "constant"
-      value: 1
-    }
   }
+  phase: PREDICT
 }
 
 layer {
@@ -1460,15 +1424,8 @@ layer {
   bottom: "fc8-3"
   top: "fc8-3"
 }
-layer{
-  name: "drop7"
-  type: "Dropout"
-  bottom: "fc8-3"
-  top: "fc8-3"
-  dropout_param {
-    dropout_ratio: 0.5
-  }
-}
+
+
 layer{
 name: "deconv_sum"
 type:  "Eltwise"
@@ -1497,37 +1454,16 @@ layer {
   convolution_param {
     num_output: 2
 	kernel_size: 1
-    weight_filler {
-      type: "gaussian"
-      std: 0.005
-    }
-    bias_filler {
-      type: "constant"
-      value: 1
-    }
-  }
-}
-layer {
-  name: "loss"
-  type: "SoftmaxWithLoss"
-  bottom: "fc9"
-  bottom: "label"
-  top: "loss"
-  loss_param{
-  ignore_label:3
   }
 }
 
-layer{
-     name: "accuracy"
-     type: "Accuracy"
-     bottom: "fc9"
-     bottom: "label" 
-	 top: "accuracy"
-	 accuracy_param{
-	 ignore_label:3
-	 }
-	 include {
-    phase: TEST
-   }
+
+#Deconvolution
+#
+
+layer {
+  name: "output"
+  type: "Softmax"
+  bottom: "fc8-4"
+  top: "output"
 }
