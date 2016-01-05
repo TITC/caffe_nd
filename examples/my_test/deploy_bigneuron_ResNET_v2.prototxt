@@ -114,12 +114,6 @@ layer {
   type: "Convolution"
   bottom: "conv2x_1_2"
   top: "conv2x_1_3"
-  param {
-    lr_mult: 1
-  }
-  param {
-    lr_mult: 2
-  }
   phase:PREDICT
   convolution_param {
     num_output: 256
@@ -133,6 +127,7 @@ type:  "Eltwise"
 bottom:"conv2x_top"
 bottom:"conv2x_1_3"
 top:"conv2x_1_sum"
+ phase:PREDICT
 eltwise_param{
 operation: SUM
 }
@@ -748,6 +743,7 @@ layer {
 phase:PREDICT
   convolution_param {
     num_output: 1024
+	kernel_size: 1
   }
 }
 

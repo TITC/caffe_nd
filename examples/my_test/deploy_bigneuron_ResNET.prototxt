@@ -1,4 +1,4 @@
-name: "BIG_N_TEST"
+name: "BIG_N_RES_TEST"
 input: "data"
 input_shape{ 
 dim:1
@@ -8,99 +8,6 @@ dim:  640
 dim:  29
 }
 
-
-
-layer {
-  name: "data"
-  type: "PatchData"
-  top: "data"
-  top: "label"
-  include {
-    phase: TRAIN
-  }
-  patch_sampler_param{
-	   data_patch_shape{
-		dim: 224
-		dim: 224
-		dim: 8
-	   }
-	   label_patch_shape{
-		dim: 224
-		dim: 224
-		dim: 1
-	   }
-	   batch_size: 1
-	   patches_per_data_batch: 899999
-	   data_source_batch_size: 1
-	   label_select_param{
-			balance: true
-			num_labels: 3
-			num_top_label_balance: 2
-			reorder_label: false
-			class_prob_mapping_file: 'label_class_selection.prototxt'
-	   }
-
- }
-  transform_nd_param{
-    mirror: false
-    padding: true
-    pad_method: ZERO
-  }
-  data_provider_param{
-    # Specify the data source.
-    backend: HDF5
-    batch_size: 1
-    hdf5_file_shuffle: true
-    data_source: "hdf5_train_file_list.txt"
-  }
-
-}
-
-
-layer {
-  name: "data"
-  type: "PatchData"
-  top: "data"
-  top: "label"
-  include {
-    phase: TEST
-  }
-  patch_sampler_param{
-	   data_patch_shape{
-		dim: 224
-		dim: 224
-		dim: 8
-	   }
-	   label_patch_shape{
-		dim: 224
-		dim: 224
-		dim: 1
-	   }
-	   batch_size: 1
-	   patches_per_data_batch: 899999
-	   data_source_batch_size: 1
-	   label_select_param{
-			   balance: true
-			   num_labels: 3
-			   num_top_label_balance: 2
-			   reorder_label: false
-			   class_prob_mapping_file: 'label_class_selection_valid.prototxt'
-		}
- }
-  transform_nd_param{
-    mirror: false
-    padding: true
-    pad_method: ZERO
-  }
-  data_provider_param{
-    # Specify the data source.
-    backend: HDF5
-    batch_size: 1
-    hdf5_file_shuffle: true
-    data_source: "hdf5_test_file_list.txt"
-  }
-
-}
 layer {
   name: "conv1"
   type: "Convolution"
@@ -1155,24 +1062,11 @@ layer {
   type: "Convolution"
   bottom: "conv4x_2_sum"
   top: "conv4x_3_1"
-  param {
-    lr_mult: 1
-  }
-  param {
-    lr_mult: 2
-  }
   convolution_param {
     num_output: 1024
     kernel_size: 1
-    weight_filler {
-      type: "gaussian"
-	  std: 0.01
-    }
-    bias_filler {
-      type: "constant"
-      value: 0
-    }
   }
+  phase: PREDICT
 }
 
 layer {
@@ -1186,12 +1080,6 @@ layer {
   type: "Convolution"
   bottom: "conv4x_3_1"
   top: "conv4x_3_2"
-  param {
-    lr_mult: 1
-  }
-  param {
-    lr_mult: 2
-  }
   convolution_param {
     num_output: 1024
     kernel_size: 3
@@ -1200,15 +1088,8 @@ layer {
 	pad:1
 	pad:1
 	pad:0
-    weight_filler {
-      type: "gaussian"
-	  std: 0.01
-    }
-    bias_filler {
-      type: "constant"
-      value: 0
-    }
   }
+  phase: PREDICT
 }
 
 layer {
@@ -1222,24 +1103,11 @@ layer {
   type: "Convolution"
   bottom: "conv4x_3_2"
   top: "conv4x_3_3"
-  param {
-    lr_mult: 1
-  }
-  param {
-    lr_mult: 2
-  }
   convolution_param {
     num_output: 1024
 	kernel_size: 1
-    weight_filler {
-      type: "gaussian"
-	  std: 0.01
-    }
-    bias_filler {
-      type: "constant"
-      value: 0
-    }
   }
+  phase: PREDICT
 }
 
 layer{
@@ -1352,12 +1220,7 @@ layer {
   type: "Convolution"
   bottom: "upsample"
   top: "fc8"
-  param {
-    lr_mult: 1
-  }
-  param {
-    lr_mult: 2
-  }
+	phase: PREDICT
   convolution_param {
     num_output: 256
 	kernel_size: 3
@@ -1366,7 +1229,7 @@ layer {
 	pad: 1
 	pad: 1
 	pad: 0
-	phase: PREDICT
+
   }
 }
 
