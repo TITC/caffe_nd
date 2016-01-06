@@ -96,6 +96,13 @@ void EltwiseLayer<Dtype>::Forward_cpu(
   default:
     LOG(FATAL) << "Unknown elementwise operation.";
   }
+
+  for (int i = 0; i < bottom.size(); ++i) {
+    if(this->layer_param_.phase()==PREDICT){
+      bottom[i]->data()->free();
+    }
+  }
+
 }
 
 template <typename Dtype>

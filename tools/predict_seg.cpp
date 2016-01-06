@@ -322,6 +322,7 @@ void Segmentor::SetMean(const string& mean_file) {
 // }
 
 int main(int argc, char** argv) {
+  //LOG(INFO)<<"size of long ="<<sizeof(int);
   if (argc != 8) {
     LOG(INFO)<<"argc ="<<argc;
         std::cerr << "Usage: " << argv[0]

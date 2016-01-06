@@ -9,7 +9,7 @@
 
 #include "caffe/layers/loss_layer.hpp"
 #include "caffe/layers/softmax_layer.hpp"
-
+#include "caffe/sample_selector.hpp"
 namespace caffe {
 
 /**
@@ -52,7 +52,7 @@ class SoftmaxWithLossLayer : public LossLayer<Dtype> {
     *    present; otherwise the loss is simply summed over spatial locations.
     */
   explicit SoftmaxWithLossLayer(const LayerParameter& param)
-      : LossLayer<Dtype>(param) {}
+      : LossLayer<Dtype>(param){}
   virtual void LayerSetUp(const vector<Blob<Dtype>*>& bottom,
       const vector<Blob<Dtype>*>& top);
   virtual void Reshape(const vector<Blob<Dtype>*>& bottom,
@@ -123,6 +123,8 @@ class SoftmaxWithLossLayer : public LossLayer<Dtype> {
   LossParameter_NormalizationMode normalization_;
 
   int softmax_axis_, outer_num_, inner_num_;
+  bool has_sample_selector_;
+  shared_ptr<SampleSelector<Dtype> > sample_selector_;
 };
 
 }  // namespace caffe

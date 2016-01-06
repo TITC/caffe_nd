@@ -33,6 +33,11 @@ void SoftmaxWithLossLayer<Dtype>::LayerSetUp(
   } else {
     normalization_ = this->layer_param_.loss_param().normalization();
   }
+   has_sample_selector_  =this->layer_param_.has_label_select_param();
+   if(has_sample_selector_ )
+      {
+         sample_selector_.reset(new SampleSelector<Dtype>(this->layer_param_));
+      }
 }
 
 template <typename Dtype>
@@ -102,9 +107,10 @@ void SoftmaxWithLossLayer<Dtype>::Forward_cpu(
         continue;
       }
       DCHECK_GE(label_value, 0);
-      CHECK_LT(label_value, prob_.shape(softmax_axis_));
+      DCHECK_LT(label_value, prob_.shape(softmax_axis_));
       loss -= log(std::max(prob_data[i * dim + label_value * inner_num_ + j],
                            Dtype(FLT_MIN)));
+    //  LOG(INFO)<<"lable = "<< label_value<<  "predict  = "<<prob_data[i * dim + label_value * inner_num_ + j];
       ++count;
     }
   }
@@ -136,7 +142,11 @@ void SoftmaxWithLossLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
             bottom_diff[i * dim + c * inner_num_ + j] = 0;
           }
         } else {
-          bottom_diff[i * dim + label_value * inner_num_ + j] -= 1;
+          if(has_sample_selector_){
+             bool accp=sample_selector_->AcceptGivenLabel(label_value);
+             bottom_diff[i * dim + label_value * inner_num_ + j] -= 1||accp;}
+          else
+              bottom_diff[i * dim + label_value * inner_num_ + j] -= 1;
           ++count;
         }
       }

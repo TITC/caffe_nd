@@ -19,16 +19,17 @@ layer {
 	   }
 	   batch_size: 2
 	   patches_per_data_batch: 899999
-	   data_source_batch_size: 1
-	   label_select_param{
-			balance: true
-			num_labels: 3
-			num_top_label_balance: 2
-			reorder_label: false
-			class_prob_mapping_file: 'label_class_selection.prototxt'
-	   }
+	   #data_source_batch_size: 1
 
  }
+ 
+label_select_param{
+	balance: true
+	num_labels: 3
+	num_top_label_balance: 2
+	reorder_label: false
+	class_prob_mapping_file: 'label_class_selection.prototxt'
+}
   transform_nd_param{
     mirror: false
     padding: true
@@ -66,15 +67,16 @@ layer {
 	   }
 	   batch_size: 1
 	   patches_per_data_batch: 899999
-	   data_source_batch_size: 1
-	   label_select_param{
+	   #data_source_batch_size: 1
+ }
+ 
+ label_select_param{
 			   balance: true
 			   num_labels: 3
 			   num_top_label_balance: 2
 			   reorder_label: false
 			   class_prob_mapping_file: 'label_class_selection_valid.prototxt'
 		}
- }
   transform_nd_param{
     mirror: false
     padding: true
@@ -240,8 +242,11 @@ layer {
   name: "relu2x_1_2"
   type: "ReLU"
   bottom: "conv2x_1_2"
+  
+  
   top: "conv2x_1_2"
 }
+
 layer {
   name: "conv2x_1_3"
   type: "Convolution"
@@ -2321,6 +2326,13 @@ layer {
   loss_param{
   ignore_label:3
   }
+label_select_param{
+	balance: true
+	num_labels: 3
+	num_top_label_balance: 2
+	reorder_label: false
+	class_prob_mapping_file: 'label_class_selection.prototxt'
+	}
 }
 
 layer{

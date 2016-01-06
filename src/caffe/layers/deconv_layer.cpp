@@ -22,6 +22,8 @@ void DeconvolutionLayer<Dtype>::compute_output_shape() {
 template <typename Dtype>
 void DeconvolutionLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
       const vector<Blob<Dtype>*>& top) {
+        if(this->layer_param_.phase()==PREDICT)
+        {LOG(INFO)<<"start forward "<< this->layer_param_.name();}
   const Dtype* weight = this->blobs_[0]->cpu_data();
   for (int i = 0; i < bottom.size(); ++i) {
     const Dtype* bottom_data = bottom[i]->cpu_data();
@@ -34,6 +36,10 @@ void DeconvolutionLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
         this->forward_cpu_bias(top_data + n * this->top_dim_, bias);
       }
     }
+  }
+  if(this->layer_param_.phase()==PREDICT){
+    bottom[0]->data()->free();
+    bottom[0]->diff()->free();
   }
 }
 

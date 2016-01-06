@@ -14,6 +14,7 @@
 #include "caffe/util/math_functions.hpp"
 #include "caffe/data_transformerND.hpp"
 #include "caffe/data_provider.hpp"
+#include "caffe/sample_selector.hpp"
 namespace caffe {
 template <typename Dtype> class PatchSampler;
  template <typename Dtype>
@@ -26,7 +27,6 @@ template <typename Dtype> class PatchSampler;
 
 //  DISABLE_COPY_AND_ASSIGN(QueuePair_Batch);
   };
-
 
   // A single body is created per source
   template <typename Dtype>
@@ -77,33 +77,7 @@ template <typename Dtype> class PatchSampler;
   };
 
 
-  template <typename Dtype>
-  class SampleSelector {
-   public:
-    explicit SampleSelector(const LayerParameter& param);
-    void ProcessLabelSelectParam();
-    void ReadLabelProbMappingFile(const string& file_name);
-    void ComputeLabelSkipRate();
-    bool AcceptGivenLabel(const int label);
-    int  GetConvertedLabel(const int label);
-  protected:
-    void InitRand();
-    unsigned int PrefetchRand();
-    const LayerParameter param_;
-    std::map <int, float> label_prob_map_;
-    std::map <int, unsigned int> label_skip_rate_map_;
-    std::map <int, int> label_mapping_map_;
-    unsigned  int num_labels_;
-    unsigned  int num_labels_with_prob_ ;
-    bool      balancing_label_;
-    unsigned int num_top_label_balance_;
-    bool  rest_of_label_mapping_;
-    bool  map2order_label_;
-    bool  ignore_rest_of_label_;
-    int   rest_of_label_mapping_label_;
-    float rest_of_label_prob_;
-    shared_ptr<Caffe::RNG> rng_;
-  };
+
 /**
  * @brief warp patches from a data_reader_general to queues available to PatchSamplerLayer layers.
  * A single reading thread is created per source, even if multiple solvers
