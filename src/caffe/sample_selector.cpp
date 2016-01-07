@@ -14,6 +14,10 @@ SampleSelector<Dtype>::SampleSelector(const LayerParameter& param)
 {
    InitRand();
    ProcessLabelSelectParam();
+   for(int i=0;i<label_prob_weight_blob_.count();++i){
+     float l_prob =label_prob_weight_blob_.cpu_data()[i];
+     LOG(INFO)<<"lable class "<<"[" <<i<<"]  weight =" << l_prob;
+   }
 }
 
 
@@ -36,7 +40,7 @@ void SampleSelector<Dtype>::ProcessLabelSelectParam(){
 
   vector<int> shape(1,num_labels_);
   label_prob_weight_blob_.Reshape(shape);
-  
+
   if(balancing_label_)
      {
     CHECK_EQ(balancing_label_,has_prob_file)<<"sample  class blanceing requires a class probability file provided ... ";

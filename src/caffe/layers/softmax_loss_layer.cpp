@@ -144,7 +144,13 @@ void SoftmaxWithLossLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
         } else {
           if(has_sample_selector_){
              bool accp=sample_selector_->AcceptGivenLabel(label_value);
-             bottom_diff[i * dim + label_value * inner_num_ + j] -= 1||accp;}
+             if(!accp){
+               for (int c = 0; c < bottom[0]->shape(softmax_axis_); ++c) {
+                 bottom_diff[i * dim + c * inner_num_ + j] = 0;
+               }
+             }else{
+               bottom_diff[i * dim + label_value * inner_num_ + j] -= 1;}
+           }
           else
               bottom_diff[i * dim + label_value * inner_num_ + j] -= 1;
           ++count;
