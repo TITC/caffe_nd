@@ -14,7 +14,7 @@ net: "bigneuron_9fm_3d_fcn_ResNET_5pool_v2.prototxt"
 test_interval: 25
 test_iter: 50
 # The base learning rate, momentum and the weight decay of the network.
-base_lr: 1e-8
+base_lr: 1e-3
 power: 0.9
 momentum: 0.9
 weight_decay: 0.0005
@@ -28,8 +28,8 @@ max_iter: 50000
 iter_size: 8
 # snapshot intermediate results
 snapshot: 5000
-#snapshot_format: HDF5
-snapshot_format: BINARYPROTO
+snapshot_format: HDF5
+#snapshot_format: BINARYPROTO
 snapshot_prefix: "patch_test_fcn_ResNET_5pool_v2_finetune"
 # solver mode: CPU or GPU
 solver_mode: CPU

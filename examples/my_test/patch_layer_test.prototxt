@@ -6,6 +6,13 @@ layer {
   include {
     phase: TRAIN
   }
+  label_select_param{
+			balance: true
+			num_labels: 3
+			num_top_label_balance: 2
+			reorder_label: false
+			class_prob_mapping_file: 'label_class_selection.prototxt'
+	   }
   patch_sampler_param{
 	   data_patch_shape{
 		dim: 75
@@ -20,13 +27,7 @@ layer {
 	   batch_size: 128
 	   patches_per_data_batch: 899999
 	   data_source_batch_size: 3
-	   label_select_param{
-			balance: true
-			num_labels: 3
-			num_top_label_balance: 2
-			reorder_label: false
-			class_prob_mapping_file: 'label_class_selection.prototxt'
-	   }
+	   
 
  }
   transform_nd_param{
@@ -53,6 +54,14 @@ layer {
   include {
     phase: TEST
   }
+  
+  	   label_select_param{
+			   balance: true
+			   num_labels: 3
+			   num_top_label_balance: 2
+			   reorder_label: false
+			   class_prob_mapping_file: 'label_class_selection_valid.prototxt'
+		}
   patch_sampler_param{
 	   data_patch_shape{
 		dim: 75
@@ -67,13 +76,7 @@ layer {
 	   batch_size: 50
 	   patches_per_data_batch: 899999
 	   data_source_batch_size: 3
-	   label_select_param{
-			   balance: true
-			   num_labels: 3
-			   num_top_label_balance: 2
-			   reorder_label: false
-			   class_prob_mapping_file: 'label_class_selection_valid.prototxt'
-		}
+
  }
   transform_nd_param{
     mirror: false

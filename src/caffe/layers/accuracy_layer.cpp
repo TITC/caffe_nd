@@ -60,7 +60,7 @@ void AccuracyLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
   }
   int count = 0;
   int total_label_1 =0;
-  int total_label_0 =0;
+ int total_label_0 =0;
   for (int i = 0; i < outer_num_; ++i) {
 
     for (int j = 0; j < inner_num_; ++j) {

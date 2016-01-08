@@ -183,6 +183,7 @@ void PatchSampler<Dtype>::ReadOnePatch(QueuePair_Batch<Dtype>* qb ){
                                                                       patch_data_label->label_.get(),
                                                                       label_offset,
                                                                       patch_label_shape_);
+  count_m_mutex_.unlock();
  //LOG(INFO)<<"end transform";
   const vector<int>& source_data_shape =source_data_label.data_->shape();
   const vector<int>& source_label_shape =source_data_label.label_->shape();
@@ -194,7 +195,7 @@ void PatchSampler<Dtype>::ReadOnePatch(QueuePair_Batch<Dtype>* qb ){
   if(patch_data_label->label_.get()->count()==1)
   {CHECK_EQ(new_label,pt_label_value);}
 
-  count_m_mutex_.unlock();
+
 
   int d_dims  =source_data_shape.size();
   int l_dims  =source_label_shape.size();
