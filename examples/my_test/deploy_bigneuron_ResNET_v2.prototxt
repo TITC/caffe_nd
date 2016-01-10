@@ -1148,41 +1148,30 @@ layer {
  
  #---------------------------deconv--------------------------- 
 
-# layer{
-# name: "deconv1_1x"
-  # type: "Convolution"
-  # bottom: "conv2x_3_sum"
-  # top: "deconv1_1x"
- # param {
-    # lr_mult: 1
-  # }
-  # param {
-    # lr_mult: 2
-  # }
-  # convolution_param {
-    # num_output: 2
-    # kernel_size: 1
-	# kernel_size: 1
-	# kernel_size: 1
-	# stride: 1
-	# stride: 1
-	# stride: 1
-	# pad:0
-	# pad:0
-	# pad:0
-   # #weight_filler {
-    # #  type: "bilinear"
-    # #}
-	# weight_filler {
-      # type: "gaussian"
-	  # std: 0.01
-    # }
-    # bias_filler {
-      # type: "constant"
-      # value: 0
-    # }
-  # }
-# }
+layer{
+ name: "deconv1_1x"
+  type: "Convolution"
+   bottom: "conv2x_3_sum"
+   top: "deconv1_1x"
+  param {
+     lr_mult: 20
+  }
+  param {
+     lr_mult: 10
+  }
+  convolution_param {
+     num_output: 2
+     kernel_size: 1
+	 kernel_size: 1
+	 kernel_size: 1
+	 stride: 1
+	 stride: 1
+	 stride: 1
+	 pad:0
+	  pad:0
+	 pad:0
+   }
+ }
 # layer{
   # name: "drop1_1x"
   # type: "Dropout"
@@ -1426,22 +1415,22 @@ name: "upsample432_2x"
   }
 }
 
-# layer{
-# name: "deconv_sum_4321"
-# type:  "Eltwise"
-# bottom:"upsample432_2x"
-# bottom:"deconv1_1x"
-# top:"upsample4321"
-# eltwise_param{
-# operation: SUM
-# }
-# }
+layer{
+name: "deconv_sum_4321"
+type:  "Eltwise"
+bottom:"upsample432_2x"
+bottom:"deconv1_1x"
+top:"upsample4321"
+eltwise_param{
+operation: SUM
+}
+}
 
 
 layer{
 name: "upsample4321_2x"
   type: "Deconvolution"
-  bottom: "upsample432_2x"
+  bottom: "upsample4321"
   top: "upsample4321_2x"
  param {
     lr_mult: 10
