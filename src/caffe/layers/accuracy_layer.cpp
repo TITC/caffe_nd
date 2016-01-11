@@ -59,7 +59,10 @@ void AccuracyLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
     caffe_set(top[1]->count(), Dtype(0), top[1]->mutable_cpu_data());
   }
   int count = 0;
+  int total_label_1 =0;
+ int total_label_0 =0;
   for (int i = 0; i < outer_num_; ++i) {
+
     for (int j = 0; j < inner_num_; ++j) {
       const int label_value =
           static_cast<int>(bottom_label[i * inner_num_ + j]);
@@ -83,14 +86,22 @@ void AccuracyLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
         if (bottom_data_vector[k].second == label_value) {
 
           ++accuracy;
-          // if(label_value==1)
-          //   {LOG(INFO)<<"predict  = "<<bottom_data_vector[k].second;}
+          CHECK_LT(label_value,2);
+          if(label_value==1)
+            {total_label_1++;}
+          else if(label_value==0){
+            total_label_0++;
+          }else{
+          LOG(INFO)<<"unkonwn label = "<<label_value;
+          }
           if (top.size() > 1) ++top[1]->mutable_cpu_data()[label_value];
           break;
         }
       }
       ++count;
+
     }
+      LOG(INFO)<<"label 1  total  :  "<<total_label_1<<"  label 0 total  : "<<total_label_0<< "   count = "<<count;
   }
 
   // LOG(INFO) << "Accuracy: " << accuracy;

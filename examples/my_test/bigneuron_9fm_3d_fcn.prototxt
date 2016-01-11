@@ -20,15 +20,15 @@ layer {
 	   batch_size: 1
 	   patches_per_data_batch: 899999
 	   data_source_batch_size: 1
-	   label_select_param{
+
+ }
+ 	   label_select_param{
 			balance: true
 			num_labels: 3
 			num_top_label_balance: 2
 			reorder_label: false
 			class_prob_mapping_file: 'label_class_selection.prototxt'
 	   }
-
- }
   transform_nd_param{
     mirror: false
     padding: true
@@ -67,13 +67,6 @@ layer {
 	   batch_size: 1
 	   patches_per_data_batch: 899999
 	   data_source_batch_size: 1
-	   label_select_param{
-			   balance: true
-			   num_labels: 3
-			   num_top_label_balance: 2
-			   reorder_label: false
-			   class_prob_mapping_file: 'label_class_selection_valid.prototxt'
-		}
  }
   transform_nd_param{
     mirror: false
@@ -87,6 +80,14 @@ layer {
     hdf5_file_shuffle: true
     data_source: "hdf5_train_file_list.txt"
   }
+  
+  label_select_param{
+			   balance: true
+			   num_labels: 3
+			   num_top_label_balance: 2
+			   reorder_label: false
+			   class_prob_mapping_file: 'label_class_selection_valid.prototxt'
+ }
 
 }
 layer {

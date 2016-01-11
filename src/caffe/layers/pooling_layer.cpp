@@ -325,6 +325,8 @@ void PoolingLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
 template <typename Dtype>
 void PoolingLayer<Dtype>::Forward_cpu_ND(const vector<Blob<Dtype>*>& bottom,
 const vector<Blob<Dtype>*>& top){
+  Forward_gpu(bottom, top);
+  return;
   const Dtype* bottom_data = bottom[0]->cpu_data();
   Dtype* top_data = top[0]->mutable_cpu_data();
   const int top_count = top[0]->count();

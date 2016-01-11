@@ -4,11 +4,11 @@
   rest_of_label_prob : 0.85;
   label_prob_mapping_info{
          label: 0
-         prob: 0.89
+         prob: 0.85
  }
   label_prob_mapping_info{
          label: 1
-         prob: 0.11
+         prob: 0.15
  }
  label_prob_mapping_info{
 	label:3

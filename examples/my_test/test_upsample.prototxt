@@ -1,10 +1,7 @@
 # reduce the learning rate after 8 epochs (4000 iters) by a factor of 10
 
 # The train/test net protocol buffer definition
-#net: "patch_layer_test.prototxt"
-#net: "bigneuron_9fm_3d.prototxt"
-#net: "bigneuron_9fm_3d_fcn.prototxt"
-#net: "bigneuron_9fm_3d_fcn_ResNET.prototxt"
+
 
 net: "bigneuron_9fm_3d_fcn_ResNET_5pool_v2.prototxt"
 # test_iter specifies how many forward passes the test should carry out.

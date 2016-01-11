@@ -258,26 +258,43 @@ class BilinearFiller : public Filler<Dtype> {
         data[i] = (1 - fabs(x / f - c)) * (1 - fabs(y / f - c));
       }
     }else if(blob->num_axes()==5){
-      int h,w;
-      h=w=0;
+      int h,w,d;
+      h=w=d=0;
       int height,width,depth;
       vector<int> shape =blob->shape();
        height=shape[2]; width=shape[3];depth=shape[4];
-       CHECK(height==1||width==1||depth==1) << "one of axis must be 1";
-       if(width==1&&height==depth&&height>1)
-         w=h=height;
-       else if(height==1&&width>1&&width==depth)
-         w=h=width;
-       else if(depth==1&&width==height&&height>1)
-          w=h=width;
-       Dtype* data = blob->mutable_cpu_data();
-       int f = ceil(w / 2.);
-       float c = (2 * f - 1 - f % 2) / (2. * f);
-       for (int i = 0; i < blob->count(); ++i) {
-         float x = i % w;
-         float y = (i / w) % h;
-         data[i] = (1 - fabs(x / f - c)) * (1 - fabs(y / f - c));
-       }
+      // CHECK(height==1||width==1||depth==1) << "one of axis must be 1";
+      if(width==1&&height==depth&&height==1){
+           if(width==1&&height==depth&&height>1)
+             w=h=height;
+           else if(height==1&&width>1&&width==depth)
+             w=h=width;
+           else if(depth==1&&width==height&&height>1)
+              w=h=width;
+           Dtype* data = blob->mutable_cpu_data();
+           int f = ceil(w / 2.);
+           float c = (2 * f - 1 - f % 2) / (2. * f);
+           for (int i = 0; i < blob->count(); ++i) {
+             float x = i % w;
+             float y = (i / w) % h;
+             data[i] = (1 - fabs(x / f - c)) * (1 - fabs(y / f - c));
+
+           }
+      }else{
+         CHECK_EQ(height, depth) << "dimension must vbe the same";
+         CHECK_EQ(height, width) << "dimension must vbe the same";
+         d=depth;w=width;h=height;
+         Dtype* data = blob->mutable_cpu_data();
+         int f = ceil(w / 2.);
+         float c = (2 * f - 1 - f % 2) / (2. * f);
+         for (int i = 0; i < blob->count(); ++i) {
+           float z = i%d;
+           float x = (i /d)% w;
+           float y = (i /d/w) % h;
+           data[i] = (1 - fabs(x / f - c)) * (1 - fabs(y / f - c))*(1 - fabs(z / f - c));
+         }
+
+      }
 
     }
       CHECK_EQ(this->filler_param_.sparse(), -1)

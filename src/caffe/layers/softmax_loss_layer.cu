@@ -59,9 +59,11 @@ void SoftmaxWithLossLayer<Dtype>::Forward_gpu(
   const Dtype* label = bottom[1]->gpu_data();
   const int dim = prob_.count() / outer_num_;
   const int nthreads = outer_num_ * inner_num_;
-  const float* lossWeights ;
-  if(has_sample_selector_)
-    lossWeights = sample_selector_->Get_Label_prob_gpu_data();
+  // const float* lossWeights =NULL;
+  // if(has_sample_selector_)
+  //   lossWeights = sample_selector_->Get_Label_prob_gpu_data();
+
+  
   // Since this memory is not used for anything until it is overwritten
   // on the backward pass, we use it here to avoid having to allocate new GPU
   // memory to accumulate intermediate results in the kernel.
@@ -71,17 +73,17 @@ void SoftmaxWithLossLayer<Dtype>::Forward_gpu(
   Dtype* counts = prob_.mutable_gpu_diff();
 
 
- if(has_sample_selector_){
-    // NOLINT_NEXT_LINE(whitespace/operators)
-  SoftmaxWeightedLossForwardGPU<Dtype><<<CAFFE_GET_BLOCKS(nthreads),
-      CAFFE_CUDA_NUM_THREADS>>>(nthreads, prob_data, label, loss_data,lossWeights,
-      outer_num_, dim, inner_num_, has_ignore_label_, ignore_label_, counts);
-    }else{
+ // if(has_sample_selector_){
+ //    // NOLINT_NEXT_LINE(whitespace/operators)
+ //  SoftmaxWeightedLossForwardGPU<Dtype><<<CAFFE_GET_BLOCKS(nthreads),
+ //      CAFFE_CUDA_NUM_THREADS>>>(nthreads, prob_data, label, loss_data,lossWeights,
+ //      outer_num_, dim, inner_num_, has_ignore_label_, ignore_label_, counts);
+ //    }else{
       // NOLINT_NEXT_LINE(whitespace/operators)
       SoftmaxLossForwardGPU<Dtype><<<CAFFE_GET_BLOCKS(nthreads),
           CAFFE_CUDA_NUM_THREADS>>>(nthreads, prob_data, label, loss_data,
           outer_num_, dim, inner_num_, has_ignore_label_, ignore_label_, counts);
-    }
+    ///}
   Dtype loss;
   caffe_gpu_asum(nthreads, loss_data, &loss);
   Dtype valid_count = -1;
@@ -116,9 +118,9 @@ __global__ void SoftmaxWeightedLossBackwardGPU(const int nthreads, const Dtype* 
       }
       counts[index] = 0;
     } else {
-      bottom_diff[n * dim + label_value * spatial_dim + s] -= 1;
-      bottom_diff[n * dim + label_value * spatial_dim + s]*=lossWeights[label_value];
-      counts[index] = 1;
+       bottom_diff[n * dim + label_value * spatial_dim + s]-=1;
+       bottom_diff[n * dim + label_value * spatial_dim + s]*=lossWeights[label_value];
+       counts[index] = 1;
     }
   }
 }
@@ -158,6 +160,10 @@ void SoftmaxWithLossLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
                << " Layer cannot backpropagate to label inputs.";
   }
   if (propagate_down[0]) {
+         if(has_sample_selector_){
+           Backward_cpu(top, propagate_down,bottom);
+           return;
+         }
     Dtype* bottom_diff = bottom[0]->mutable_gpu_diff();
     const Dtype* prob_data = prob_.gpu_data();
     const Dtype* top_data = top[0]->gpu_data();
@@ -171,6 +177,7 @@ void SoftmaxWithLossLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
     // Since this memory is never used for anything else,
     // we use to to avoid allocating new GPU memory.
     Dtype* counts = prob_.mutable_gpu_diff();
+
 
     if(has_sample_selector_){
       // NOLINT_NEXT_LINE(whitespace/operators)

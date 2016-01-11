@@ -1,107 +1,18 @@
-layer {
-  name: "data"
-  type: "PatchData"
-  top: "data"
-  top: "label"
-  include {
-    phase: TRAIN
-  }
-  patch_sampler_param{
-	   data_patch_shape{
-		dim: 224
-		dim: 224
-		dim: 8
-	   }
-	   label_patch_shape{
-		dim: 1
-		dim: 1
-		dim: 1
-	   }
-	   batch_size: 1
-	   patches_per_data_batch: 899999
-	   #data_source_batch_size: 1
-
- }
- 
-label_select_param{
-	balance: true
-	num_labels: 3
-	num_top_label_balance: 2
-	reorder_label: false
-	class_prob_mapping_file: 'label_class_selection.prototxt'
-}
-  transform_nd_param{
-    mirror: false
-    padding: true
-    pad_method: ZERO
-  }
-  data_provider_param{
-    # Specify the data source.
-    backend: HDF5
-    batch_size: 1
-    hdf5_file_shuffle: true
-    data_source: "hdf5_train_file_list.txt"
-  }
-
+name: "BIG_N_TEST"
+input: "data"
+input_shape{ 
+dim:1
+dim: 1
+dim:  640
+dim:  640
+dim:  41
 }
 
-
-layer {
-  name: "data"
-  type: "PatchData"
-  top: "data"
-  top: "label"
-  include {
-    phase: TEST
-  }
-  patch_sampler_param{
-	   data_patch_shape{
-		dim: 224
-		dim: 224
-		dim: 8
-	   }
-	   label_patch_shape{
-		dim: 1
-		dim: 1
-		dim: 1
-	   }
-	   batch_size: 1
-	   patches_per_data_batch: 899999
-	   #data_source_batch_size: 1
- }
- 
- label_select_param{
-			   balance: true
-			   num_labels: 3
-			   num_top_label_balance: 2
-			   reorder_label: false
-			   class_prob_mapping_file: 'label_class_selection_valid.prototxt'
-		}
-  transform_nd_param{
-    mirror: false
-    padding: true
-    pad_method: ZERO
-  }
-  data_provider_param{
-    # Specify the data source.
-    backend: HDF5
-    batch_size: 2
-    hdf5_file_shuffle: true
-    data_source: "hdf5_test_file_list.txt"
-  }
-
-}
 layer {
   name: "conv1"
   type: "Convolution"
   bottom: "data"
   top: "conv1"
-  param {
-    lr_mult: 1
-  }
-  param {
-    lr_mult: 2
-  }
   convolution_param {
     num_output: 64
     kernel_size: 7
@@ -111,15 +22,8 @@ layer {
 	pad:3
 	pad:3
 	pad:0
-    weight_filler {
-      type: "gaussian"
-	  std: 0.01
-    }
-    bias_filler {
-      type: "constant"
-      value: 0
-    }
   }
+  phase:PREDICT
 }
 
 layer {
@@ -141,7 +45,7 @@ layer {
 	kernel_shape: 3
     stride_shape: 2
 	stride_shape: 2
-	stride_shape: 1
+	stride_shape: 2
   }
 }
 
@@ -155,23 +59,10 @@ layer {
   type: "Convolution"
   bottom: "pool1"
   top: "conv2x_top"
-  param {
-    lr_mult: 1
-  }
-  param {
-    lr_mult: 2
-  }
+  phase:PREDICT
   convolution_param {
     num_output: 256
     kernel_size: 1
-    weight_filler {
-      type: "gaussian"
-	  std: 0.01
-    }
-    bias_filler {
-      type: "constant"
-      value: 0
-    }
   }
 }
 
@@ -182,23 +73,9 @@ layer {
   type: "Convolution"
   bottom: "conv2x_top"
   top: "conv2x_1_1"
-  param {
-    lr_mult: 1
-  }
-  param {
-    lr_mult: 2
-  }
   convolution_param {
     num_output: 64
     kernel_size: 1
-    weight_filler {
-      type: "gaussian"
-	  std: 0.01
-    }
-    bias_filler {
-      type: "constant"
-      value: 0
-    }
   }
 }
 
@@ -213,12 +90,7 @@ layer {
   type: "Convolution"
   bottom: "conv2x_1_1"
   top: "conv2x_1_2"
-  param {
-    lr_mult: 1
-  }
-  param {
-    lr_mult: 2
-  }
+phase:PREDICT
   convolution_param {
     num_output: 64
     kernel_size: 3
@@ -227,14 +99,6 @@ layer {
 	pad:1
 	pad:1
 	pad:0
-    weight_filler {
-      type: "gaussian"
-	  std: 0.01
-    }
-    bias_filler {
-      type: "constant"
-      value: 0
-    }
   }
 }
 
@@ -242,33 +106,17 @@ layer {
   name: "relu2x_1_2"
   type: "ReLU"
   bottom: "conv2x_1_2"
-  
-  
   top: "conv2x_1_2"
 }
-
 layer {
   name: "conv2x_1_3"
   type: "Convolution"
   bottom: "conv2x_1_2"
   top: "conv2x_1_3"
-  param {
-    lr_mult: 1
-  }
-  param {
-    lr_mult: 2
-  }
+  phase:PREDICT
   convolution_param {
     num_output: 256
 	kernel_size: 1
-    weight_filler {
-      type: "gaussian"
-	  std: 0.01
-    }
-    bias_filler {
-      type: "constant"
-      value: 0
-    }
   }
 }
 
@@ -278,6 +126,7 @@ type:  "Eltwise"
 bottom:"conv2x_top"
 bottom:"conv2x_1_3"
 top:"conv2x_1_sum"
+ phase:PREDICT
 eltwise_param{
 operation: SUM
 }
@@ -299,23 +148,9 @@ layer {
   type: "Convolution"
   bottom: "conv2x_1_sum"
   top: "conv2x_2_1"
-  param {
-    lr_mult: 1
-  }
-  param {
-    lr_mult: 2
-  }
   convolution_param {
     num_output: 64
     kernel_size: 1
-    weight_filler {
-      type: "gaussian"
-	  std: 0.01
-    }
-    bias_filler {
-      type: "constant"
-      value: 0
-    }
   }
 }
 
@@ -330,12 +165,7 @@ layer {
   type: "Convolution"
   bottom: "conv2x_2_1"
   top: "conv2x_2_2"
-  param {
-    lr_mult: 1
-  }
-  param {
-    lr_mult: 2
-  }
+phase:PREDICT
   convolution_param {
     num_output: 64
     kernel_size: 3
@@ -344,14 +174,6 @@ layer {
 	pad:1
 	pad:1
 	pad:0
-    weight_filler {
-      type: "gaussian"
-	  std: 0.01
-    }
-    bias_filler {
-      type: "constant"
-      value: 0
-    }
   }
 }
 
@@ -366,23 +188,10 @@ layer {
   type: "Convolution"
   bottom: "conv2x_2_2"
   top: "conv2x_2_3"
-  param {
-    lr_mult: 1
-  }
-  param {
-    lr_mult: 2
-  }
+phase:PREDICT
   convolution_param {
     num_output: 256
 	kernel_size: 1
-    weight_filler {
-      type: "gaussian"
-	  std: 0.01
-    }
-    bias_filler {
-      type: "constant"
-      value: 0
-    }
   }
 }
 
@@ -395,6 +204,7 @@ top:"conv2x_2_sum"
 eltwise_param{
 operation: SUM
 }
+phase:PREDICT
 }
 
 layer {
@@ -409,23 +219,9 @@ layer {
   type: "Convolution"
   bottom: "conv2x_2_sum"
   top: "conv2x_3_1"
-  param {
-    lr_mult: 1
-  }
-  param {
-    lr_mult: 2
-  }
   convolution_param {
     num_output: 64
     kernel_size: 1
-    weight_filler {
-      type: "gaussian"
-	  std: 0.01
-    }
-    bias_filler {
-      type: "constant"
-      value: 0
-    }
   }
 }
 
@@ -440,12 +236,7 @@ layer {
   type: "Convolution"
   bottom: "conv2x_3_1"
   top: "conv2x_3_2"
-  param {
-    lr_mult: 1
-  }
-  param {
-    lr_mult: 2
-  }
+phase:PREDICT
   convolution_param {
     num_output: 64
     kernel_size: 3
@@ -454,14 +245,6 @@ layer {
 	pad:1
 	pad:1
 	pad:0
-    weight_filler {
-      type: "gaussian"
-	  std: 0.01
-    }
-    bias_filler {
-      type: "constant"
-      value: 0
-    }
   }
 }
 
@@ -476,23 +259,10 @@ layer {
   type: "Convolution"
   bottom: "conv2x_3_2"
   top: "conv2x_3_3"
-  param {
-    lr_mult: 1
-  }
-  param {
-    lr_mult: 2
-  }
+  phase:PREDICT
   convolution_param {
     num_output: 256
 	kernel_size: 1
-    weight_filler {
-      type: "gaussian"
-	  std: 0.01
-    }
-    bias_filler {
-      type: "constant"
-      value: 0
-    }
   }
 }
 
@@ -505,6 +275,7 @@ top:"conv2x_3_sum"
 eltwise_param{
 operation: SUM
 }
+phase:PREDICT
 }
 
 layer {
@@ -523,12 +294,6 @@ layer {
   type: "Convolution"
   bottom: "conv2x_3_sum"
   top: "conv3x_top"
-  param {
-    lr_mult: 1
-  }
-  param {
-    lr_mult: 2
-  }
   convolution_param {
     num_output: 512
     kernel_size: 3
@@ -540,14 +305,6 @@ layer {
 	pad :1
 	pad :1
 	pad :0
-    weight_filler {
-      type: "gaussian"
-	  std: 0.01
-    }
-    bias_filler {
-      type: "constant"
-      value: 0
-    }
   }
 }
 
@@ -557,23 +314,9 @@ layer {
   type: "Convolution"
   bottom: "conv3x_top"
   top: "conv3x_1_1"
-  param {
-    lr_mult: 1
-  }
-  param {
-    lr_mult: 2
-  }
   convolution_param {
     num_output: 128
     kernel_size: 1
-    weight_filler {
-      type: "gaussian"
-	  std: 0.01
-    }
-    bias_filler {
-      type: "constant"
-      value: 0
-    }
   }
 }
 
@@ -588,12 +331,7 @@ layer {
   type: "Convolution"
   bottom: "conv3x_1_1"
   top: "conv3x_1_2"
-  param {
-    lr_mult: 1
-  }
-  param {
-    lr_mult: 2
-  }
+phase:PREDICT
   convolution_param {
     num_output: 128
     kernel_size: 3
@@ -602,14 +340,6 @@ layer {
 	pad:1
 	pad:1
 	pad:0
-    weight_filler {
-      type: "gaussian"
-	  std: 0.01
-    }
-    bias_filler {
-      type: "constant"
-      value: 0
-    }
   }
 }
 
@@ -624,23 +354,10 @@ layer {
   type: "Convolution"
   bottom: "conv3x_1_2"
   top: "conv3x_1_3"
-  param {
-    lr_mult: 1
-  }
-  param {
-    lr_mult: 2
-  }
+phase:PREDICT
   convolution_param {
     num_output: 512
 	kernel_size: 1
-    weight_filler {
-      type: "gaussian"
-	  std: 0.01
-    }
-    bias_filler {
-      type: "constant"
-      value: 0
-    }
   }
 }
 
@@ -653,6 +370,7 @@ top:"conv3x_1_sum"
 eltwise_param{
 operation: SUM
 }
+phase:PREDICT
 }
 
 layer {
@@ -669,23 +387,9 @@ layer {
   type: "Convolution"
   bottom: "conv3x_1_sum"
   top: "conv3x_2_1"
-  param {
-    lr_mult: 1
-  }
-  param {
-    lr_mult: 2
-  }
   convolution_param {
     num_output: 128
     kernel_size: 1
-    weight_filler {
-      type: "gaussian"
-	  std: 0.01
-    }
-    bias_filler {
-      type: "constant"
-      value: 0
-    }
   }
 }
 
@@ -700,12 +404,7 @@ layer {
   type: "Convolution"
   bottom: "conv3x_2_1"
   top: "conv3x_2_2"
-  param {
-    lr_mult: 1
-  }
-  param {
-    lr_mult: 2
-  }
+phase:PREDICT
   convolution_param {
     num_output: 128
     kernel_size: 3
@@ -714,14 +413,6 @@ layer {
 	pad:1
 	pad:1
 	pad:0
-    weight_filler {
-      type: "gaussian"
-	  std: 0.01
-    }
-    bias_filler {
-      type: "constant"
-      value: 0
-    }
   }
 }
 
@@ -736,23 +427,10 @@ layer {
   type: "Convolution"
   bottom: "conv3x_2_2"
   top: "conv3x_2_3"
-  param {
-    lr_mult: 1
-  }
-  param {
-    lr_mult: 2
-  }
+phase:PREDICT
   convolution_param {
     num_output: 512
 	kernel_size: 1
-    weight_filler {
-      type: "gaussian"
-	  std: 0.01
-    }
-    bias_filler {
-      type: "constant"
-      value: 0
-    }
   }
 }
 
@@ -765,6 +443,7 @@ top:"conv3x_2_sum"
 eltwise_param{
 operation: SUM
 }
+phase:PREDICT
 }
 
 layer {
@@ -780,23 +459,9 @@ layer {
   type: "Convolution"
   bottom: "conv3x_2_sum"
   top: "conv3x_3_1"
-  param {
-    lr_mult: 1
-  }
-  param {
-    lr_mult: 2
-  }
   convolution_param {
     num_output: 128
     kernel_size: 1
-    weight_filler {
-      type: "gaussian"
-	  std: 0.01
-    }
-    bias_filler {
-      type: "constant"
-      value: 0
-    }
   }
 }
 
@@ -811,12 +476,7 @@ layer {
   type: "Convolution"
   bottom: "conv3x_3_1"
   top: "conv3x_3_2"
-  param {
-    lr_mult: 1
-  }
-  param {
-    lr_mult: 2
-  }
+phase:PREDICT
   convolution_param {
     num_output: 128
     kernel_size: 3
@@ -825,14 +485,6 @@ layer {
 	pad:1
 	pad:1
 	pad:0
-    weight_filler {
-      type: "gaussian"
-	  std: 0.01
-    }
-    bias_filler {
-      type: "constant"
-      value: 0
-    }
   }
 }
 
@@ -847,23 +499,10 @@ layer {
   type: "Convolution"
   bottom: "conv3x_3_2"
   top: "conv3x_3_3"
-  param {
-    lr_mult: 1
-  }
-  param {
-    lr_mult: 2
-  }
+phase:PREDICT
   convolution_param {
     num_output: 512
 	kernel_size: 1
-    weight_filler {
-      type: "gaussian"
-	  std: 0.01
-    }
-    bias_filler {
-      type: "constant"
-      value: 0
-    }
   }
 }
 
@@ -876,6 +515,7 @@ top:"conv3x_3_sum"
 eltwise_param{
 operation: SUM
 }
+phase:PREDICT
 }
 
 layer {
@@ -892,12 +532,6 @@ layer {
   type: "Convolution"
   bottom: "conv3x_3_sum"
   top: "conv4x_top"
-  param {
-    lr_mult: 1
-  }
-  param {
-    lr_mult: 2
-  }
   convolution_param {
     num_output: 1024
     kernel_size: 3
@@ -909,14 +543,6 @@ layer {
 	pad :1
 	pad :1
 	pad :0
-    weight_filler {
-      type: "gaussian"
-	  std: 0.01
-    }
-    bias_filler {
-      type: "constant"
-      value: 0
-    }
   }
 }
  #------------ block layers conv4_1-------------------- 
@@ -925,23 +551,9 @@ layer {
   type: "Convolution"
   bottom: "conv4x_top"
   top: "conv4x_1_1"
-  param {
-    lr_mult: 1
-  }
-  param {
-    lr_mult: 2
-  }
   convolution_param {
     num_output: 256
     kernel_size: 1
-    weight_filler {
-      type: "gaussian"
-	  std: 0.01
-    }
-    bias_filler {
-      type: "constant"
-      value: 0
-    }
   }
 }
 
@@ -956,12 +568,7 @@ layer {
   type: "Convolution"
   bottom: "conv4x_1_1"
   top: "conv4x_1_2"
-  param {
-    lr_mult: 1
-  }
-  param {
-    lr_mult: 2
-  }
+phase:PREDICT
   convolution_param {
     num_output: 256
     kernel_size: 3
@@ -970,14 +577,6 @@ layer {
 	pad:1
 	pad:1
 	pad:0
-    weight_filler {
-      type: "gaussian"
-	  std: 0.01
-    }
-    bias_filler {
-      type: "constant"
-      value: 0
-    }
   }
 }
 
@@ -992,23 +591,10 @@ layer {
   type: "Convolution"
   bottom: "conv4x_1_2"
   top: "conv4x_1_3"
-  param {
-    lr_mult: 1
-  }
-  param {
-    lr_mult: 2
-  }
+phase:PREDICT
   convolution_param {
     num_output: 1024
 	kernel_size: 1
-    weight_filler {
-      type: "gaussian"
-	  std: 0.01
-    }
-    bias_filler {
-      type: "constant"
-      value: 0
-    }
   }
 }
 
@@ -1021,6 +607,7 @@ top:"conv4x_1_sum"
 eltwise_param{
 operation: SUM
 }
+phase:PREDICT
 }
 
 layer {
@@ -1037,23 +624,9 @@ layer {
   type: "Convolution"
   bottom: "conv4x_1_sum"
   top: "conv4x_2_1"
-  param {
-    lr_mult: 1
-  }
-  param {
-    lr_mult: 2
-  }
   convolution_param {
     num_output: 256
     kernel_size: 1
-    weight_filler {
-      type: "gaussian"
-	  std: 0.01
-    }
-    bias_filler {
-      type: "constant"
-      value: 0
-    }
   }
 }
 
@@ -1068,12 +641,7 @@ layer {
   type: "Convolution"
   bottom: "conv4x_2_1"
   top: "conv4x_2_2"
-  param {
-    lr_mult: 1
-  }
-  param {
-    lr_mult: 2
-  }
+phase:PREDICT
   convolution_param {
     num_output: 256
     kernel_size: 3
@@ -1082,14 +650,6 @@ layer {
 	pad:1
 	pad:1
 	pad:0
-    weight_filler {
-      type: "gaussian"
-	  std: 0.01
-    }
-    bias_filler {
-      type: "constant"
-      value: 0
-    }
   }
 }
 
@@ -1104,23 +664,10 @@ layer {
   type: "Convolution"
   bottom: "conv4x_2_2"
   top: "conv4x_2_3"
-  param {
-    lr_mult: 1
-  }
-  param {
-    lr_mult: 2
-  }
+phase:PREDICT
   convolution_param {
     num_output: 1024
 	kernel_size: 1
-    weight_filler {
-      type: "gaussian"
-	  std: 0.01
-    }
-    bias_filler {
-      type: "constant"
-      value: 0
-    }
   }
 }
 
@@ -1133,6 +680,7 @@ top:"conv4x_2_sum"
 eltwise_param{
 operation: SUM
 }
+phase:PREDICT
 }
 
 layer {
@@ -1148,23 +696,9 @@ layer {
   type: "Convolution"
   bottom: "conv4x_2_sum"
   top: "conv4x_3_1"
-  param {
-    lr_mult: 1
-  }
-  param {
-    lr_mult: 2
-  }
   convolution_param {
     num_output: 256
     kernel_size: 1
-    weight_filler {
-      type: "gaussian"
-	  std: 0.01
-    }
-    bias_filler {
-      type: "constant"
-      value: 0
-    }
   }
 }
 
@@ -1179,12 +713,7 @@ layer {
   type: "Convolution"
   bottom: "conv4x_3_1"
   top: "conv4x_3_2"
-  param {
-    lr_mult: 1
-  }
-  param {
-    lr_mult: 2
-  }
+phase:PREDICT
   convolution_param {
     num_output: 256
     kernel_size: 3
@@ -1193,14 +722,6 @@ layer {
 	pad:1
 	pad:1
 	pad:0
-    weight_filler {
-      type: "gaussian"
-	  std: 0.01
-    }
-    bias_filler {
-      type: "constant"
-      value: 0
-    }
   }
 }
 
@@ -1215,23 +736,10 @@ layer {
   type: "Convolution"
   bottom: "conv4x_3_2"
   top: "conv4x_3_3"
-  param {
-    lr_mult: 1
-  }
-  param {
-    lr_mult: 2
-  }
+phase:PREDICT
   convolution_param {
     num_output: 1024
 	kernel_size: 1
-    weight_filler {
-      type: "gaussian"
-	  std: 0.01
-    }
-    bias_filler {
-      type: "constant"
-      value: 0
-    }
   }
 }
 
@@ -1244,6 +752,7 @@ top:"conv4x_3_sum"
 eltwise_param{
 operation: SUM
 }
+phase:PREDICT
 }
 
 layer {
@@ -1258,23 +767,9 @@ layer {
   type: "Convolution"
   bottom: "conv4x_3_sum"
   top: "conv4x_4_1"
-  param {
-    lr_mult: 1
-  }
-  param {
-    lr_mult: 2
-  }
   convolution_param {
     num_output: 256
     kernel_size: 1
-    weight_filler {
-      type: "gaussian"
-	  std: 0.01
-    }
-    bias_filler {
-      type: "constant"
-      value: 0
-    }
   }
 }
 
@@ -1289,12 +784,7 @@ layer {
   type: "Convolution"
   bottom: "conv4x_4_1"
   top: "conv4x_4_2"
-  param {
-    lr_mult: 1
-  }
-  param {
-    lr_mult: 2
-  }
+phase:PREDICT
   convolution_param {
     num_output: 256
     kernel_size: 3
@@ -1303,14 +793,6 @@ layer {
 	pad:1
 	pad:1
 	pad:0
-    weight_filler {
-      type: "gaussian"
-	  std: 0.01
-    }
-    bias_filler {
-      type: "constant"
-      value: 0
-    }
   }
 }
 
@@ -1325,23 +807,10 @@ layer {
   type: "Convolution"
   bottom: "conv4x_4_2"
   top: "conv4x_4_3"
-  param {
-    lr_mult: 1
-  }
-  param {
-    lr_mult: 2
-  }
+phase:PREDICT
   convolution_param {
     num_output: 1024
 	kernel_size: 1
-    weight_filler {
-      type: "gaussian"
-	  std: 0.01
-    }
-    bias_filler {
-      type: "constant"
-      value: 0
-    }
   }
 }
 
@@ -1354,6 +823,7 @@ top:"conv4x_4_sum"
 eltwise_param{
 operation: SUM
 }
+phase:PREDICT
 }
 
 layer {
@@ -1369,23 +839,9 @@ layer {
   type: "Convolution"
   bottom: "conv4x_4_sum"
   top: "conv4x_5_1"
-  param {
-    lr_mult: 1
-  }
-  param {
-    lr_mult: 2
-  }
   convolution_param {
     num_output: 256
     kernel_size: 1
-    weight_filler {
-      type: "gaussian"
-	  std: 0.01
-    }
-    bias_filler {
-      type: "constant"
-      value: 0
-    }
   }
 }
 
@@ -1400,12 +856,7 @@ layer {
   type: "Convolution"
   bottom: "conv4x_5_1"
   top: "conv4x_5_2"
-  param {
-    lr_mult: 1
-  }
-  param {
-    lr_mult: 2
-  }
+phase:PREDICT
   convolution_param {
     num_output: 256
     kernel_size: 3
@@ -1414,14 +865,6 @@ layer {
 	pad:1
 	pad:1
 	pad:0
-    weight_filler {
-      type: "gaussian"
-	  std: 0.01
-    }
-    bias_filler {
-      type: "constant"
-      value: 0
-    }
   }
 }
 
@@ -1436,23 +879,10 @@ layer {
   type: "Convolution"
   bottom: "conv4x_5_2"
   top: "conv4x_5_3"
-  param {
-    lr_mult: 1
-  }
-  param {
-    lr_mult: 2
-  }
+phase:PREDICT
   convolution_param {
     num_output: 1024
 	kernel_size: 1
-    weight_filler {
-      type: "gaussian"
-	  std: 0.01
-    }
-    bias_filler {
-      type: "constant"
-      value: 0
-    }
   }
 }
 
@@ -1465,6 +895,7 @@ top:"conv4x_5_sum"
 eltwise_param{
 operation: SUM
 }
+phase:PREDICT
 }
 
 layer {
@@ -1480,23 +911,9 @@ layer {
   type: "Convolution"
   bottom: "conv4x_5_sum"
   top: "conv4x_6_1"
-  param {
-    lr_mult: 1
-  }
-  param {
-    lr_mult: 2
-  }
   convolution_param {
     num_output: 256
     kernel_size: 1
-    weight_filler {
-      type: "gaussian"
-	  std: 0.01
-    }
-    bias_filler {
-      type: "constant"
-      value: 0
-    }
   }
 }
 
@@ -1511,12 +928,7 @@ layer {
   type: "Convolution"
   bottom: "conv4x_6_1"
   top: "conv4x_6_2"
-  param {
-    lr_mult: 1
-  }
-  param {
-    lr_mult: 2
-  }
+phase:PREDICT
   convolution_param {
     num_output: 256
     kernel_size: 3
@@ -1525,14 +937,6 @@ layer {
 	pad:1
 	pad:1
 	pad:0
-    weight_filler {
-      type: "gaussian"
-	  std: 0.01
-    }
-    bias_filler {
-      type: "constant"
-      value: 0
-    }
   }
 }
 
@@ -1547,23 +951,10 @@ layer {
   type: "Convolution"
   bottom: "conv4x_6_2"
   top: "conv4x_6_3"
-  param {
-    lr_mult: 1
-  }
-  param {
-    lr_mult: 2
-  }
+phase:PREDICT
   convolution_param {
     num_output: 1024
 	kernel_size: 1
-    weight_filler {
-      type: "gaussian"
-	  std: 0.01
-    }
-    bias_filler {
-      type: "constant"
-      value: 0
-    }
   }
 }
 
@@ -1576,6 +967,7 @@ top:"conv4x_6_sum"
 eltwise_param{
 operation: SUM
 }
+phase:PREDICT
 }
 
 layer {
@@ -1593,12 +985,6 @@ layer {
   type: "Convolution"
   bottom: "conv4x_6_sum"
   top: "conv5x_top"
-  param {
-    lr_mult: 1
-  }
-  param {
-    lr_mult: 2
-  }
   convolution_param {
     num_output: 2048
     kernel_size: 3
@@ -1610,14 +996,6 @@ layer {
 	pad :1
 	pad :1
 	pad :0
-    weight_filler {
-      type: "gaussian"
-	  std: 0.01
-    }
-    bias_filler {
-      type: "constant"
-      value: 0
-    }
   }
  }
   
@@ -1629,23 +1007,9 @@ layer {
   type: "Convolution"
   bottom: "conv5x_top"
   top: "conv5x_1_1"
-  param {
-    lr_mult: 1
-  }
-  param {
-    lr_mult: 2
-  }
   convolution_param {
     num_output: 512
     kernel_size: 1
-    weight_filler {
-      type: "gaussian"
-	  std: 0.01
-    }
-    bias_filler {
-      type: "constant"
-      value: 0
-    }
   }
 }
 
@@ -1660,12 +1024,7 @@ layer {
   type: "Convolution"
   bottom: "conv5x_1_1"
   top: "conv5x_1_2"
-  param {
-    lr_mult: 1
-  }
-  param {
-    lr_mult: 2
-  }
+phase:PREDICT
   convolution_param {
     num_output: 512
     kernel_size: 3
@@ -1674,14 +1033,6 @@ layer {
 	pad:1
 	pad:1
 	pad:0
-    weight_filler {
-      type: "gaussian"
-	  std: 0.01
-    }
-    bias_filler {
-      type: "constant"
-      value: 0
-    }
   }
 }
 
@@ -1696,23 +1047,9 @@ layer {
   type: "Convolution"
   bottom: "conv5x_1_2"
   top: "conv5x_1_3"
-  param {
-    lr_mult: 1
-  }
-  param {
-    lr_mult: 2
-  }
   convolution_param {
     num_output: 2048
 	kernel_size: 1
-    weight_filler {
-      type: "gaussian"
-	  std: 0.01
-    }
-    bias_filler {
-      type: "constant"
-      value: 0
-    }
   }
 }
 
@@ -1725,6 +1062,7 @@ top:"conv5x_1_sum"
 eltwise_param{
 operation: SUM
 }
+phase:PREDICT
 }
 
 layer {
@@ -1739,23 +1077,9 @@ layer {
   type: "Convolution"
   bottom: "conv5x_1_sum"
   top: "conv5x_2_1"
-  param {
-    lr_mult: 1
-  }
-  param {
-    lr_mult: 2
-  }
   convolution_param {
     num_output: 512
     kernel_size: 1
-    weight_filler {
-      type: "gaussian"
-	  std: 0.01
-    }
-    bias_filler {
-      type: "constant"
-      value: 0
-    }
   }
 }
 
@@ -1770,12 +1094,7 @@ layer {
   type: "Convolution"
   bottom: "conv5x_2_1"
   top: "conv5x_2_2"
-  param {
-    lr_mult: 1
-  }
-  param {
-    lr_mult: 2
-  }
+phase:PREDICT
   convolution_param {
     num_output: 512
     kernel_size: 3
@@ -1784,14 +1103,6 @@ layer {
 	pad:1
 	pad:1
 	pad:0
-    weight_filler {
-      type: "gaussian"
-	  std: 0.01
-    }
-    bias_filler {
-      type: "constant"
-      value: 0
-    }
   }
 }
 
@@ -1806,23 +1117,10 @@ layer {
   type: "Convolution"
   bottom: "conv5x_2_2"
   top: "conv5x_2_3"
-  param {
-    lr_mult: 1
-  }
-  param {
-    lr_mult: 2
-  }
+phase:PREDICT
   convolution_param {
     num_output: 2048
 	kernel_size: 1
-    weight_filler {
-      type: "gaussian"
-	  std: 0.01
-    }
-    bias_filler {
-      type: "constant"
-      value: 0
-    }
   }
 }
 
@@ -1835,17 +1133,8 @@ top:"conv5x_2_sum"
 eltwise_param{
 operation: SUM
 }
+phase:PREDICT
 }
-
-layer{
-  name: "drop6"
-  type: "Dropout"
-  bottom: "conv5x_2_sum"
-  top: "conv5x_2_sum"
-  dropout_param {
-    dropout_ratio: 0.5
-  }
-  }
 
 layer {
   name: "relu5x_2_sum"
@@ -1858,168 +1147,75 @@ layer {
  #---------------------------deconv--------------------------- 
 
 layer{
- name: "deconv1_1x"
+name: "deconv1_1x"
   type: "Convolution"
-   bottom: "conv2x_3_sum"
-   top: "deconv1_1x"
-  param {
-     lr_mult: 20
-  }
-  param {
-     lr_mult: 10
-  }
+  bottom: "conv2x_3_sum"
+  top: "deconv1_1x"
+  phase:PREDICT
   convolution_param {
-     num_output: 2
-     kernel_size: 1
-	 kernel_size: 1
-	 kernel_size: 1
-	 stride: 1
-	 stride: 1
-	 stride: 1
-	 pad:0
-	  pad:0
-	 pad:0
-   # weight_filler {
-      # type: "bilinear"
-    # }
-	 weight_filler {
-       type: "gaussian"
-	   std: 0.01
-    }
-     bias_filler {
-       type: "constant"
-       value: 0
-    }
-   }
- }
-# layer{
-  # name: "drop1_1x"
-  # type: "Dropout"
-  # bottom: "deconv1_1x"
-  # top: "deconv1_1x"
-  # dropout_param {
-    # dropout_ratio: 0.5
-  # }
-  # }
-
+    num_output: 128
+    kernel_size: 1
+	kernel_size: 1
+	kernel_size: 1
+	stride: 1
+	stride: 1
+	stride: 1
+	pad:0
+	pad:0
+	pad:0
+  }
+}
 
 layer{
 name: "deconv2_1x"
   type: "Convolution"
   bottom: "conv3x_3_sum"
   top: "deconv2_1x"
- param {
-    lr_mult: 10
-  }
-  param {
-    lr_mult: 20
-  }
+  phase:PREDICT
   convolution_param {
-    num_output: 2
+    num_output: 128
     kernel_size: 1
 	kernel_size: 1
 	kernel_size: 1
 	stride: 1
 	stride: 1
 	stride: 1
-   weight_filler {
-      type: "gaussian"
-	  std: 0.01
-    }
-    bias_filler {
-      type: "constant"
-      value: 0
-    }
   }
 }
-
-layer{
-  name: "drop2_1x"
-  type: "Dropout"
-  bottom: "deconv2_1x"
-  top: "deconv2_1x"
-  dropout_param {
-    dropout_ratio: 0.5
-  }
-  }
 
 layer{
 name: "deconv3_1x"
   type: "Convolution"
   bottom: "conv4x_6_sum"
   top: "deconv3_1x"
- param {
-    lr_mult: 10
-  }
-  param {
-    lr_mult: 20
-  }
+  phase:PREDICT
   convolution_param {
-    num_output: 2
+    num_output: 128
     kernel_size: 1
 	kernel_size: 1
 	kernel_size: 1
 	stride: 1
 	stride: 1
 	stride: 1
-   weight_filler {
-      type: "gaussian"
-	  std: 0.01
-    }
-    bias_filler {
-      type: "constant"
-      value: 0
-    }
   }
 }
-layer{
-  name: "drop3_1x"
-  type: "Dropout"
-  bottom: "deconv3_1x"
-  top: "deconv3_1x"
-  dropout_param {
-    dropout_ratio: 0.5
-  }
-  }
 
 layer{
 name: "deconv4_1x"
   type: "Convolution"
   bottom: "conv5x_2_sum"
   top: "deconv4_1x"
- param {
-    lr_mult: 10
-  }
-  param {
-    lr_mult: 20
-  }
+  phase:PREDICT
   convolution_param {
-    num_output: 2
+    num_output: 128
     kernel_size: 1
 	kernel_size: 1
 	kernel_size: 1
 	stride: 1
 	stride: 1
 	stride: 1
-   weight_filler {
-      type: "gaussian"
-	  std: 0.01
-    }
-    bias_filler {
-      type: "constant"
-      value: 0
-    }
   }
 }
-layer{
-  name: "drop4_1x"
-  type: "Dropout"
-  bottom: "deconv4_1x"
-  top: "deconv4_1x"
-  dropout_param {
-    dropout_ratio: 0.5
-  }
-  }
 
 
 
@@ -2029,14 +1225,9 @@ name: "deconv4_2x"
   type: "Deconvolution"
   bottom: "deconv4_1x"
   top: "deconv4_2x"
- param {
-    lr_mult: 10
-  }
-  param {
-    lr_mult: 20
-  }
+phase:PREDICT
   convolution_param {
-    num_output: 2
+    num_output: 128
     kernel_size: 4
 	kernel_size: 4
 	kernel_size: 1
@@ -2071,14 +1262,9 @@ name: "upsample43_2x"
   type: "Deconvolution"
   bottom: "upsample43"
   top: "upsample43_2x"
- param {
-    lr_mult: 10
-  }
-  param {
-    lr_mult: 20
-  }
+  phase:PREDICT
   convolution_param {
-    num_output: 2
+    num_output: 128
     kernel_size: 4
 	kernel_size: 4
 	kernel_size: 1
@@ -2088,6 +1274,7 @@ name: "upsample43_2x"
 	pad:1
 	pad:1
 	pad:0
+	group: 2
    weight_filler {
       type: "bilinear"
     }
@@ -2112,14 +1299,9 @@ name: "upsample432_2x"
   type: "Deconvolution"
   bottom: "upsample432"
   top: "upsample432_2x"
- param {
-    lr_mult: 10
-  }
-  param {
-    lr_mult: 20
-  }
+  phase:PREDICT
   convolution_param {
-    num_output: 2
+    num_output: 128
     kernel_size: 4
 	kernel_size: 4
 	kernel_size: 1
@@ -2129,6 +1311,7 @@ name: "upsample432_2x"
 	pad:1
 	pad:1
 	pad:0
+	group: 2
    weight_filler {
       type: "bilinear"
     }
@@ -2136,15 +1319,15 @@ name: "upsample432_2x"
 }
 
 layer{
- name: "deconv_sum_4321"
- type:  "Eltwise"
- bottom:"upsample432_2x"
- bottom:"deconv1_1x"
- top:"upsample4321"
- eltwise_param{
- operation: SUM
- }
- }
+name: "deconv_sum_4321"
+type:  "Eltwise"
+bottom:"upsample432_2x"
+bottom:"deconv1_1x"
+top:"upsample4321"
+eltwise_param{
+operation: SUM
+}
+}
 
 
 layer{
@@ -2152,14 +1335,9 @@ name: "upsample4321_2x"
   type: "Deconvolution"
   bottom: "upsample4321"
   top: "upsample4321_2x"
- param {
-    lr_mult: 10
-  }
-  param {
-    lr_mult: 20
-  }
+  phase:PREDICT
   convolution_param {
-    num_output: 2
+    num_output: 128
     kernel_size: 8
 	kernel_size: 8
 	kernel_size: 1
@@ -2169,14 +1347,12 @@ name: "upsample4321_2x"
 	pad:2
 	pad:2
 	pad:0
+	group: 2
    weight_filler {
       type: "bilinear"
     }
   }
 }
-
-
-
 
 
 # layer{
@@ -2207,63 +1383,115 @@ name: "upsample4321_2x"
 # }
 # }
 
+# layer {
+  # name: "fc8"
+  # type: "Convolution"
+  # bottom: "upsample4321_2x"
+  # top: "fc8"
+  # convolution_param {
+    # num_output: 128
+	# kernel_size: 3
+	# kernel_size: 3
+	# kernel_size: 1
+	# pad: 1
+	# pad: 1
+	# pad: 0
+  # }
+# }
+
+# layer {
+  # name: "relu7-1"
+  # type: "ReLU"
+  # bottom: "fc8"
+  # top: "fc8"
+# }
+
+# layer {
+  # name: "fc8-2"
+  # type: "Convolution"
+  # bottom: "fc8"
+  # top: "fc8-2"
+  # convolution_param {
+    # num_output: 128
+	# kernel_size: 3
+	# kernel_size: 3
+	# kernel_size: 1
+	# pad: 1
+	# pad: 1
+	# pad: 0
+  # }
+    # phase:PREDICT
+# }
+
+# layer {
+  # name: "relu7-2"
+  # type: "ReLU"
+  # bottom: "fc8-2"
+  # top: "fc8-2"
+# }
+
+# layer {
+  # name: "fc8-3"
+  # type: "Convolution"
+  # bottom: "fc8-2"
+  # top: "fc8-3"
+  # convolution_param {
+    # num_output: 128
+	# kernel_size: 3
+	# kernel_size: 3
+	# kernel_size: 1
+	# pad: 1
+	# pad: 1
+	# pad: 0
+  # }
+    # phase:PREDICT
+# }
 
 
+# layer{
+# name: "deconv_sum"
+# type:  "Eltwise"
+# bottom:"upsample4321_2x"
+# bottom:"fc8-3"
+# top:"fc8-4"
+# eltwise_param{
+# operation: SUM
+# }
+# }
+
+# layer {
+   # name: "relu8-3"
+   # type: "ReLU"
+   # bottom: "fc8-4"
+   # top: "fc8-4"
+# }
 
 
 
 layer {
-  name: "fc"
+  name: "fc9"
   type: "Convolution"
   bottom: "upsample4321_2x"
-  top: "fc"
+  top: "fc9"
   param {
-    lr_mult: 10
+    lr_mult: 1
   }
   param {
-    lr_mult: 20
+    lr_mult: 2
   }
   convolution_param {
     num_output: 2
 	kernel_size: 1
-    weight_filler {
-      type: "gaussian"
-      std: 0.005
-    }
-    bias_filler {
-      type: "constant"
-      value: 1
-    }
   }
-}
-layer {
-  name: "loss"
-  type: "SoftmaxWithLoss"
-  bottom: "fc"
-  bottom: "label"
-  top: "loss"
-  loss_param{
-  ignore_label:3
-  }
-label_select_param{
-	balance: true
-	num_labels: 3
-	num_top_label_balance: 2
-	reorder_label: false
-	class_prob_mapping_file: 'label_weight.prototxt'
-	}
+  phase:PREDICT
 }
 
-layer{
-     name: "accuracy"
-     type: "Accuracy"
-     bottom: "fc"
-     bottom: "label" 
-	 top: "accuracy"
-	 accuracy_param{
-	 ignore_label:3
-	 }
-	 include {
-    phase: TEST
-   }
+#Deconvolution
+#
+
+layer {
+  name: "output"
+  type: "Softmax"
+  bottom: "fc9"
+  top: "output"
 }
