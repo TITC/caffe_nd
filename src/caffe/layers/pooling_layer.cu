@@ -846,7 +846,6 @@ void PoolingLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
             height_, width_, pooled_height_, pooled_width_, kernel_h_,
             kernel_w_, stride_h_, stride_w_, pad_h_, pad_w_, bottom_diff);
       }else{
-        LOG(INFO)<<"calling ave backward ND GPU";
         switch (num_spatial_axes_) {
           case 1:
           AvePoolBackward_ND<Dtype,1><<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(
