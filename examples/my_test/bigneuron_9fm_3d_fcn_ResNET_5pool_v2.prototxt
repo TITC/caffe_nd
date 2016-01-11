@@ -13,9 +13,9 @@ layer {
 		dim: 8
 	   }
 	   label_patch_shape{
-		dim: 224
-		dim: 224
-		dim: 8
+		dim: 1
+		dim: 1
+		dim: 1
 	   }
 	   batch_size: 1
 	   patches_per_data_batch: 899999
@@ -61,9 +61,9 @@ layer {
 		dim: 8
 	   }
 	   label_patch_shape{
-		dim: 224
-		dim: 224
-		dim: 8
+		dim: 1
+		dim: 1
+		dim: 1
 	   }
 	   batch_size: 1
 	   patches_per_data_batch: 899999

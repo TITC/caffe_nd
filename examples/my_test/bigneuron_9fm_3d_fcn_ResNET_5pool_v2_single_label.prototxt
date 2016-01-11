@@ -17,7 +17,7 @@ layer {
 		dim: 1
 		dim: 1
 	   }
-	   batch_size: 6
+	   batch_size: 16
 	   patches_per_data_batch: 899999
 	   #data_source_batch_size: 1
 
@@ -1843,7 +1843,7 @@ layer{
   bottom: "conv5x_2_sum"
   top: "conv5x_2_sum"
   dropout_param {
-    dropout_ratio: 0.5
+    dropout_ratio: 0.25
   }
   }
 
@@ -1881,8 +1881,6 @@ layer {
     }
   }
 }
- 
- #---------------------------deconv--------------------------- 
 
  layer {
   name: "relufc8"
@@ -1891,13 +1889,61 @@ layer {
   top: "fc8"
   }
  
+layer {
+    name: "bn1"
+    type: "BatchNorm"
+    bottom: "fc8"
+    top: "bn1"
+    batch_norm_param {
+	use_global_stats: false
+	}
+	  param {
+		lr_mult: 0
+	  }
+	  param {
+		lr_mult: 0
+	  }
+	  param {
+		lr_mult: 0
+	  }
+	  include {
+		phase: TRAIN
+	  }
+ }
+ 
+ 
+ layer {
+    name: "bn1"
+    type: "BatchNorm"
+    bottom: "fc8"
+    top: "bn1"
+    batch_norm_param {
+	use_global_stats: true
+	}
+	  param {
+		lr_mult: 0
+	  }
+	  param {
+		lr_mult: 0
+	  }
+	  param {
+		lr_mult: 0
+	  }
+	  include {
+		phase: TEST
+	  }
+ }
+ 
+ #---------------------------deconv--------------------------- 
+
+
 
 
 
 layer {
   name: "fc9"
   type: "Convolution"
-  bottom: "fc8"
+  bottom: "bn1"
   top: "fc9"
   param {
     lr_mult: 1

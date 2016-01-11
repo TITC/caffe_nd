@@ -6,6 +6,8 @@
 #include "caffe/common.hpp"
 #include "caffe/patch_sampler.hpp"
 #include "caffe/proto/caffe.pb.h"
+#include "caffe/util/benchmark.hpp"
+
 
 namespace caffe {
 
@@ -98,6 +100,7 @@ template <typename Dtype>
 void PatchSampler<Dtype>::ReadOnePatch(QueuePair_Batch<Dtype>* qb ){
   // load new data to memomry pool
 // LOG(INFO)<<"patch read count "<<patch_count_;
+  CPUTimer timer;
  count_m_mutex_.lock();
   if(patch_count_%patches_per_data_batch_ ==0)
   {
@@ -109,16 +112,10 @@ void PatchSampler<Dtype>::ReadOnePatch(QueuePair_Batch<Dtype>* qb ){
   }
   patch_count_++;
 
-
-
-
   int data_idx=PrefetchRand()% d_provider_->get_current_batch_size();
   const Batch_data<Dtype> source_data_label=d_provider_->getOneData(data_idx);
 
   //LOG(INFO)<<()
-
-
-
   Batch_data<Dtype>* patch_data_label = qb->free_.pop();
   //LOG(INFO)<< "readone from provider";
   // take input patch_data then warp a patch and put it to patch_data;
@@ -145,63 +142,36 @@ void PatchSampler<Dtype>::ReadOnePatch(QueuePair_Batch<Dtype>* qb ){
 
   vector<int> data_offset     = patch_coord_finder_->GetDataOffset();
   vector<int> label_offset    = patch_coord_finder_->GetLabelOffset();
-  // for(int i=0;i<randPt.size();++i){
-  //   LOG(INFO)<<"randPt "<<"["<<i<<"] = "<<  randPt[i];
-  //   LOG(INFO)<<"label_offset  "<<"["<<i<<"] = "<<  label_offset[i];
-  //   LOG(INFO)<<"data_offset  "<<"["<<i<<"] = "<<  data_offset[i];
-  // }
-
-  //randPt.insert(s_data_shape.begin(),s_data_shape.begin()+2);
-  //CropCenterInfo<Dtype> crp_cent_info=data_transformer_nd->PeekCropCenterPoint(source_data_label.label_.get());
-  //LOG(INFO)<<"nd_off num_aix after return  ="<<crp_cent_info.nd_off.size();
-
-
-  //Blob<Dtype> &trans_data_blob = *patch_data_label->data_;
-  //Blob<Dtype> &trans_label_blob =*patch_data_label->label_;
+  //double  trans_time = 0;
+  //timer.Start();
+  data_transformer_nd->Transform(source_data_label.data_.get(),
+                                    patch_data_label->data_.get(),
+                                    data_offset,
+                                    patch_data_shape_);
+  data_transformer_nd->Transform(source_data_label.label_.get(),
+                                    patch_data_label->label_.get(),
+                                    label_offset,
+                                    patch_label_shape_);
 
 
-//Blob<Dtype> trans_data_blob,trans_label_blob;
-
-
-  //LOG(INFO)<<"start transform";
-//  data_transformer_nd->Transform(source_data_label.data_.get(), &trans_data_blob, crp_cent_info.nd_off);
-
-  // data_transformer_nd->Transform(source_data_label.data_.get(),
-  //                                   &trans_data_blob,
-  //                                   data_offset,
-  //                                   patch_data_shape_);
-  // data_transformer_nd->Transform(source_data_label.label_.get(),
-  //                                   &trans_label_blob,
-  //                                   label_offset,
-  //                                   patch_label_shape_);
-
-                                    data_transformer_nd->Transform(source_data_label.data_.get(),
-                                                                      patch_data_label->data_.get(),
-                                                                      data_offset,
-                                                                      patch_data_shape_);
-                                    data_transformer_nd->Transform(source_data_label.label_.get(),
-                                                                      patch_data_label->label_.get(),
-                                                                      label_offset,
-                                                                      patch_label_shape_);
-  count_m_mutex_.unlock();
  //LOG(INFO)<<"end transform";
   const vector<int>& source_data_shape =source_data_label.data_->shape();
   const vector<int>& source_label_shape =source_data_label.label_->shape();
 
-
-
-
   int new_label=(int)  patch_data_label->label_.get()->cpu_data()[0];
   if(patch_data_label->label_.get()->count()==1)
   {CHECK_EQ(new_label,pt_label_value);}
+  count_m_mutex_.unlock();
 
+  qb->full_.push(patch_data_label);
+
+    // trans_time += timer.MicroSeconds();
+    // timer.Stop();
+    // LOG(INFO) << "     Trans time: " << trans_time / 1000 << " ms.";
 
 
   int d_dims  =source_data_shape.size();
   int l_dims  =source_label_shape.size();
-  //LOG(INFO)<<"data size = "<<d_dims;
-  //LOG(INFO)<<"label in blob = "<<patch_data_label->label_.get()->cpu_data()[0];
-
   int d_num   =source_data_shape[0];
   int l_num   =source_label_shape[0];
   CHECK_EQ(d_dims,l_dims);
@@ -212,36 +182,9 @@ void PatchSampler<Dtype>::ReadOnePatch(QueuePair_Batch<Dtype>* qb ){
     int l_dim=source_label_shape[i];
     CHECK_EQ(d_dim,l_dim);
   }
+//  dest_label_shape_.clear();
+//  dest_data_shape_.clear();
 
-
-
-
-
-
-  //vector<int>& source_shape =patch_data->data.shape();
-  //vector<int> dest_label_shape;
-
-  dest_label_shape_.clear();
-  dest_data_shape_.clear();
-  // for(int i=1;i< d_dims;i++){
-  //   dest_label_shape_.push_back(1);
-  // }
-
-//****===================================================***//
-// the data dest_label_shape_[0] and dest_data_shape_[0]
-// are  suppose to be 1 as each patch is just one data from the source data valum//
-//====================================================////
- //LOG(INFO)<<"copy blob from trans_data_blob";
-
-//  patch_data_label->data_->CopyFrom(trans_data_blob,false,true);
-//  patch_data_label->label_->CopyFrom(trans_label_blob,false,true);
-
-
-  //patch_data_label->label_->Reshape(dest_label_shape_);
-
-  //patch_data_label->label_->mutable_cpu_data()[0]=crp_cent_info.value;
-  //patch_data_label->label_->mutable_cpu_data()[0]=pt_label_value;
-  qb->full_.push(patch_data_label);
   //LOG(INFO)<<"put q back to quque";
   // setting patch data and label shape;
   dest_label_shape_=patch_data_label->label_->shape();
