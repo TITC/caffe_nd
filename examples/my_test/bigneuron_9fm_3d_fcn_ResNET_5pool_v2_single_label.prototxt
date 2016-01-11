@@ -1855,49 +1855,49 @@ layer {
   }
 
 
-# layer {
-# 	bottom: "conv5x_2_sum"
-# 	top: "conv5x_2_sum_bn"
-# 	name: "conv5x_2_sum_bn"
-# 	type: "BatchNorm"
-# 	batch_norm_param {
-# 		use_global_stats: false
-# 	}
-# 	param {
-# 		lr_mult: 0
-# 	}
-# 	param {
-# 		lr_mult: 0
-# 	}
-# 	param {
-# 		lr_mult: 0
-# 	}
-# 	include {
-#     phase: TRAIN
-#   }
-# }
-#
-# layer {
-# 	bottom: "conv5x_2_sum"
-# 	top: "conv5x_2_sum_bn"
-# 	name: "conv5x_2_sum_bn"
-# 	type: "BatchNorm"
-# 	batch_norm_param {
-# 		use_global_stats: true
-# 	}
-# 	param {
-# 		lr_mult: 0
-# 	}
-# 	param {
-# 		lr_mult: 0
-# 	}
-# 	param {
-# 		lr_mult: 0
-# 	}
-# 	include {
-#     phase: TEST
-#   }
-# }
+layer {
+	bottom: "conv5x_2_sum"
+	top: "conv5x_2_sum_bn"
+	name: "conv5x_2_sum_bn"
+	type: "BatchNorm"
+	batch_norm_param {
+		use_global_stats: false
+	}
+	param {
+		lr_mult: 0
+	}
+	param {
+		lr_mult: 0
+	}
+	param {
+		lr_mult: 0
+	}
+	include {
+    phase: TRAIN
+  }
+}
+
+layer {
+	bottom: "conv5x_2_sum"
+	top: "conv5x_2_sum_bn"
+	name: "conv5x_2_sum_bn"
+	type: "BatchNorm"
+	batch_norm_param {
+		use_global_stats: true
+	}
+	param {
+		lr_mult: 0
+	}
+	param {
+		lr_mult: 0
+	}
+	param {
+		lr_mult: 0
+	}
+	include {
+    phase: TEST
+  }
+}
 
  # layer {
   # name: "fc8"
@@ -1929,7 +1929,7 @@ layer {
 layer {
   name: "pool_ave"
   type: "Pooling"
-  bottom: "conv5x_2_sum"
+  bottom: "conv5x_2_sum_bn"
   top: "fc8"
   pooling_param {
     pool: AVE

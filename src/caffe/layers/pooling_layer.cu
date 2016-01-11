@@ -383,11 +383,43 @@ void PoolingLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
     //  LOG(INFO)<<"end gpu pooling forwarding...";
     break;
   case PoolingParameter_PoolMethod_AVE:
-    // NOLINT_NEXT_LINE(whitespace/operators)
-    AvePoolForward<Dtype><<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(
-        count, bottom_data, bottom[0]->num(), channels_,
-        height_, width_, pooled_height_, pooled_width_, kernel_h_,
-        kernel_w_, stride_h_, stride_w_, pad_h_, pad_w_, top_data);
+      if(num_spatial_axes_ ==2){
+          // NOLINT_NEXT_LINE(whitespace/operators)
+          AvePoolForward<Dtype><<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(
+              count, bottom_data, bottom[0]->num(), channels_,
+              height_, width_, pooled_height_, pooled_width_, kernel_h_,
+              kernel_w_, stride_h_, stride_w_, pad_h_, pad_w_, top_data);
+      }else{
+        switch(num_spatial_axes_){
+        case 1:
+          AvePoolForward_ND<Dtype,1><<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(count,
+            bottom_data,  bottom[0]->num(), channels_,
+            bottom_shape, top_shape, kernel,
+            stride,pad,top_data,mask,top_mask);
+            break;
+        case 2:
+          AvePoolForward_ND<Dtype,2><<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(count,
+            bottom_data,  bottom[0]->num(), channels_,
+            bottom_shape, top_shape, kernel,
+            stride,pad,top_data,mask,top_mask);
+          break;
+        case 3:
+        AvePoolForward_ND<Dtype,3><<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(count,
+          bottom_data,  bottom[0]->num(), channels_,
+          bottom_shape, top_shape, kernel,
+          stride,pad,top_data,mask,top_mask);
+            break;
+        case 4:
+          AvePoolForward_ND<Dtype,4><<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(count,
+            bottom_data,  bottom[0]->num(), channels_,
+            bottom_shape, top_shape, kernel,
+            stride,pad,top_data,mask,top_mask);
+            break;
+        default:
+        LOG(FATAL) << "Unsupported pooling dimension.";
+       }
+
+      }
     break;
   case PoolingParameter_PoolMethod_STOCHASTIC:
     if (this->phase_ == TRAIN) {
@@ -807,13 +839,14 @@ void PoolingLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
 
     break;
   case PoolingParameter_PoolMethod_AVE:
-  if(num_axes==4){
-    // NOLINT_NEXT_LINE(whitespace/operators)
-    AvePoolBackward<Dtype><<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(
-        count, top_diff, top[0]->num(), channels_,
-        height_, width_, pooled_height_, pooled_width_, kernel_h_,
-        kernel_w_, stride_h_, stride_w_, pad_h_, pad_w_, bottom_diff);
+      if(num_axes==4){
+        // NOLINT_NEXT_LINE(whitespace/operators)
+        AvePoolBackward<Dtype><<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(
+            count, top_diff, top[0]->num(), channels_,
+            height_, width_, pooled_height_, pooled_width_, kernel_h_,
+            kernel_w_, stride_h_, stride_w_, pad_h_, pad_w_, bottom_diff);
       }else{
+        LOG(INFO)<<"calling ave backward ND GPU";
         switch (num_spatial_axes_) {
           case 1:
           AvePoolBackward_ND<Dtype,1><<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(
