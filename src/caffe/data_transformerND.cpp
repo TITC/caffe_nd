@@ -343,6 +343,39 @@ void DataTransformerND<Dtype>::Transform(Blob<Dtype>* input_blob,
   //  LOG(INFO)<<"transform done..";
 
 }
+template <typename Dtype>
+void DataTransformerND<Dtype>::ApplyMean(Blob<Dtype>* input_blob,
+                  Blob<Dtype>* transformed_blob){
+
+  vector<int> src_shape  = input_blob->shape();
+  int iput_axes          = input_blob->num_axes();
+
+  int channels_axis =1;
+  int num_ch_means = mean_values_.size();
+  int num = src_shape[0];
+  int channels =src_shape[channels_axis];
+  size_t data_size=input_blob->count(channels_axis+1);
+  const Dtype* input_data =input_blob->cpu_data();
+  Dtype* trans_data =transformed_blob->mutable_cpu_data();
+  if(input_blob!=transformed_blob)
+    transformed_blob->Reshape(src_shape);
+  else
+    caffe_copy(transformed_blob->count(),input_data,trans_data);
+
+  if(param_.mean_value_size()==0) return;
+  
+  CHECK_GE(iput_axes,3);
+
+  CHECK_EQ(channels,num_ch_means);
+
+  int count = 0;
+  for(int i=0;i<num;++i)
+    for(int c=0;c<channels;++c){
+      for(int d=0;d<data_size;++d)
+          trans_data[count++]-=mean_values_[c];
+    }
+
+}
 
 
 template <typename Dtype>

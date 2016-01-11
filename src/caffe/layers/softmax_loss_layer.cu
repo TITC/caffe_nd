@@ -59,9 +59,11 @@ void SoftmaxWithLossLayer<Dtype>::Forward_gpu(
   const Dtype* label = bottom[1]->gpu_data();
   const int dim = prob_.count() / outer_num_;
   const int nthreads = outer_num_ * inner_num_;
-  const float* lossWeights ;
-  if(has_sample_selector_)
-    lossWeights = sample_selector_->Get_Label_prob_gpu_data();
+  // const float* lossWeights =NULL;
+  // if(has_sample_selector_)
+  //   lossWeights = sample_selector_->Get_Label_prob_gpu_data();
+
+  
   // Since this memory is not used for anything until it is overwritten
   // on the backward pass, we use it here to avoid having to allocate new GPU
   // memory to accumulate intermediate results in the kernel.

@@ -48,6 +48,8 @@ class DataTransformerND {
                   Blob<Dtype>* transformed_blob,
                   const vector<int>& off_set,
                   const vector<int>& crop_shape);
+  void ApplyMean(Blob<Dtype>* input_blob,
+                    Blob<Dtype>* transformed_blob);
 
 
   // void Transform(Blob<Dtype>* input_blob,

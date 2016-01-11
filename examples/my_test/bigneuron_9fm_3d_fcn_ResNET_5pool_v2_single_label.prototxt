@@ -34,6 +34,7 @@ label_select_param{
     mirror: false
     padding: true
     pad_method: ZERO
+	mean_value: 43
   }
   data_provider_param{
     # Specify the data source.
@@ -81,6 +82,7 @@ layer {
     mirror: false
     padding: true
     pad_method: ZERO
+	mean_value: 43
   }
   data_provider_param{
     # Specify the data source.
@@ -174,6 +176,52 @@ layer {
     }
   }
 }
+
+
+layer {
+    name: "bn2x"
+    type: "BatchNorm"
+    bottom: "conv2x_top"
+    top: "conv2x_top"
+    batch_norm_param {
+	use_global_stats: false
+	}
+	  param {
+		lr_mult: 0
+	  }
+	  param {
+		lr_mult: 0
+	  }
+	  param {
+		lr_mult: 0
+	  }
+	  include {
+		phase: TRAIN
+	  }
+ }
+ 
+ 
+ layer {
+    name: "bn2x"
+    type: "BatchNorm"
+    bottom: "conv2x_top"
+    top: "conv2x_top"
+    batch_norm_param {
+	use_global_stats: true
+	}
+	  param {
+		lr_mult: 0
+	  }
+	  param {
+		lr_mult: 0
+	  }
+	  param {
+		lr_mult: 0
+	  }
+	  include {
+		phase: TEST
+	  }
+ }
 
 #---------------------------  block layers conv2_1 ----------------------------
 
@@ -271,6 +319,52 @@ layer {
     }
   }
 }
+
+layer {
+    name: "bn2_1"
+    type: "BatchNorm"
+    bottom: "conv2x_1_3"
+    top: "conv2x_1_3"
+    batch_norm_param {
+	use_global_stats: false
+	}
+	  param {
+		lr_mult: 0
+	  }
+	  param {
+		lr_mult: 0
+	  }
+	  param {
+		lr_mult: 0
+	  }
+	  include {
+		phase: TRAIN
+	  }
+ }
+ 
+ 
+ layer {
+    name: "bn2_1"
+    type: "BatchNorm"
+    bottom: "conv2x_1_3"
+    top: "conv2x_1_3"
+    batch_norm_param {
+	use_global_stats: true
+	}
+	  param {
+		lr_mult: 0
+	  }
+	  param {
+		lr_mult: 0
+	  }
+	  param {
+		lr_mult: 0
+	  }
+	  include {
+		phase: TEST
+	  }
+ }
+
 
 layer{
 name: "conv2x_1_sum"
@@ -550,6 +644,51 @@ layer {
     }
   }
 }
+
+layer {
+    name: "bn3x"
+    type: "BatchNorm"
+    bottom: "conv3x_top"
+    top: "conv3x_top"
+    batch_norm_param {
+	use_global_stats: false
+	}
+	  param {
+		lr_mult: 0
+	  }
+	  param {
+		lr_mult: 0
+	  }
+	  param {
+		lr_mult: 0
+	  }
+	  include {
+		phase: TRAIN
+	  }
+ }
+ 
+ 
+ layer {
+    name: "bn3x"
+    type: "BatchNorm"
+    bottom: "conv3x_top"
+    top: "conv3x_top"
+    batch_norm_param {
+	use_global_stats: true
+	}
+	  param {
+		lr_mult: 0
+	  }
+	  param {
+		lr_mult: 0
+	  }
+	  param {
+		lr_mult: 0
+	  }
+	  include {
+		phase: TEST
+	  }
+ }
 
 #------------ block layers conv3_1-------------------- 
 layer {
@@ -884,6 +1023,16 @@ layer {
   bottom: "conv3x_3_sum"
   top: "conv3x_3_sum"
   }
+  
+  layer{
+  name: "drop3"
+  type: "Dropout"
+  bottom: "conv3x_3_sum"
+  top: "conv3x_3_sum"
+  dropout_param {
+    dropout_ratio: 0.5
+  }
+  }
  
  # ----conv_4x_-----------------------------------------------
  
@@ -919,6 +1068,52 @@ layer {
     }
   }
 }
+
+
+layer {
+    name: "bn4x"
+    type: "BatchNorm"
+    bottom: "conv4x_top"
+    top: "conv4x_top"
+    batch_norm_param {
+	use_global_stats: false
+	}
+	  param {
+		lr_mult: 0
+	  }
+	  param {
+		lr_mult: 0
+	  }
+	  param {
+		lr_mult: 0
+	  }
+	  include {
+		phase: TRAIN
+	  }
+ }
+ 
+ 
+ layer {
+    name: "bn4x"
+    type: "BatchNorm"
+    bottom: "conv4x_top"
+    top: "conv4x_top"
+    batch_norm_param {
+	use_global_stats: true
+	}
+	  param {
+		lr_mult: 0
+	  }
+	  param {
+		lr_mult: 0
+	  }
+	  param {
+		lr_mult: 0
+	  }
+	  include {
+		phase: TEST
+	  }
+ }
  #------------ block layers conv4_1-------------------- 
 layer {
   name: "conv4x_1_1"
@@ -1585,6 +1780,15 @@ layer {
   top: "conv4x_6_sum"
   }
   
+layer{
+  name: "drop4"
+  type: "Dropout"
+  bottom: "conv4x_6_sum"
+  top: "conv4x_6_sum"
+  dropout_param {
+    dropout_ratio: 0.5
+  }
+  }
   
  #----------------------conv5x----------------------------------------------------------------------------------------------------
  #---------------conv5_top------------------
@@ -1620,7 +1824,51 @@ layer {
     }
   }
  }
-  
+ 
+ layer {
+    name: "bn5x"
+    type: "BatchNorm"
+    bottom: "conv5x_top"
+    top: "conv5x_top"
+    batch_norm_param {
+	use_global_stats: false
+	}
+	  param {
+		lr_mult: 0
+	  }
+	  param {
+		lr_mult: 0
+	  }
+	  param {
+		lr_mult: 0
+	  }
+	  include {
+		phase: TRAIN
+	  }
+ }
+ 
+ 
+ layer {
+    name: "bn5x"
+    type: "BatchNorm"
+    bottom: "conv5x_top"
+    top: "conv5x_top"
+    batch_norm_param {
+	use_global_stats: true
+	}
+	  param {
+		lr_mult: 0
+	  }
+	  param {
+		lr_mult: 0
+	  }
+	  param {
+		lr_mult: 0
+	  }
+	  include {
+		phase: TEST
+	  }
+ }
   
   
  #---------------conv5x_1------------------------------
@@ -1843,7 +2091,7 @@ layer{
   bottom: "conv5x_2_sum"
   top: "conv5x_2_sum"
   dropout_param {
-    dropout_ratio: 0.25
+    dropout_ratio: 0.5
   }
   }
 

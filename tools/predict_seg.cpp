@@ -7,6 +7,8 @@
 #include <caffe/util/db.hpp>
 #include <caffe/util/hdf5.hpp>
 #include <caffe/blob.hpp>
+#include <caffe/data_transformerND.hpp>
+#include <caffe/proto/caffe.pb.h>
 #include <algorithm>
 #include <iosfwd>
 #include <memory>
@@ -52,6 +54,8 @@ void SaveBlob2HD5File(const char* filename, const Blob<float>& output_blob);
   int num_channels_;
   cv::Mat mean_;
   std::vector<string> labels_;
+  TransformationNDParameter transform_param_;
+  DataTransformerND<float>* transformerND_;// = new DataTransformerND<TypeParam>(transform_param);
 };
 
 Segmentor::Segmentor(const string& model_file,

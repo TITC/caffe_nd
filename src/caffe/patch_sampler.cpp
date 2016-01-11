@@ -108,6 +108,12 @@ void PatchSampler<Dtype>::ReadOnePatch(QueuePair_Batch<Dtype>* qb ){
       LOG(INFO)<<"loading batch patch_count = "<<patch_count_;
       d_provider_->Load_next_batch();
 
+      for(int i= 0;i<d_provider_->get_current_batch_size();++i){
+        const Batch_data<Dtype> source_d_l=d_provider_->getOneData(i);
+        data_transformer_nd->ApplyMean(source_d_l.data_.get(),
+                                       source_d_l.data_.get());
+      }
+
 
   }
   patch_count_++;
