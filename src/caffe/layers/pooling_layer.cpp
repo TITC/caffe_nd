@@ -668,6 +668,7 @@ void PoolingLayer<Dtype>::Backward_cpu_ND(const vector<Blob<Dtype>*>& top,
             }
             break;
         case PoolingParameter_PoolMethod_AVE:
+               Backward_gpu(top,propagate_down, bottom);
           break;
         case PoolingParameter_PoolMethod_STOCHASTIC:
             NOT_IMPLEMENTED;
