@@ -34,6 +34,7 @@ label_select_param{
     mirror: false
     padding: true
     pad_method: ZERO
+    mean_value: 113
   }
   data_provider_param{
     # Specify the data source.
@@ -81,6 +82,7 @@ layer {
     mirror: false
     padding: true
     pad_method: ZERO
+    mean_value: 113
   }
   data_provider_param{
     # Specify the data source.
@@ -1843,7 +1845,7 @@ layer{
   bottom: "conv5x_2_sum"
   top: "conv5x_2_sum"
   dropout_param {
-    dropout_ratio: 0.5
+    dropout_ratio: 0.85
   }
   }
 

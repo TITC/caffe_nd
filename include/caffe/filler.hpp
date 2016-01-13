@@ -264,7 +264,7 @@ class BilinearFiller : public Filler<Dtype> {
       vector<int> shape =blob->shape();
        height=shape[2]; width=shape[3];depth=shape[4];
       // CHECK(height==1||width==1||depth==1) << "one of axis must be 1";
-      if(width==1&&height==depth&&height==1){
+      if(width==1||height==1||depth==1){
            if(width==1&&height==depth&&height>1)
              w=h=height;
            else if(height==1&&width>1&&width==depth)
