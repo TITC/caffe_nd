@@ -101,8 +101,9 @@ void AccuracyLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
       ++count;
 
     }
-      DLOG(INFO)<<"label 1  total  :  "<<total_label_1<<"  label 0 total  : "<<total_label_0<< "   count = "<<count;
+
   }
+    LOG(INFO)<<"label 1  total  :  "<<total_label_1<<"  label 0 total  : "<<total_label_0<< "   count = "<<count;
 
   // LOG(INFO) << "Accuracy: " << accuracy;
   top[0]->mutable_cpu_data()[0] = accuracy / count;
