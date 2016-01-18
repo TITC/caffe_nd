@@ -28,7 +28,7 @@ Dtype DataTransformerND<Dtype>::ReadOnePoint(Blob<Dtype>* input_blob, vector<int
   CHECK_EQ(input_channels,1);
   CHECK_EQ(input_num,1);
   if(pointCoord.size()!=(input_shape_dims-2) && pointCoord.size()!=input_shape_dims)
-  LOG(ERROR)<<"dim of input point coords must equal to dim of input blob, or 2 dim smaller if num and channel info is ignored";
+  LOG(FATAL)<<"dim of input point coords must equal to dim of input blob, or 2 dim smaller if num and channel info is ignored";
 
   int pt_index=pointCoord[0];
   for (int n=1;n<pointCoord.size();++n){
@@ -363,7 +363,7 @@ void DataTransformerND<Dtype>::ApplyMean(Blob<Dtype>* input_blob,
     caffe_copy(transformed_blob->count(),input_data,trans_data);
 
   if(param_.mean_value_size()==0) return;
-  
+
   CHECK_GE(iput_axes,3);
 
   CHECK_EQ(channels,num_ch_means);

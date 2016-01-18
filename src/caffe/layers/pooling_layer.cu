@@ -460,9 +460,9 @@ __global__ void MaxPoolBackward_ND(const int nthreads, const Dtype*  top_diff,
       //int d_iter[num_axes];  // NOLINT(runtime/arrays)
       //int i;
     CUDA_KERNEL_LOOP(index, nthreads) {
-      int depth =bottom_shape[2];
-      int width= bottom_shape[1];
       int height=bottom_shape[0];
+      int width= bottom_shape[1];
+      int depth =bottom_shape[2];
       int kernel_h=kernel[0];
       int kernel_w=kernel[1];
       int kernel_d=kernel[2];
@@ -746,9 +746,9 @@ template <typename Dtype>
 void PoolingLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
       const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom) {
   if (!propagate_down[0]) {
+    LOG(INFO)<<"pooling backwarding. retruned..";
     return;
   }
-//  return;
 //  LOG(INFO)<<"start gpu pooling backwarding...";
   const Dtype* top_diff = top[0]->gpu_diff();
   Dtype* bottom_diff = bottom[0]->mutable_gpu_diff();

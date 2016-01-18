@@ -61,6 +61,8 @@ void AccuracyLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
   int count = 0;
   int total_label_1 =0;
  int total_label_0 =0;
+ int label_1 =0;
+ int label_0 =0;
   for (int i = 0; i < outer_num_; ++i) {
 
     for (int j = 0; j < inner_num_; ++j) {
@@ -94,6 +96,7 @@ void AccuracyLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
           }else{
           LOG(INFO)<<"unkonwn label = "<<label_value;
           }
+          //LOG(INFO)<<"acc prob  " <<"["<<k<<"] = "<<bottom_data_vector[k].first;
           if (top.size() > 1) ++top[1]->mutable_cpu_data()[label_value];
           break;
         }

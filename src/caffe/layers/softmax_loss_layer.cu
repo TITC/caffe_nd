@@ -59,11 +59,12 @@ void SoftmaxWithLossLayer<Dtype>::Forward_gpu(
   const Dtype* label = bottom[1]->gpu_data();
   const int dim = prob_.count() / outer_num_;
   const int nthreads = outer_num_ * inner_num_;
+  //LOG(INFO)<<"has_ignore_label_ = " <<has_ignore_label_;
   // const float* lossWeights =NULL;
   // if(has_sample_selector_)
   //   lossWeights = sample_selector_->Get_Label_prob_gpu_data();
 
-  
+
   // Since this memory is not used for anything until it is overwritten
   // on the backward pass, we use it here to avoid having to allocate new GPU
   // memory to accumulate intermediate results in the kernel.
@@ -203,6 +204,13 @@ void SoftmaxWithLossLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
     const Dtype loss_weight = top[0]->cpu_diff()[0] /
                               get_normalizer(normalization_, valid_count);
     caffe_gpu_scal(prob_.count(), loss_weight , bottom_diff);
+  //  Dtype a =0;
+  //  Dtype* bottom_diff_cpu = bottom[0]->mutable_cpu_diff();
+    // for (int i=0; i<nthreads;++i)
+    // a+=bottom_diff_cpu[i];
+    //
+    // //if(a==0)
+    //   LOG(INFO)<<"all diff  =  "<<a;
   }
 }
 
