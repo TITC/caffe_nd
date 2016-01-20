@@ -22,7 +22,7 @@ layer {
 	   #data_source_batch_size: 1
 
  }
- 
+
 label_select_param{
 	balance: true
 	num_labels: 3
@@ -34,6 +34,7 @@ label_select_param{
     mirror: false
     padding: true
     pad_method: ZERO
+    mean_value: 113
   }
   data_provider_param{
     # Specify the data source.
@@ -69,7 +70,7 @@ layer {
 	   patches_per_data_batch: 899999
 	   #data_source_batch_size: 1
  }
- 
+
  label_select_param{
 			   balance: true
 			   num_labels: 3
@@ -81,6 +82,7 @@ layer {
     mirror: false
     padding: true
     pad_method: ZERO
+    mean_value: 113
   }
   data_provider_param{
     # Specify the data source.
@@ -242,8 +244,8 @@ layer {
   name: "relu2x_1_2"
   type: "ReLU"
   bottom: "conv2x_1_2"
-  
-  
+
+
   top: "conv2x_1_2"
 }
 
@@ -513,8 +515,8 @@ layer {
   bottom: "conv2x_3_sum"
   top: "conv2x_3_sum"
   }
-  
-#------------ block layers conv2_3-------------------- 
+
+#------------ block layers conv2_3--------------------
 
 
 #------------------- conv3_x_-----------------------
@@ -551,7 +553,7 @@ layer {
   }
 }
 
-#------------ block layers conv3_1-------------------- 
+#------------ block layers conv3_1--------------------
 layer {
   name: "conv3x_1_1"
   type: "Convolution"
@@ -661,9 +663,9 @@ layer {
   bottom: "conv3x_1_sum"
   top: "conv3x_1_sum"
   }
-#------------ block layers conv3_2-------------------- 
- 
-  
+#------------ block layers conv3_2--------------------
+
+
 layer {
   name: "conv3x_2_1"
   type: "Convolution"
@@ -774,7 +776,7 @@ layer {
   top: "conv3x_2_sum"
   }
 
-#------------ block layers conv3_3-------------------- 
+#------------ block layers conv3_3--------------------
 layer {
   name: "conv3x_3_1"
   type: "Convolution"
@@ -884,9 +886,9 @@ layer {
   bottom: "conv3x_3_sum"
   top: "conv3x_3_sum"
   }
- 
+
  # ----conv_4x_-----------------------------------------------
- 
+
  layer {
   name: "conv4x_top"
   type: "Convolution"
@@ -919,7 +921,7 @@ layer {
     }
   }
 }
- #------------ block layers conv4_1-------------------- 
+ #------------ block layers conv4_1--------------------
 layer {
   name: "conv4x_1_1"
   type: "Convolution"
@@ -1029,9 +1031,9 @@ layer {
   bottom: "conv4x_1_sum"
   top: "conv4x_1_sum"
   }
-#------------ block layers conv4_2-------------------- 
- 
-  
+#------------ block layers conv4_2--------------------
+
+
 layer {
   name: "conv4x_2_1"
   type: "Convolution"
@@ -1142,7 +1144,7 @@ layer {
   top: "conv4x_2_sum"
   }
 
-#------------ block layers conv4_3-------------------- 
+#------------ block layers conv4_3--------------------
 layer {
   name: "conv4x_3_1"
   type: "Convolution"
@@ -1362,7 +1364,7 @@ layer {
   bottom: "conv4x_4_sum"
   top: "conv4x_4_sum"
   }
-  
+
  #----------block layers 4x_5-------------------------------
  layer {
   name: "conv4x_5_1"
@@ -1473,8 +1475,8 @@ layer {
   bottom: "conv4x_5_sum"
   top: "conv4x_5_sum"
   }
-  
- #--------------------------block_layers  4x_6---------------- 
+
+ #--------------------------block_layers  4x_6----------------
  layer {
   name: "conv4x_6_1"
   type: "Convolution"
@@ -1584,8 +1586,8 @@ layer {
   bottom: "conv4x_6_sum"
   top: "conv4x_6_sum"
   }
-  
-  
+
+
  #----------------------conv5x----------------------------------------------------------------------------------------------------
  #---------------conv5_top------------------
  layer {
@@ -1620,9 +1622,9 @@ layer {
     }
   }
  }
-  
-  
-  
+
+
+
  #---------------conv5x_1------------------------------
 layer {
   name: "conv5x_1_1"
@@ -1843,7 +1845,7 @@ layer{
   bottom: "conv5x_2_sum"
   top: "conv5x_2_sum"
   dropout_param {
-    dropout_ratio: 0.5
+    dropout_ratio: 0.85
   }
   }
 
@@ -1853,44 +1855,106 @@ layer {
   bottom: "conv5x_2_sum"
   top: "conv5x_2_sum"
   }
- 
- 
- layer {
-  name: "fc8"
-  type: "Convolution"
-  bottom: "conv5x_2_sum"
-  top: "fc8"
-  param {
-    lr_mult: 1
-  }
-  param {
-    lr_mult: 2
-  }
-  convolution_param {
-    num_output: 128
-	kernel_size: 7
-	kernel_size: 7
-	kernel_size: 1
-    weight_filler {
-      type: "gaussian"
-      std: 0.005
-    }
-    bias_filler {
-      type: "constant"
-      value: 1
-    }
+
+
+layer {
+	bottom: "conv5x_2_sum"
+	top: "conv5x_2_sum_bn"
+	name: "conv5x_2_sum_bn"
+	type: "BatchNorm"
+	batch_norm_param {
+		use_global_stats: false
+	}
+	param {
+		lr_mult: 0
+	}
+	param {
+		lr_mult: 0
+	}
+	param {
+		lr_mult: 0
+	}
+	include {
+    phase: TRAIN
   }
 }
- 
- #---------------------------deconv--------------------------- 
 
- layer {
-  name: "relufc8"
-  type: "ReLU"
-  bottom: "fc8"
-  top: "fc8"
+layer {
+	bottom: "conv5x_2_sum"
+	top: "conv5x_2_sum_bn"
+	name: "conv5x_2_sum_bn"
+	type: "BatchNorm"
+	batch_norm_param {
+		use_global_stats: true
+	}
+	param {
+		lr_mult: 0
+	}
+	param {
+		lr_mult: 0
+	}
+	param {
+		lr_mult: 0
+	}
+	include {
+    phase: TEST
   }
- 
+}
+
+ # layer {
+  # name: "fc8"
+  # type: "Convolution"
+  # bottom: "conv5x_2_sum"
+  # top: "fc8"
+  # param {
+    # lr_mult: 1
+  # }
+  # param {
+    # lr_mult: 2
+  # }
+  # convolution_param {
+    # num_output: 128
+	# kernel_size: 7
+	# kernel_size: 7
+	# kernel_size: 1
+    # weight_filler {
+      # type: "gaussian"
+      # std: 0.005
+    # }
+    # bias_filler {
+      # type: "constant"
+      # value: 1
+    # }
+  # }
+# }
+
+layer {
+  name: "pool_ave"
+  type: "Pooling"
+  bottom: "conv5x_2_sum_bn"
+  top: "fc8"
+  pooling_param {
+    pool: AVE
+    kernel_shape: 7
+	kernel_shape: 7
+	kernel_shape: 1
+    stride_shape: 1
+	stride_shape: 1
+	stride_shape: 1
+  }
+}
+
+
+
+ #---------------------------deconv---------------------------
+
+ # layer {
+  # name: "relufc8"
+  # type: "ReLU"
+  # bottom: "fc8"
+  # top: "fc8"
+  # }
+
 
 
 
@@ -1934,7 +1998,7 @@ layer{
      name: "accuracy"
      type: "Accuracy"
      bottom: "fc9"
-     bottom: "label" 
+     bottom: "label"
 	 top: "accuracy"
 	 accuracy_param{
 	 ignore_label:3

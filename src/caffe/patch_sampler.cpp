@@ -110,7 +110,7 @@ void PatchSampler<Dtype>::ReadOnePatch(QueuePair_Batch<Dtype>* qb ){
 
       for(int i= 0;i<d_provider_->get_current_batch_size();++i){
         const Batch_data<Dtype> source_d_l=d_provider_->getOneData(i);
-        data_transformer_nd->ApplyMean(source_d_l.data_.get(),
+      data_transformer_nd->ApplyMean(source_d_l.data_.get(),
                                        source_d_l.data_.get());
       }
 
@@ -118,11 +118,12 @@ void PatchSampler<Dtype>::ReadOnePatch(QueuePair_Batch<Dtype>* qb ){
   }
   patch_count_++;
 
+
   int data_idx=PrefetchRand()% d_provider_->get_current_batch_size();
   const Batch_data<Dtype> source_data_label=d_provider_->getOneData(data_idx);
 
   //LOG(INFO)<<()
-  Batch_data<Dtype>* patch_data_label = qb->free_.pop();
+
   //LOG(INFO)<< "readone from provider";
   // take input patch_data then warp a patch and put it to patch_data;
   // the function that address the probability of selecting classe need to be addressed
@@ -150,6 +151,7 @@ void PatchSampler<Dtype>::ReadOnePatch(QueuePair_Batch<Dtype>* qb ){
   vector<int> label_offset    = patch_coord_finder_->GetLabelOffset();
   //double  trans_time = 0;
   //timer.Start();
+  Batch_data<Dtype>* patch_data_label = qb->free_.pop();
   data_transformer_nd->Transform(source_data_label.data_.get(),
                                     patch_data_label->data_.get(),
                                     data_offset,
@@ -160,16 +162,20 @@ void PatchSampler<Dtype>::ReadOnePatch(QueuePair_Batch<Dtype>* qb ){
                                     patch_label_shape_);
 
 
- //LOG(INFO)<<"end transform";
-  const vector<int>& source_data_shape =source_data_label.data_->shape();
-  const vector<int>& source_label_shape =source_data_label.label_->shape();
 
   int new_label=(int)  patch_data_label->label_.get()->cpu_data()[0];
   if(patch_data_label->label_.get()->count()==1)
-  {CHECK_EQ(new_label,pt_label_value);}
+  {CHECK_EQ(new_label,pt_label_value)<<"select label must be equal to the center";}
+  qb->full_.push(patch_data_label);
+  //LOG(INFO)<<"end transform";
+   const vector<int>& source_data_shape =source_data_label.data_->shape();
+   const vector<int>& source_label_shape =source_data_label.label_->shape();
+
   count_m_mutex_.unlock();
 
-  qb->full_.push(patch_data_label);
+
+
+//  count_m_mutex_.unlock();
 
     // trans_time += timer.MicroSeconds();
     // timer.Stop();
@@ -195,8 +201,6 @@ void PatchSampler<Dtype>::ReadOnePatch(QueuePair_Batch<Dtype>* qb ){
   // setting patch data and label shape;
   dest_label_shape_=patch_data_label->label_->shape();
   dest_data_shape_=patch_data_label->data_->shape();
-
-
 }
 //
 template <typename Dtype>
