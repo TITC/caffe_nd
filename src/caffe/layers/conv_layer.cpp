@@ -36,10 +36,13 @@ void ConvolutionLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
         this->forward_cpu_bias(top_data + n * this->top_dim_, bias);
       }
     }
+    if(this->layer_param_.phase()==PREDICT){
+      bottom[i]->data()->free();
+      bottom[i]->diff()->free();
+    }
   }
+
   if(this->layer_param_.phase()==PREDICT){
-    bottom[0]->data()->free();
-    bottom[0]->diff()->free();
       this->free_col_buffer();
   }
 }

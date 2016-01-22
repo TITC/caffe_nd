@@ -314,7 +314,7 @@ void PoolingLayer<Dtype>::Reshape2D(const vector<Blob<Dtype>*>& bottom,
 template <typename Dtype>
 void PoolingLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
   const vector<Blob<Dtype>*>& top) {
-     //LOG(INFO)<<"start forward "<< this->layer_param_.name();
+    LOG(INFO)<<"start forward "<< this->layer_param_.name();
     if(num_spatial_axes_ ==2)
       Forward_cpu_2D(bottom, top);
     else

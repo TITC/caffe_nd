@@ -51,13 +51,13 @@ inline void im2col_nd_core_cpu(const Dtype* data_input, const bool im2col,
     const int* kernel_shape, const int* pad, const int* stride,
     const int* dilation, Dtype* data_output) {
   if (!im2col) {
-    int im_size = im_shape[0];
+    long im_size = im_shape[0];
     for (int i = 0; i < num_spatial_axes; ++i) {
       im_size *= im_shape[1 + i];
     }
     caffe_set(im_size, Dtype(0), data_output);
   }
-  int kernel_size = 1;
+  long kernel_size = 1;
   for (int i = 0; i < num_spatial_axes; ++i) {
     kernel_size *= kernel_shape[i];
   }
@@ -76,18 +76,20 @@ inline void im2col_nd_core_cpu(const Dtype* data_input, const bool im2col,
     for (bool incremented = true; incremented; ) {
       // Loop over spatial axes in forward order to compute the indices in the
       // image and column, and whether the index lies in the padding.
-      int index_col = c_col;
-      int index_im = c_col / kernel_size;
+    //  int index_col = c_col;
+      //int index_im = c_col / kernel_size;
+      long index_col = c_col;
+      long index_im = c_col / kernel_size;
       bool is_padding = false;
       for (int d_i = 0; d_i < num_spatial_axes; ++d_i) {
-        const int d = d_iter[d_i];
-        const int d_im = d * stride[d_i] - pad[d_i] +
+        const long d = d_iter[d_i];
+        const long d_im = d * stride[d_i] - pad[d_i] +
             d_offset[d_i] * dilation[d_i];
         is_padding |= d_im < 0 || d_im >= im_shape[d_i + 1];
-        index_col *= col_shape[d_i + 1];
-        index_col += d;
-        index_im *= im_shape[d_i + 1];
-        index_im += d_im;
+        index_col *= (long)col_shape[d_i + 1];
+        index_col += (long)d;
+        index_im *= (long)im_shape[d_i + 1];
+        index_im += (long)d_im;
       }
       if (im2col) {
         if (is_padding) {
