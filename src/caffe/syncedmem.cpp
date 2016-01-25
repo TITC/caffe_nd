@@ -5,21 +5,22 @@
 namespace caffe {
 
 SyncedMemory::~SyncedMemory() {
-  if (cpu_ptr_ && own_cpu_data_) {
-    CaffeFreeHost(cpu_ptr_, cpu_malloc_use_cuda_);
-  }
-
-#ifndef CPU_ONLY
-  if (gpu_ptr_ && own_gpu_data_) {
-    int initial_device;
-    cudaGetDevice(&initial_device);
-    if (gpu_device_ != -1) {
-      CUDA_CHECK(cudaSetDevice(gpu_device_));
-    }
-    CUDA_CHECK(cudaFree(gpu_ptr_));
-    cudaSetDevice(initial_device);
-  }
-#endif  // CPU_ONLY
+  free();
+//   if (cpu_ptr_ && own_cpu_data_) {
+//     CaffeFreeHost(cpu_ptr_, cpu_malloc_use_cuda_);
+//   }
+//
+// #ifndef CPU_ONLY
+//   if (gpu_ptr_ && own_gpu_data_) {
+//     int initial_device;
+//     cudaGetDevice(&initial_device);
+//     if (gpu_device_ != -1) {
+//       CUDA_CHECK(cudaSetDevice(gpu_device_));
+//     }
+//     CUDA_CHECK(cudaFree(gpu_ptr_));
+//     cudaSetDevice(initial_device);
+//   }
+// #endif  // CPU_ONLY
 }
 
 inline void SyncedMemory::to_cpu() {
@@ -138,8 +139,11 @@ void* SyncedMemory::mutable_gpu_data() {
 #endif
 }
 void SyncedMemory::free(){
+  //if(head_ == UNINITIALIZED) return;
   if (cpu_ptr_ && own_cpu_data_) {
     CaffeFreeHost(cpu_ptr_, cpu_malloc_use_cuda_);
+    head_ = UNINITIALIZED;
+    cpu_ptr_=NULL;
   }
   #ifndef CPU_ONLY
     if (gpu_ptr_ && own_gpu_data_) {
@@ -150,6 +154,8 @@ void SyncedMemory::free(){
       }
       CUDA_CHECK(cudaFree(gpu_ptr_));
       cudaSetDevice(initial_device);
+      head_ = UNINITIALIZED;
+      gpu_ptr_ =NULL;
     }
   #endif  // CPU_ONLY
 }

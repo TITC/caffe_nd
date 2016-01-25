@@ -15,6 +15,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include <glog/logging.h>
 
 #ifdef USE_OPENCV
 using namespace caffe;  // NOLINT(build/namespaces)
@@ -106,10 +107,10 @@ Segmentor::Segmentor(const string& model_file,
   //  << "Number of labels is different from the output layer dimension.";
 }
 
-static bool PairCompare(const std::pair<float, int>& lhs,
-                        const std::pair<float, int>& rhs) {
-  return lhs.first > rhs.first;
-}
+// static bool PairCompare(const std::pair<float, int>& lhs,
+//                         const std::pair<float, int>& rhs) {
+//   return lhs.first > rhs.first;
+// }
 
 /* Return the indices of the top N values of vector v. */
 // static std::vector<int> Argmax(const std::vector<float>& v, int N) {
@@ -327,6 +328,8 @@ void Segmentor::SetMean(const string& mean_file) {
 
 int main(int argc, char** argv) {
   //LOG(INFO)<<"size of long ="<<sizeof(int);
+    ::google::InitGoogleLogging(argv[0]);
+     //FLAGS_logtostderr = 1;
   if (argc != 8) {
     LOG(INFO)<<"argc ="<<argc;
         std::cerr << "Usage: " << argv[0]
@@ -335,7 +338,7 @@ int main(int argc, char** argv) {
     return 1;
   }
 
-  ::google::InitGoogleLogging(argv[0]);
+
 
   string model_file   = argv[1];
   string trained_file = argv[2];

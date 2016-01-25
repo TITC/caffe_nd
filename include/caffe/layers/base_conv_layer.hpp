@@ -44,6 +44,10 @@ class BaseConvolutionLayer : public Layer<Dtype> {
 #ifndef CPU_ONLY
   void forward_gpu_gemm(const Dtype* col_input, const Dtype* weights,
       Dtype* output, bool skip_im2col = false);
+  //This is for fast preidction to solve out of memory issue when using GPU
+  void forward_gpu_gemm_partition(const Dtype* input,
+        const Dtype* weights, Dtype* output, bool skip_im2col);
+
   void forward_gpu_bias(Dtype* output, const Dtype* bias);
   void backward_gpu_gemm(const Dtype* input, const Dtype* weights,
       Dtype* col_output);

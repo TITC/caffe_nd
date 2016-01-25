@@ -445,7 +445,13 @@ void PoolingLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
   default:
     LOG(FATAL) << "Unknown pooling method.";
   }
+  if(this->layer_param_.phase()==PREDICT){
+    LOG(INFO)<<"Free GPU mem...";
+    bottom[0]->data()->free();
+    bottom[0]->diff()->free();
+  }
   CUDA_POST_KERNEL_CHECK;
+
 }
 
 

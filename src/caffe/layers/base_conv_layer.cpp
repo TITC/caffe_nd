@@ -389,6 +389,77 @@ void BaseConvolutionLayer<Dtype>::backward_gpu_bias(Dtype* bias,
       input, bias_multiplier_.gpu_data(), 1., bias);
 }
 
+
+template <typename Dtype>
+void BaseConvolutionLayer<Dtype>::forward_gpu_gemm_partition(const Dtype* input,
+    const Dtype* weights, Dtype* output, bool skip_im2col) {
+  const Dtype* col_buff = input;
+  const int partition_size_  =1024;
+  long output_size    = 1;
+  int cur_part_size   =partition_size_;
+  for(int i=0;i<output_shape_.size();++i){
+    output_size *=output_shape_[i];
+  }
+  const int partition_num_   =output_size/partition_size_+1;
+  const int lastPart_size    =output_size%partition_size_;
+
+  col_buffer_shape_.clear();
+  col_buffer_shape_.push_back(kernel_dim_ * group_);
+  col_buffer_shape_.push_back(partition_size_);
+  // for (int i = 0; i < num_spatial_axes_; ++i) {
+  //   if (reverse_dimensions()) {
+  //     col_buffer_shape_.push_back(input_shape(i + 1));
+  //   } else {
+  //     col_buffer_shape_.push_back(output_shape_[i]);
+  //   }
+  // }
+
+  col_buffer_.Reshape(1,kernel_dim_*group_,1,partition_size_);
+  Dtype* col_data = col_buffer_.mutable_gpu_data();
+  Blob<Dtype> temp_out_buffer;
+  temp_out_buffer.Reshape(1, 1, num_output_, partition_size_);
+  Dtype* temp_out = temp_out_buffer.mutable_gpu_data();
+  const Dtype* weight = this->blobs_[0]->gpu_data();
+	long M_ = num_output_ / group_;
+  long weight_offset = M_ * kernel_dim_;
+  long col_offset = kernel_dim_ * partition_size_;
+  long top_offset = M_ * partition_size_;
+  for (int p=0; p<partition_num_; p++){
+			  long p_offset =  partition_size_*p;
+			  long end_index;
+			  const long start_index =p*partition_size_;
+			 if (start_index >=output_size) break;
+			 if((start_index +partition_size_)<output_size){
+			    end_index =start_index +partition_size_;
+			 }else{
+  				end_index =output_size;
+  				cur_part_size  =end_index-start_index;
+  				CHECK_GT(cur_part_size ,0);
+			 }
+			 CHECK_EQ(cur_part_size,end_index-start_index);
+       // now write the partial im2col funciton here
+  // im2col_gpu(data, conv_in_channels_,
+  //     conv_input_shape_.cpu_data()[1], conv_input_shape_.cpu_data()[2],
+  //     kernel_shape_.cpu_data()[0], kernel_shape_.cpu_data()[1],
+  //     pad_.cpu_data()[0], pad_.cpu_data()[1],
+  //     stride_.cpu_data()[0], stride_.cpu_data()[1],
+  //     dilation_.cpu_data()[0], dilation_.cpu_data()[1], col_buff);
+
+
+  if (!is_1x1_) {
+    if (!skip_im2col) {
+      conv_im2col_gpu(input, col_buffer_.mutable_gpu_data());
+    }
+    col_buff = col_buffer_.gpu_data();
+  }
+  for (int g = 0; g < group_; ++g) {
+    caffe_gpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, conv_out_channels_ /
+        group_, conv_out_spatial_dim_, kernel_dim_,
+        (Dtype)1., weights + weight_offset_ * g, col_buff + col_offset_ * g,
+        (Dtype)0., output + output_offset_ * g);
+      }
+  }
+}
 #endif  // !CPU_ONLY
 
 INSTANTIATE_CLASS(BaseConvolutionLayer);

@@ -19,6 +19,10 @@ void DeconvolutionLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
         this->forward_gpu_bias(top_data + n * this->top_dim_, bias);
       }
     }
+    if(this->layer_param_.phase()==PREDICT){
+      bottom[i]->data()->free();
+      bottom[i]->diff()->free();
+    }  
   }
 }
 
