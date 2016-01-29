@@ -303,6 +303,8 @@ __global__ void StoPoolForwardTest(const int nthreads,
 template <typename Dtype>
 void PoolingLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
       const vector<Blob<Dtype>*>& top) {
+        if(this->layer_param_.phase()==PREDICT)
+          {LOG(INFO)<<"start forward "<< this->layer_param_.name();}
   const Dtype* bottom_data = bottom[0]->gpu_data();
   Dtype* top_data = top[0]->mutable_gpu_data();
   int count = top[0]->count();

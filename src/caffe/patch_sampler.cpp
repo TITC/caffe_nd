@@ -121,8 +121,7 @@ void PatchSampler<Dtype>::ReadOnePatch(QueuePair_Batch<Dtype>* qb ){
 
   int data_idx=PrefetchRand()% d_provider_->get_current_batch_size();
   const Batch_data<Dtype> source_data_label=d_provider_->getOneData(data_idx);
-
-  //LOG(INFO)<<()
+  //LOG(INFO)<<"reading from data blob "<<data_idx;
 
   //LOG(INFO)<< "readone from provider";
   // take input patch_data then warp a patch and put it to patch_data;
