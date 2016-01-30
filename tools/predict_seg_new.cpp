@@ -36,6 +36,8 @@ DEFINE_int32(shift_stride, 1,
     "shift stride along the axis");
 DEFINE_int32(gpu, -1,
         "shift stride along the axis");
+DEFINE_double(mean_value, 0,
+                "mean value ");
 
 
 class Segmentor {
@@ -167,6 +169,9 @@ void Segmentor::SetMean(const string& mean_file) {
   LoadHD5File(input_hd5_file.c_str());
 
   TransformationNDParameter transform_param;
+  float mean_v =FLAGS_mean_value;
+  transform_param.add_mean_value(FLAGS_mean_value);
+  //set_mean_value(0,FLAGS_mean_value);
   DataTransformerND<float>* transformer
     = new DataTransformerND<float>(transform_param);
   Blob<float> trans_blob;
@@ -206,6 +211,7 @@ void Segmentor::SetMean(const string& mean_file) {
                               off_set,
                               crop_shape);
       //input_layer->CopyFrom(trans_blob);
+      transformer->ApplyMean(&trans_blob,&trans_blob);
       input_blob->CopyFrom(trans_blob);
       LOG(INFO)<<"input shape "<<trans_blob.shape()[0]<<":"
       <<trans_blob.shape()[1]<<":"<<trans_blob.shape()[2]<<":"

@@ -274,7 +274,7 @@ void DataTransformerND<Dtype>::Transform(Blob<Dtype>* input_blob,
     }
     const Dtype scale = param_.scale();
       // do mirro for each of dimention respectively
-    //const bool do_mirror = param_.mirror() && Rand(crop_shape_axis+1);
+     //const bool do_mirror = param_.mirror() && Rand(crop_shape_axis+1);
    //  const bool has_mean_values = mean_values_.size() > 0;
     // vector<int> nd_off(crop_shape_axis,0);
     const Dtype* input_data =input_blob->cpu_data();
@@ -288,7 +288,7 @@ void DataTransformerND<Dtype>::Transform(Blob<Dtype>* input_blob,
      for(int i=transform_shape.size()-1;i>=off_set.size()-1;--i){
          nd_point[i]=index%transform_shape[i]+off_set[i-2];
          //if(do_mirror)
-         //      nd_point[i]=transform_shape[i]-nd_point[i];
+         //     //    nd_point[i]=transform_shape[i]-nd_point[i];
          index/=transform_shape[i];
         //  if(i==transform_shape.size()-1){
         //     data_axis_idx=p%transform_shape[i]+off_set[i-2];
