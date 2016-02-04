@@ -30,7 +30,7 @@ DEFINE_string(data, "",
         "source input file");
 DEFINE_string(predict, "", "predicted segmentation file");
 DEFINE_int32(shift_axis, 0, "the patch shifting dimention along the 3d data");
-DEFINE_int32(shift_num, 1,
+DEFINE_int32(shift_num, 0,
     "total shifting times along the axis");
 DEFINE_int32(shift_stride, 1,
     "shift stride along the axis");
@@ -201,9 +201,9 @@ void Segmentor::SetMean(const string& mean_file) {
   //input_layer->ReshapeLike(*data_blob_);
 
   vector<Blob<float>*> prob_blobs;
-
+  int shif_num=FLAGS_shift_num<=0?shift_data_dim_size:FLAGS_shift_num;
 //  for(int i=0;i<FLAGS_shift_num;++i){
-  for(int i=0;i<FLAGS_shift_num;++i){
+  for(int i=0;i<shif_num;++i){
       off_set[FLAGS_shift_axis]=i*FLAGS_shift_stride-shift_input_dim_size/2;
       //off_set[FLAGS_shift_axis]=i*FLAGS_shift_stride-FLAGS_shift_num/2;
       transformer->Transform(data_blob_.get(),

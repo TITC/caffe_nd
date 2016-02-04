@@ -104,24 +104,29 @@ void PatchSampler<Dtype>::ReadOnePatch(QueuePair_Batch<Dtype>* qb ){
  count_m_mutex_.lock();
   if(patch_count_%patches_per_data_batch_ ==0)
   {
-
+      int load_idx=PrefetchRand()% d_provider_->get_current_batch_size();
       LOG(INFO)<<"loading batch patch_count = "<<patch_count_;
-      d_provider_->Load_next_batch();
-
-      for(int i= 0;i<d_provider_->get_current_batch_size();++i){
-        const Batch_data<Dtype> source_d_l=d_provider_->getOneData(i);
-      data_transformer_nd->ApplyMean(source_d_l.data_.get(),
+      LOG(INFO)<<"replace index = "<<load_idx;
+      patch_count_==0?d_provider_->Load_next_batch()
+                      :d_provider_->Load_next_batch(load_idx);
+      if(patch_count_==0){
+        for(int i= 0;i<d_provider_->get_current_batch_size();++i){
+          const Batch_data<Dtype> source_d_l=d_provider_->getOneData(i);
+          data_transformer_nd->ApplyMean(source_d_l.data_.get(),
+                                         source_d_l.data_.get());
+        }
+      }else{
+        const Batch_data<Dtype> source_d_l=d_provider_->getOneData(load_idx);
+        data_transformer_nd->ApplyMean(source_d_l.data_.get(),
                                        source_d_l.data_.get());
       }
-
-
   }
   patch_count_++;
 
 
   int data_idx=PrefetchRand()% d_provider_->get_current_batch_size();
   const Batch_data<Dtype> source_data_label=d_provider_->getOneData(data_idx);
-  //LOG(INFO)<<"reading from data blob "<<data_idx;
+  //LOG(INFO)<<"reading one patch from data blob "<<data_idx;
 
   //LOG(INFO)<< "readone from provider";
   // take input patch_data then warp a patch and put it to patch_data;
@@ -379,10 +384,16 @@ void Runner<Dtype>::InternalThreadEntry() {
 
 
         for(int i=0;i<data_shape_offset_.size();i++){
-            int min_point    =    label_shape_[i]/2;
-            int max_point    =    input_shape_[i]-label_shape_[i]/2-1;
-            label_shape_center_[i]  =    Rand(max_point-min_point)+min_point;
-            label_shape_offset_[i]  =     label_shape_center_[i] - min_point;
+            int min_point     =    label_shape_[i]/2;
+            int max_point     =    input_shape_[i]-min_point-1;
+            //int max_point    =    input_shape_[i]-label_shape_[i]/2-1;
+            int diff          =     max_point-min_point+1;
+            CHECK_GE(diff,0);
+            label_shape_center_[i]  =   diff==0?min_point:Rand(diff)+min_point;
+           //CHECK_GE(diff,0);
+            //label_shape_center_[i]  =    Rand(max_point-min_point)+min_point;
+            //label_shape_center_[i]  =     Rand(diff)+min_point;
+            label_shape_offset_[i]  =     std::max(0,label_shape_center_[i] - min_point);
             data_shape_offset_[i]   =     label_shape_center_[i] - data_shape_[i]/2;
        }
        return label_shape_center_;

@@ -106,6 +106,8 @@ void Data_HDF5_provider<Dtype>::LoadHDF5FileData(const char* filename, int blob_
   for (int i=0;i<d_shape.size();++i)
      LOG(INFO)<<"loaded data shape : " <<d_shape[i];
 
+ //make data blob to have 2 extra dimention ; num and channel but all ==1
+
   if(d_shape.size()<=3){
     //there is no num and channel in data , so appending num and channel to the data
     d_shape.insert(d_shape.begin(),1);
