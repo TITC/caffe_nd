@@ -32,17 +32,17 @@ inline void SyncedMemory::to_cpu() {
     own_cpu_data_ = true;
     break;
   case HEAD_AT_GPU:
-#ifndef CPU_ONLY
-    if (cpu_ptr_ == NULL) {
-      CaffeMallocHost(&cpu_ptr_, size_, &cpu_malloc_use_cuda_);
-      own_cpu_data_ = true;
-    }
-    caffe_gpu_memcpy(size_, gpu_ptr_, cpu_ptr_);
-    head_ = SYNCED;
-#else
-    NO_GPU;
-#endif
-    break;
+    #ifndef CPU_ONLY
+        if (cpu_ptr_ == NULL) {
+          CaffeMallocHost(&cpu_ptr_, size_, &cpu_malloc_use_cuda_);
+          own_cpu_data_ = true;
+        }
+        caffe_gpu_memcpy(size_, gpu_ptr_, cpu_ptr_);
+        head_ = SYNCED;
+    #else
+        NO_GPU;
+    #endif
+        break;
   case HEAD_AT_CPU:
   case SYNCED:
     break;

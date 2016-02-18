@@ -109,6 +109,7 @@ void PatchSampler<Dtype>::ReadOnePatch(QueuePair_Batch<Dtype>* qb ){
       LOG(INFO)<<"replace index = "<<load_idx;
       patch_count_==0?d_provider_->Load_next_batch()
                       :d_provider_->Load_next_batch(load_idx);
+      // apply mean has some logical error here, need to be corrected ?
       if(patch_count_==0){
         for(int i= 0;i<d_provider_->get_current_batch_size();++i){
           const Batch_data<Dtype> source_d_l=d_provider_->getOneData(i);
