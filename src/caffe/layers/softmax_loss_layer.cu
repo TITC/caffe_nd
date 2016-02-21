@@ -120,7 +120,11 @@ __global__ void SoftmaxWeightedLossBackwardGPU(const int nthreads, const Dtype* 
       counts[index] = 0;
     } else {
        bottom_diff[n * dim + label_value * spatial_dim + s]-=1;
-       bottom_diff[n * dim + label_value * spatial_dim + s]*=lossWeights[label_value];
+       //size_t idx= n * dim + label_value * spatial_dim + s;
+       //Dtype curent_diff = bottom_diff[idx];
+       for (int c = 0; c < channels; ++c) {
+         bottom_diff[n * dim + c * spatial_dim + s]*=static_cast<Dtype> (lossWeights[label_value]);
+       }
        counts[index] = 1;
     }
   }
@@ -161,10 +165,10 @@ void SoftmaxWithLossLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
                << " Layer cannot backpropagate to label inputs.";
   }
   if (propagate_down[0]) {
-         if(has_sample_selector_){
-           Backward_cpu(top, propagate_down,bottom);
-           return;
-         }
+        //  if(has_sample_selector_){
+        //    Backward_cpu(top, propagate_down,bottom);
+        //    return;
+        //  }
     Dtype* bottom_diff = bottom[0]->mutable_gpu_diff();
     const Dtype* prob_data = prob_.gpu_data();
     const Dtype* top_data = top[0]->gpu_data();
@@ -204,13 +208,6 @@ void SoftmaxWithLossLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
     const Dtype loss_weight = top[0]->cpu_diff()[0] /
                               get_normalizer(normalization_, valid_count);
     caffe_gpu_scal(prob_.count(), loss_weight , bottom_diff);
-  //  Dtype a =0;
-  //  Dtype* bottom_diff_cpu = bottom[0]->mutable_cpu_diff();
-    // for (int i=0; i<nthreads;++i)
-    // a+=bottom_diff_cpu[i];
-    //
-    // //if(a==0)
-    //   LOG(INFO)<<"all diff  =  "<<a;
   }
 }
 
