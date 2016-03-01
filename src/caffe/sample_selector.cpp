@@ -46,9 +46,9 @@ void SampleSelector<Dtype>::ProcessLabelSelectParam(){
     CHECK_EQ(balancing_label_,has_prob_file)<<"sample  class blanceing requires a class probability file provided ... ";
     const string&  label_prob_map_file = param_.label_select_param().class_prob_mapping_file();
     ReadLabelProbMappingFile(label_prob_map_file);
-    LOG(INFO)<<"Done ReadLabelProbMappingFile";
+    //LOG(INFO)<<"Done ReadLabelProbMappingFile";
     ComputeLabelSkipRate();
-    LOG(INFO)<<"compute_label_skip_rate()";
+    //LOG(INFO)<<"compute_label_skip_rate()";
     }
 }
 
@@ -108,7 +108,7 @@ struct CmpByValue {
       }
       else
       {
-        scale_factor =1.0/bottom_prob ;
+        scale_factor =1.0/(bottom_prob==0?0.0000001:bottom_prob) ;
       }
       LOG(INFO)<<" scale_factor =  "<< scale_factor;
       LOG(INFO)<<" bottom_prob =   " << bottom_prob;

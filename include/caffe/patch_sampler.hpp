@@ -24,8 +24,7 @@ template <typename Dtype> class PatchSampler;
     ~QueuePair_Batch();
     BlockingQueue<Batch_data<Dtype>*> free_;
     BlockingQueue<Batch_data<Dtype>*> full_;
-
-//  DISABLE_COPY_AND_ASSIGN(QueuePair_Batch);
+    DISABLE_COPY_AND_ASSIGN(QueuePair_Batch);
   };
 
   // A single body is created per source
@@ -47,7 +46,7 @@ template <typename Dtype> class PatchSampler;
 
     friend class PatchSampler<Dtype>;
 
-  //DISABLE_COPY_AND_ASSIGN(Runner);
+    //DISABLE_COPY_AND_ASSIGN(Runner);
   };
 
   template <typename Dtype>
@@ -79,7 +78,7 @@ template <typename Dtype> class PatchSampler;
 
 
 /**
- * @brief warp patches from a data_reader_general to queues available to PatchSamplerLayer layers.
+ * @brief warp patches from a patch_sampler to queues available to PatchSamplerLayer layers.
  * A single reading thread is created per source, even if multiple solvers
  * are running in parallel, e.g. for multi-GPU training. This makes sure
  * databases are read sequentially, and that each solver accesses a different
@@ -137,7 +136,7 @@ class PatchSampler {
   //typedef typename template<typename Dtype> map<const string, boost::weak_ptr<Runner<Dtype> > > Run_container;
   static map<const string, boost::weak_ptr<Runner<Dtype> > > runners_;
   //static Run_container runners_;
-//DISABLE_COPY_AND_ASSIGN(PatchSampler);
+  DISABLE_COPY_AND_ASSIGN(PatchSampler);
 };
 
 

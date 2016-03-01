@@ -54,7 +54,7 @@ template <typename Dtype>
   }
 
   // Load the first HDF5 file and initialize the line counter.
-  LOG(INFO) << "Loading hdf5 ...  " << hdf5_filenames_[file_permutation_[current_file_]];
+ // LOG(INFO) << "Loading hdf5 ...  " << hdf5_filenames_[file_permutation_[current_file_]];
   //this->LoadHDF5FileData(hdf5_filenames_[file_permutation_[current_file_]].c_str(),0);
   //this->Load_next_batch();
   //this->Load_next_batch();
@@ -85,17 +85,17 @@ void Data_HDF5_provider<Dtype>::LoadHDF5FileData(const char* filename, int blob_
 
   //for (int i = 0; i < data_set_names.size(); ++i) {
     //source_data_label_pair_[blob_idx].data = shared_ptr<Blob<Dtype> >(new Blob<Dtype>());
-    LOG(INFO) << "hdf5_load_nd_dataset ...  " << data_set_names[0];
+    //LOG(INFO) << "hdf5_load_nd_dataset ...  " << data_set_names[0];
     hdf5_load_nd_dataset(file_id, data_set_names[0].c_str(),
         MIN_DATA_DIM, MAX_DATA_DIM, this->source_data_label_pair_[blob_idx].data_.get());
-    LOG(INFO) << "hdf5_load_nd_dataset ...  " << data_set_names[1];
+    //LOG(INFO) << "hdf5_load_nd_dataset ...  " << data_set_names[1];
     //source_data_label_pair_[blob_idx].label = shared_ptr<Blob<Dtype> >(new Blob<Dtype>());
         hdf5_load_nd_dataset(file_id, data_set_names[1].c_str(),
             MIN_DATA_DIM, MAX_DATA_DIM, this->source_data_label_pair_[blob_idx].label_.get());
 
 
   //}
-   LOG(INFO) << "finished loading hdf5 file ";
+   //LOG(INFO) << "finished loading hdf5 file ";
   herr_t status = H5Fclose(file_id);
   CHECK_GE(status, 0) << "Failed to close HDF5 file: " << filename;
 
@@ -103,8 +103,8 @@ void Data_HDF5_provider<Dtype>::LoadHDF5FileData(const char* filename, int blob_
   CHECK_GE(this->source_data_label_pair_[blob_idx].data_->num_axes(), 1) << "Input must have at least 1 axis.";
   vector<int> d_shape =this->source_data_label_pair_[blob_idx].data_->shape();
 
-  for (int i=0;i<d_shape.size();++i)
-     LOG(INFO)<<"loaded data shape : " <<d_shape[i];
+ // for (int i=0;i<d_shape.size();++i)
+ //    LOG(INFO)<<"loaded data shape : " <<d_shape[i];
 
  //make data blob to have 2 extra dimention ; num and channel but all ==1
 
@@ -137,7 +137,9 @@ void Data_HDF5_provider<Dtype>::LoadHDF5FileData(const char* filename, int blob_
   // } else {
   //   DLOG(INFO) << "Successully loaded " << hdf_blobs_[0]->shape(0) << " rows";
   // }
-  LOG(INFO) << "Successully loaded hdf5 file " << filename;
+  
+  
+  LOG(INFO) << "loaded hdf5 file " << filename;
 }
 
 template <typename Dtype>
@@ -147,7 +149,7 @@ template <typename Dtype>
      CHECK_GE(data_idx,0);
      CHECK_LE(data_idx, this->batch_size_-1);
      if(current_file_ >=num_files_) {current_file_  =0;}
-     LOG(INFO) <<"loading HDF5 file : "<<"'"<<hdf5_filenames_[file_permutation_[current_file_]]<<"'";
+     //LOG(INFO) <<"loading HDF5 file : "<<"'"<<hdf5_filenames_[file_permutation_[current_file_]]<<"'";
      this->LoadHDF5FileData(hdf5_filenames_[file_permutation_[current_file_]].c_str(), data_idx);
      current_file_++;
   //  }

@@ -25,9 +25,7 @@ PatchDataLayer<Dtype>::~PatchDataLayer() {
 template <typename Dtype>
 void PatchDataLayer<Dtype>::DataLayerSetUp(const vector<Blob<Dtype>*>& bottom,
       const vector<Blob<Dtype>*>& top) {
-
-    LOG(INFO)<<"start dataLayer_SetUp ";
-  const int batch_size = this->layer_param_.patch_sampler_param().batch_size();
+       const int batch_size = this->layer_param_.patch_sampler_param().batch_size();
   // Read a data point, and use it to initialize the top blob.
   //Datum& datum = *(reader_.full().peek());
 
@@ -39,8 +37,6 @@ void PatchDataLayer<Dtype>::DataLayerSetUp(const vector<Blob<Dtype>*>& bottom,
   // top_data_shape.push_back(batch_size);
   // for(int i=1;i<this->layer_param_patch_sample_param().patch_shape_size();++i){
   //   top_data_shape.push_back(this->layer_param_patch_sample_param().patch_shape(i))
-  // }
-  LOG(INFO)<<"get shape ";
   vector<int> top_data_shape=patch_sampler_.patch_data_shape();
   top_data_shape[0]=batch_size;
   for(int i=0;i<top_data_shape.size();++i)
@@ -80,7 +76,7 @@ void PatchDataLayer<Dtype>::load_batch(Batch<Dtype>* batch) {
   CHECK(batch->data_.count());
   //CHECK(this->transformed_data_.count());
 
-  // Reshape according to the first datum of each batch
+  // Reshape according to the first patch of each batch
   // on single input batches allows for inputs of varying dimension.
   const int batch_size = this->layer_param_.patch_sampler_param().batch_size();
 
@@ -99,12 +95,8 @@ void PatchDataLayer<Dtype>::load_batch(Batch<Dtype>* batch) {
     top_label = batch->label_.mutable_cpu_data();
   }
 
-
+  //LOG(INFO)<<"PatchDataLayer load batch...";
   for (int item_id = 0; item_id < batch_size; ++item_id) {
-
-
-
-
     // Apply data transformations (mirror, scale, crop...)
     vector<int> v_item_id(1);//(1,item_id);
     v_item_id[0]=item_id;
@@ -127,8 +119,6 @@ void PatchDataLayer<Dtype>::load_batch(Batch<Dtype>* batch) {
     if(this->output_labels_){
       caffe_copy(data_label->label_->count(), source_label, top_label+l_offset);
     }
-
-
     patch_sampler_.free().push(data_label);
 
   //  LOG(INFO) << "     Read time: " << read_time / 1000 << " ms.";

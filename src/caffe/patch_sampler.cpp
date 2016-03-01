@@ -21,6 +21,7 @@ template <typename Dtype>
 map<const string, weak_ptr<Runner<Dtype> > > PatchSampler<Dtype>::runners_;
 
 static boost::mutex runners_mutex_;
+static int count_patch_instances = 0;
 template <typename Dtype>
 PatchSampler<Dtype>::PatchSampler(const LayerParameter& param)
     :param_(param),
@@ -31,19 +32,30 @@ PatchSampler<Dtype>::PatchSampler(const LayerParameter& param)
     data_transformer_nd(new DataTransformerND<Dtype>(param.transform_nd_param()))
 {
   // Get or create a body
-  boost::mutex::scoped_lock lock(runners_mutex_);
+  //----------------------------------------------------------------------------------------------------------
+  // Change code not to be sequential as in dataReader, instead
+  // we allow or mutilple runner to run in paraller(random patching from the loaded data sets)
+  //------------------------------------------------------------------------------------------------------------
+  /*boost::mutex::scoped_lock lock(runners_mutex_);
   string key = source_key(param);
   LOG(INFO)<<"patch sample key = "<<key;
   weak_ptr<Runner<Dtype> >& weak = runners_[key];
   runner_ = weak.lock();
+  count_patch_instances = count_patch_instances+1;
   if (!runner_) {
     runner_.reset(new Runner<Dtype>(param,*this));
     runners_[key] = weak_ptr<Runner<Dtype> >(runner_);
-    LOG(INFO)<<("reset runner ...");
+    LOG(INFO)<<"reset runner ...";
   }
+  runner_->new_queue_pairs_.push(queue_pair_); */
+  
+  runner_.reset(new Runner<Dtype>(param,*this));
+  //runner_ = new Runner<Dtype>(param,*this);
   runner_->new_queue_pairs_.push(queue_pair_);
-  LOG(INFO)<<("runner setup done ...");
-
+  
+  
+  LOG(INFO)<<"runner setup done ... count =" <<count_patch_instances;
+  //count_patch_instances++；
   patches_per_data_batch_ = param_.patch_sampler_param().patches_per_data_batch();
   data_transformer_nd->InitRand();
   const unsigned int prefetch_rng_seed = caffe_rng_rand();
@@ -62,12 +74,13 @@ PatchSampler<Dtype>::PatchSampler(const LayerParameter& param)
 
 template <typename Dtype>
 PatchSampler<Dtype>::~PatchSampler() {
-  string key = source_key(runner_->param_);
+  /*string key = source_key(runner_->param_);
   runner_.reset();
   boost::mutex::scoped_lock lock(runners_mutex_);
   if (runners_[key].expired()) {
     runners_.erase(key);
-  }
+  }*/
+  runner_.reset();
 }
 
 template <typename Dtype>
@@ -101,12 +114,11 @@ void PatchSampler<Dtype>::ReadOnePatch(QueuePair_Batch<Dtype>* qb ){
   // load new data to memomry pool
 // LOG(INFO)<<"patch read count "<<patch_count_;
   CPUTimer timer;
- count_m_mutex_.lock();
+  count_m_mutex_.lock();
   if(patch_count_%patches_per_data_batch_ ==0)
   {
       int load_idx=PrefetchRand()% d_provider_->get_current_batch_size();
       LOG(INFO)<<"loading batch patch_count = "<<patch_count_;
-      LOG(INFO)<<"replace index = "<<load_idx;
       patch_count_==0?d_provider_->Load_next_batch()
                       :d_provider_->Load_next_batch(load_idx);
       // apply mean has some logical error here, need to be corrected ?
@@ -117,11 +129,13 @@ void PatchSampler<Dtype>::ReadOnePatch(QueuePair_Batch<Dtype>* qb ){
                                          source_d_l.data_.get());
         }
       }else{
+		LOG(INFO)<<"replace index = "<<load_idx;
         const Batch_data<Dtype> source_d_l=d_provider_->getOneData(load_idx);
         data_transformer_nd->ApplyMean(source_d_l.data_.get(),
                                        source_d_l.data_.get());
       }
   }
+
   patch_count_++;
 
 
@@ -129,7 +143,7 @@ void PatchSampler<Dtype>::ReadOnePatch(QueuePair_Batch<Dtype>* qb ){
   const Batch_data<Dtype> source_data_label=d_provider_->getOneData(data_idx);
   //LOG(INFO)<<"reading one patch from data blob "<<data_idx;
 
-  //LOG(INFO)<< "readone from provider";
+  //LOG(INFO)<< "dong reading hd5";
   // take input patch_data then warp a patch and put it to patch_data;
   // the function that address the probability of selecting classe need to be addressed
    //CropCenterInfo<Dtype>& PeekCropCenterPoint(Blob<Dtype>* input_blob);
@@ -149,13 +163,14 @@ void PatchSampler<Dtype>::ReadOnePatch(QueuePair_Batch<Dtype>* qb ){
       pt_label_value        = data_transformer_nd->ReadOnePoint(source_data_label.label_.get(), randPt);
   }while (!sample_selector_->AcceptGivenLabel((int)pt_label_value));
 
-  //LOG(INFO)<<"selected Label = "<<pt_label_value;
+ // LOG(INFO)<<"selected Label = "<<pt_label_value;
 
 
   vector<int> data_offset     = patch_coord_finder_->GetDataOffset();
   vector<int> label_offset    = patch_coord_finder_->GetLabelOffset();
   //double  trans_time = 0;
   //timer.Start();
+ // LOG(INFO)<<"size of qb->free == " <<qb->free_.size();
   Batch_data<Dtype>* patch_data_label = qb->free_.pop();
   data_transformer_nd->Transform(source_data_label.data_.get(),
                                     patch_data_label->data_.get(),
@@ -167,18 +182,18 @@ void PatchSampler<Dtype>::ReadOnePatch(QueuePair_Batch<Dtype>* qb ){
                                     patch_label_shape_);
 
 
-
+  //LOG(INFO)<<"end transfer";
   int new_label=(int)  patch_data_label->label_.get()->cpu_data()[0];
   if(patch_data_label->label_.get()->count()==1)
   {CHECK_EQ(new_label,pt_label_value)<<"select label must be equal to the center";}
+  //LOG(INFO)<<"push to full queue";
   qb->full_.push(patch_data_label);
-  //LOG(INFO)<<"end transform";
    const vector<int>& source_data_shape =source_data_label.data_->shape();
    const vector<int>& source_label_shape =source_data_label.label_->shape();
 
-  count_m_mutex_.unlock();
+   count_m_mutex_.unlock();
 
-
+  //LOG(INFO)<<"unlock mutex";
 
 //  count_m_mutex_.unlock();
 
@@ -206,6 +221,7 @@ void PatchSampler<Dtype>::ReadOnePatch(QueuePair_Batch<Dtype>* qb ){
   // setting patch data and label shape;
   dest_label_shape_=patch_data_label->label_->shape();
   dest_data_shape_=patch_data_label->data_->shape();
+  //LOG(INFO)<<"done reading oen patch";
 }
 //
 template <typename Dtype>
@@ -234,26 +250,9 @@ QueuePair_Batch<Dtype>::QueuePair_Batch(const LayerParameter& param) {
   //  LOG(INFO)<<"batch_size = " << patch_shape[i+2] <<" crop_dim = "<<dim;
   }
 
-    // for(int i=1;i<patch_dims;i++){
-    //    label_shape.push_back(1);
-    //  }
+    
 
-
-  // bool output_label =param.patch_sampler_param().has_label_shape();
-  //bool output_label =true;
-
-
-
-  // if(output_label){
-  //   int label_dim = param.patch_sampler_param().label_shape().dim_size();
-  //   for(int i=1;i<label_dim;i++){
-  //      label_shape.push_back(label_dim);
-  //    }
-  // }
-
-
-
-  for (int i = 0; i < batch_size*2; ++i) {
+  for (int i = 0; i < batch_size; ++i) {
     //Batch_data<Dtype>* b_d =new
   //  Batch_data<Dtype>* b_data =new Batch_data<Dtype>();
     free_.push(new Batch_data<Dtype>);
@@ -308,22 +307,23 @@ void Runner<Dtype>::InternalThreadEntry() {
       vector<shared_ptr<QueuePair_Batch<Dtype> > > qps;
       try {
           int solver_count = param_.phase() == TRAIN ? Caffe::solver_count() : 1;
-
+          if(param_.phase() == TRAIN) LOG(INFO)<<"phase =train and solover_count =" << Caffe::solver_count();
           // To ensure deterministic runs, only start running once all solvers
           // are ready. But solvers need to peek on one item during initialization,
           // so read one item, then wait for the next solver.
           LOG(INFO)<<"solver_count  = "<<solver_count << "  size of queue pairs = "<<new_queue_pairs_.size();
-          for (int i = 0; i < solver_count; ++i) {
-            //LOG(INFO)<<"new_queue_pairs_.pop() = "<<i;
+          //for (int i = 0; i < solver_count; ++i) {
+           // LOG(INFO)<<"new_queue_pairs_.pop() = "<<i;
             shared_ptr<QueuePair_Batch<Dtype> > qp(new_queue_pairs_.pop());
-            //LOG(INFO)<<"size of queue  is now = " <<new_queue_pairs_.size();
+            LOG(INFO)<<"size of queue  is now = " <<new_queue_pairs_.size();
             qps.push_back(qp);
-          }
+			//}
           while (!must_stop()) {
-            for (int i = 0; i < solver_count; ++i) {
+            //for (int i = 0; i < solver_count; ++i) {
+			 // LOG(INFO)<<"size of qps["<<i<<"] free =" <<qps[i].get()->free_.size();
+			 int i=0;
               p_sampler_.ReadOnePatch(qps[i].get());
-
-            }
+            //}
           }
         } catch (boost::thread_interrupted&) {
           // Interrupted exception is expected on shutdown

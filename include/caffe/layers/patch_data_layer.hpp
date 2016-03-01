@@ -22,7 +22,7 @@ class PatchDataLayer : public BasePrefetchingDataLayer<Dtype> {
   virtual ~PatchDataLayer();
   virtual void DataLayerSetUp(const vector<Blob<Dtype>*>& bottom,
       const vector<Blob<Dtype>*>& top);
-  // DataLayer uses DataReader instead for sharing for parallelism
+  // DataLayer uses patch_sampler instead for sharing for parallelism
   virtual inline bool ShareInParallel() const { return false; }
   virtual inline const char* type() const { return "PatchData"; }
   virtual inline int ExactNumBottomBlobs() const { return 0; }
@@ -32,7 +32,6 @@ class PatchDataLayer : public BasePrefetchingDataLayer<Dtype> {
  protected:
   virtual void load_batch(Batch<Dtype>* batch);
    PatchSampler<Dtype> patch_sampler_;
-  //DataReader reader_;
 };
 
 }  // namespace caffe

@@ -90,8 +90,10 @@ static void get_gpus(vector<int>* gpus) {
       gpus->push_back(i);
     }
   } else if (FLAGS_gpu.size()) {
+	  LOG(INFO)<<"FLAGS_gpu.size() = "<<FLAGS_gpu.size();
     vector<string> strings;
     boost::split(strings, FLAGS_gpu, boost::is_any_of(","));
+	LOG(INFO)<<"FLAGS_strings.size() = "<<strings.size();
     for (int i = 0; i < strings.size(); ++i) {
       gpus->push_back(boost::lexical_cast<int>(strings[i]));
     }
