@@ -189,8 +189,9 @@ void SoftmaxWithLossLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
 		lossWeights = sample_selector_->Get_Label_prob_gpu_data();
      
 	}
-	//const float*lossWeights_cpu  =sample_selector_->Get_Label_prob_cpu_data();
-	//LOG(INFO)<<"weight loss 0 ="<<lossWeights_cpu[0]<<"weight loss 1 ="<<lossWeights_cpu[1];
+	const float*lossWeights_cpu  =sample_selector_->Get_Label_prob_cpu_data();
+	if(rand()%80==0)
+	LOG(INFO)<<"weight loss 0 ="<<lossWeights_cpu[0]<<"  weight loss 1 ="<<lossWeights_cpu[1]<<"  weight loss 2 ="<<lossWeights_cpu[2];
     // Since this memory is never used for anything else,
     // we use to to avoid allocating new GPU memory.
     Dtype* counts = prob_.mutable_gpu_diff();

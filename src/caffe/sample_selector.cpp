@@ -77,7 +77,7 @@ void SampleSelector<Dtype>::ReadLabelProbMappingFile(const string& source){
   LOG(INFO)<<"rest_of_label_mapping_  = "<<rest_of_label_mapping_<<" "<<rest_of_label_mapping_label_;
   label_prob_map_.clear();
   label_mapping_map_.clear();
-  LOG(INFO)<< "label_prob_map_ size =" <<label_prob_map_.size();
+  
   for (int i=0;i<num_labels_with_prob_;++i){
         const LabelProbMapping&   label_prob_mapping_param = lb_param.label_prob_mapping_info(i);
         int   label 			=	label_prob_mapping_param.label();
@@ -87,9 +87,11 @@ void SampleSelector<Dtype>::ReadLabelProbMappingFile(const string& source){
            mapped_label =   label_prob_mapping_param.map2label();
         else
           mapped_label = label ;
-          label_prob_map_[label]	=	lb_prob;
-          label_mapping_map_[label]=   mapped_label;
+        label_prob_map_[label]	=	lb_prob;
+        label_mapping_map_[label] =   mapped_label;
+		LOG(INFO)<< "label map :"<<label<<"--->"<<label_mapping_map_[label];
       }
+	  LOG(INFO)<< "label_prob_map_ size =" <<label_prob_map_.size();
  }
 typedef std::pair<int, float> PAIR;
 struct CmpByValue {
@@ -211,20 +213,22 @@ struct CmpByValue {
 	  size_t count =labelBlob->count();
 	  int count_labels[1000]={0};
 	  int max_label=0;
-	  int min_label_index=0;
 	  int min_count  =9999999;
 	  const Dtype* lable_p =labelBlob->cpu_data();
 	  for(size_t i=0;i<count;++i){
 		  int label =static_cast<int>(lable_p[i]);
+		  label=label_mapping_map_[label];
+		  //if(label==2)
+		  //LOG(INFO)<<"there is label 2";
 		  count_labels[label]++;
 		  max_label =max_label<label?label:max_label;
 	  }
-	  for (int i =0;i<max_label;i++){
-		  if (min_count>count_labels[i]){min_count=count_labels[i]; min_label_index =i;}
+	  for (int i =0;i<=max_label;i++){
+		  if (min_count>count_labels[i]){min_count=count_labels[i];}
 	  }
 	  CHECK_GE(min_count,1)<<"smallest number of label among classes must great then 0";
 	  
-	  for (int i =0;i<max_label;i++)
+	  for (int i =0;i<=max_label;i++)
 	  {
 		  CHECK_GE(count_labels[i],1);
 		  prob[i]=static_cast<float>(min_count)/static_cast<float>(count_labels[i]);
