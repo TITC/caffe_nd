@@ -394,6 +394,9 @@ void Runner<Dtype>::InternalThreadEntry() {
            //CHECK_GE(diff,0);
             //label_shape_center_[i]  =    Rand(max_point-min_point)+min_point;
             //label_shape_center_[i]  =     Rand(diff)+min_point;
+			
+			//label_shape_offset_[i]  =     std::max(0,label_shape_center_[i] );
+            //data_shape_offset_[i]   =     label_shape_center_[i] ;
             label_shape_offset_[i]  =     std::max(0,label_shape_center_[i] - min_point);
             data_shape_offset_[i]   =     label_shape_center_[i] - data_shape_[i]/2;
        }

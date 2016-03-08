@@ -191,6 +191,11 @@ struct CmpByValue {
  const float*  SampleSelector<Dtype>:: Get_Label_prob_gpu_data(){
    return label_prob_weight_blob_.gpu_data();
  }
+  template <typename Dtype>
+  const float*  SampleSelector<Dtype>:: Get_Label_prob_cpu_data(){
+   return label_prob_weight_blob_.cpu_data();
+  }
+ 
  template <typename Dtype>
  int SampleSelector<Dtype>::GetConvertedLabel(const int label){
        if(!balancing_label_)
@@ -198,6 +203,35 @@ struct CmpByValue {
     else
       return label_mapping_map_[label];
  }
+ 
+ template <typename Dtype>
+ void SampleSelector<Dtype>:: Compute_label_prob_fromBlob(Blob<Dtype>* labelBlob){
+	  caffe_set(label_prob_weight_blob_.count(), static_cast<float>(0), label_prob_weight_blob_.mutable_cpu_data());
+	  float* prob= label_prob_weight_blob_.mutable_cpu_data();
+	  size_t count =labelBlob->count();
+	  int count_labels[1000]={0};
+	  int max_label=0;
+	  int min_label_index=0;
+	  int min_count  =9999999;
+	  const Dtype* lable_p =labelBlob->cpu_data();
+	  for(size_t i=0;i<count;++i){
+		  int label =static_cast<int>(lable_p[i]);
+		  count_labels[label]++;
+		  max_label =max_label<label?label:max_label;
+	  }
+	  for (int i =0;i<max_label;i++){
+		  if (min_count>count_labels[i]){min_count=count_labels[i]; min_label_index =i;}
+	  }
+	  CHECK_GE(min_count,1)<<"smallest number of label among classes must great then 0";
+	  
+	  for (int i =0;i<max_label;i++)
+	  {
+		  CHECK_GE(count_labels[i],1);
+		  prob[i]=static_cast<float>(min_count)/static_cast<float>(count_labels[i]);
+	 }
+    // return label_prob_weight_blob_.gpu_data();
+ }
+ 
 
  template <typename Dtype>
  unsigned int SampleSelector<Dtype>::PrefetchRand(){

@@ -1388,6 +1388,7 @@ message PatchSamplerParameter {
 }
 
 message LabelSelectParameter{
+ optional bool        auto_balance               =6 [default =true];
  optional bool 		  balance  			        =1 [default =false];
  optional uint32      num_labels                =2 [default=1000];
  optional uint32      num_top_label_balance     =3;

@@ -59,13 +59,17 @@ void AccuracyLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
     caffe_set(top[1]->count(), Dtype(0), top[1]->mutable_cpu_data());
   }
   int count = 0;
-  int total_label_1 =0;
- int total_label_0 =0;
+  int total_label[2]={0};
+  int correct_lb_0=0;
+  int correct_lb_1=0;
   for (int i = 0; i < outer_num_; ++i) {
 
     for (int j = 0; j < inner_num_; ++j) {
-      const int label_value =
+      //const int label_value =
+      //    static_cast<int>(bottom_label[i * inner_num_ + j]);
+	  int label_value =
           static_cast<int>(bottom_label[i * inner_num_ + j]);
+	  if (label_value ==2) label_value =0;
       if (has_ignore_label_ && label_value == ignore_label_) {
         continue;
       }
@@ -88,9 +92,9 @@ void AccuracyLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
           ++accuracy;
           CHECK_LT(label_value,2);
           if(label_value==1)
-            {total_label_1++;}
+            {correct_lb_1++;}
           else if(label_value==0){
-            total_label_0++;
+            correct_lb_0++;
           }else{
           LOG(INFO)<<"unkonwn label = "<<label_value;
           }
@@ -100,11 +104,12 @@ void AccuracyLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
         }
       }
       ++count;
+	  total_label[label_value]++;
 
     }
 
   }
-    LOG(INFO)<<"label 1  total  :  "<<total_label_1<<"  label 0 total  : "<<total_label_0<< "   count = "<<count;
+    LOG(INFO)<<"label 1  correct/totol  :  "<<correct_lb_1<<"/"<<total_label[1]<<"  label 0 correct /total : "<<correct_lb_0<<"/"<< total_label[0] <<  "  count = "<<count;
 
   // LOG(INFO) << "Accuracy: " << accuracy;
   top[0]->mutable_cpu_data()[0] = accuracy / count;

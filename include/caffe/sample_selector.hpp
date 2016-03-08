@@ -21,6 +21,8 @@ namespace caffe {
     bool AcceptGivenLabel(const int label);
     int  GetConvertedLabel(const int label);
     const float*  Get_Label_prob_gpu_data();
+	const float*  Get_Label_prob_cpu_data();
+	void  Compute_label_prob_fromBlob(Blob<Dtype>* labelBlob);
   protected:
     void InitRand();
     unsigned int PrefetchRand();
