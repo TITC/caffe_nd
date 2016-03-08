@@ -1,103 +1,130 @@
 #include <algorithm>
+#include <functional>
+#include <map>
+#include <set>
 #include <vector>
 
-#include "caffe/util/math_functions.hpp"
+
+#include "caffe/layer.hpp"
 #include "caffe/layers/crop_layer.hpp"
+#include "caffe/net.hpp"
+
+
 namespace caffe {
 
 template <typename Dtype>
 void CropLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
     const vector<Blob<Dtype>*>& top) {
-      int channel_axis = 1;
-      first_spatial_axis_ = channel_axis + 1;
-      const int num_axes = bottom[0]->num_axes();
-      num_spatial_axes_ = num_axes - first_spatial_axis_;
-      vector<int> spatial_dim_blob_shape(1,std::max(num_spatial_axes_, 1));
-      crop_shape_.Reshape(spatial_dim_blob_shape);
-      src_shape_.Reshape(spatial_dim_blob_shape);
-  // Construct a map from top blobs to layer inds, skipping over in-place
-  // connections.
-
-  // map<Blob<Dtype>*, int> down_map;
-  // for (int layer_ind = 0; layer_ind < this->net_->top_vecs().size();
-  //      ++layer_ind) {
-  //   vector<Blob<Dtype>*> tops = this->net_->top_vecs()[layer_ind];
-  //   for (int top_ind = 0; top_ind < tops.size(); ++top_ind) {
-  //     if (down_map.find(tops[top_ind]) == down_map.end()) {
-  //       down_map[tops[top_ind]] = layer_ind;
-  //     }
-  //   }
-  // }
-  //
-  //
-  //
-  // // Walk back from the first bottom, keeping track of all the blobs we pass.
-  // set<Blob<Dtype>*> path_blobs;
-  // Blob<Dtype>* blob = bottom[0];
-  // int layer_ind;
-  // // TODO this logic can be simplified if all blobs are tops
-  // path_blobs.insert(blob);
-  // while (down_map.find(blob) != down_map.end()) {
-  //   layer_ind = down_map[blob];
-  //   if (this->net_->bottom_vecs()[layer_ind].size() == 0) {
-  //     break;
-  //   }
-  //   blob = this->net_->bottom_vecs()[layer_ind][0];
-  //   path_blobs.insert(blob);
-  // }
-  // // Now walk back from the second bottom, until we find a blob of intersection.
-  // Blob<Dtype>* inter_blob = bottom[1];
-  // while (path_blobs.find(inter_blob) == path_blobs.end()) {
-  //   CHECK(down_map.find(inter_blob) != down_map.end())
-  //       << "Cannot align apparently disconnected blobs.";
-  //   layer_ind = down_map[inter_blob];
-  //   CHECK_GT(this->net_->bottom_vecs()[layer_ind].size(), 0)
-  //       << "Cannot align apparently disconnected blobs.";
-  //   inter_blob = this->net_->bottom_vecs()[layer_ind][0];
-  // }
-  // Compute the coord map from the blob of intersection to each bottom.
-//  vector<DiagonalAffineMap<Dtype> > coord_maps(2,
-  //    DiagonalAffineMap<Dtype>::identity(2));
-  // for (int i = 0; i < 2; ++i) {
-  //   for (Blob<Dtype>* blob = bottom[i]; blob != inter_blob;
-  //        blob = this->net_->bottom_vecs()[down_map[blob]][0]) {
-  //     shared_ptr<Layer<Dtype> > layer = this->net_->layers()[down_map[blob]];
-  //   //  coord_maps[i] = coord_maps[i].compose(layer->coord_map());
-  //   }
-  // }
-
+  // All logic that depends only on the number of dimensions is here,
+  // the rest is in Reshape because it depends on Blob size.
+  // bottom[0] supplies the data
+  // bottom[1] supplies the size
+  const CropParameter& param = this->layer_param_.crop_param();
+  CHECK_EQ(bottom.size(), 2) << "Wrong number of bottom blobs.";
+  int input_dim = bottom[0]->num_axes();
+  const int start_axis = bottom[0]->CanonicalAxisIndex(param.axis());
+  CHECK_LT(start_axis, input_dim) << "crop axis bigger than input dim";
+  if (param.offset_size() > 1) {
+    // the number of crop values specified must be equal to the number
+    // of dimensions following axis
+    CHECK_EQ(start_axis + param.offset_size(), input_dim)
+      << "number of offset values specified must be equal to the number of "
+      << "dimensions following axis.";
+  }
 }
 
 template <typename Dtype>
 void CropLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
     const vector<Blob<Dtype>*>& top) {
-      int* crop_shape_data = crop_shape_.mutable_cpu_data();
-      int* src_shape_data = src_shape_.mutable_cpu_data();
-      vector<int> shape_0=bottom[0]->shape();
-      vector<int> shape_1=bottom[1]->shape();
-      for(int i=0;i<num_spatial_axes_;++i){
-        crop_shape_data[i]= shape_1[first_spatial_axis_+i];
-        src_shape_data[i] = shape_0[first_spatial_axis_+i];
+  const CropParameter& param = this->layer_param_.crop_param();
+  int input_dim = bottom[0]->num_axes();
+  const int start_axis = bottom[0]->CanonicalAxisIndex(param.axis());
+
+  // initialize all offsets to 0
+  offsets = vector<int>(input_dim, 0);
+  // initialize new shape to bottom[0]
+  vector<int> new_shape(bottom[0]->shape());
+
+  // apply crops
+  for (int i = 0; i < input_dim; ++i) {
+    int crop_offset = 0;
+    int new_size    = bottom[0]->shape(i);
+    if (i >= start_axis) {
+      new_size = bottom[1]->shape(i);
+
+      if (param.offset_size() == 1) {
+        // if only one crop value is supplied, crop all dimensions after axis
+        // by this crop value
+        crop_offset = param.offset(0);
+      } else if (param.offset_size() > 1) {
+        // crop values specified must be equal to the number of dimensions
+        // following axis
+        crop_offset = param.offset(i - start_axis);
       }
-      shape_1[0]=bottom[0]->num();
-      shape_1[1]=bottom[0]->channels();
-      top[0]->Reshape(shape_1);
+    }
+    // Check that the image we are cropping minus the margin is bigger
+    // than the destination image.
+    CHECK_GE(bottom[0]->shape(i) - crop_offset,
+             bottom[1]->shape(i))
+        << "invalid crop parameters in dimension: " << i;
+    // Now set new size and offsets
+    new_shape[i] = new_size;
+    offsets[i] = crop_offset;
+  }
+  top[0]->Reshape(new_shape);
+}
+
+// recursive copy function
+template <typename Dtype>
+void CropLayer<Dtype>::crop_copy(const vector<Blob<Dtype>*>& bottom,
+             const vector<Blob<Dtype>*>& top,
+             const vector<int>& offsets,
+             vector<int> indices,
+             int cur_dim,
+             const Dtype* src_data,
+             Dtype* dest_data,
+             bool is_forward) {
+  if (cur_dim + 1 < top[0]->num_axes()) {
+    // We are not yet at the final dimension, call copy recursively
+    for (int i = 0; i < top[0]->shape(cur_dim); ++i) {
+      indices[cur_dim] = i;
+      crop_copy(bottom, top, offsets, indices, cur_dim+1,
+                src_data, dest_data, is_forward);
+    }
+  } else {
+    // We are at the last dimensions, which is stored continously in memory
+    for (int i = 0; i < top[0]->shape(cur_dim); ++i) {
+      // prepare index vector reduced(red) and with offsets(off)
+      std::vector<int> ind_red(cur_dim, 0);
+      std::vector<int> ind_off(cur_dim+1, 0);
+      for (int j = 0; j < cur_dim; ++j) {
+          ind_red[j] = indices[j];
+          ind_off[j] = indices[j] + offsets[j];
+      }
+      ind_off[cur_dim] = offsets[cur_dim];
+      // do the copy
+      if (is_forward) {
+        caffe_copy(top[0]->shape(cur_dim),
+            src_data + bottom[0]->offset(ind_off),
+            dest_data + top[0]->offset(ind_red));
+      } else {
+        // in the backwards pass the src_data is top_diff
+        // and the dest_data is bottom_diff
+        caffe_copy(top[0]->shape(cur_dim),
+            src_data + top[0]->offset(ind_red),
+            dest_data + bottom[0]->offset(ind_off));
+      }
+    }
+  }
 }
 
 template <typename Dtype>
 void CropLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
     const vector<Blob<Dtype>*>& top) {
+  std::vector<int> indices(top[0]->num_axes(), 0);
   const Dtype* bottom_data = bottom[0]->cpu_data();
   Dtype* top_data = top[0]->mutable_cpu_data();
-  for (int n = 0; n < top[0]->num(); ++n) {
-    for (int c = 0; c < top[0]->channels(); ++c) {
-      for (int h = 0; h < top[0]->height(); ++h) {
-        caffe_copy(top[0]->width(),
-            bottom_data + bottom[0]->offset(n, c, crop_h_ + h, crop_w_),
-            top_data + top[0]->offset(n, c, h));
-      }
-    }
-  }
+  crop_copy(bottom, top, offsets, indices, 0, bottom_data, top_data, true);
 }
 
 template <typename Dtype>
@@ -105,26 +132,19 @@ void CropLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
     const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom) {
   const Dtype* top_diff = top[0]->cpu_diff();
   Dtype* bottom_diff = bottom[0]->mutable_cpu_diff();
+
   if (propagate_down[0]) {
     caffe_set(bottom[0]->count(), static_cast<Dtype>(0), bottom_diff);
-    for (int n = 0; n < top[0]->num(); ++n) {
-      for (int c = 0; c < top[0]->channels(); ++c) {
-        for (int h = 0; h < top[0]->height(); ++h) {
-          caffe_copy(top[0]->width(),
-              top_diff + top[0]->offset(n, c, h),
-              bottom_diff + bottom[0]->offset(n, c, crop_h_ + h, crop_w_));
-        }
-      }
-    }
+    std::vector<int> indices(top[0]->num_axes(), 0);
+    crop_copy(bottom, top, offsets, indices, 0, top_diff, bottom_diff, false);
   }
 }
 
+#ifdef CPU_ONLY
+STUB_GPU(CropLayer);
+#endif
 
-  #ifdef CPU_ONLY
-  STUB_GPU(CropLayer);
-  #endif
+INSTANTIATE_CLASS(CropLayer);
+REGISTER_LAYER_CLASS(Crop);
 
-
-  INSTANTIATE_CLASS(CropLayer);
-  REGISTER_LAYER_CLASS(Crop);
-}
+}  // namespace caffe
