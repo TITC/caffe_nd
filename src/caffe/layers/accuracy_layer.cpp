@@ -102,6 +102,7 @@ void AccuracyLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
           if (top.size() > 1) ++top[1]->mutable_cpu_data()[label_value];
           break;
         }
+		//LOG(INFO)<< "predicT_lb== " << bottom_data_vector[k].second <<" lb =" <<label_value;
       }
       ++count;
 	  total_label[label_value]++;

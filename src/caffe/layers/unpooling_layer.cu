@@ -144,6 +144,13 @@ void UnpoolingLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
   default:
     LOG(FATAL) << "Unknown unpooling method.";
   }
+  
+  if(this->layer_param_.phase()==PREDICT){
+    LOG(INFO)<<"Free GPU mem... "<<this->layer_param_.name();
+    bottom[0]->data()->free();
+	bottom[1]->data()->free();
+    //bottom[0]->diff()->free();
+  }
   CUDA_POST_KERNEL_CHECK;
 }
 

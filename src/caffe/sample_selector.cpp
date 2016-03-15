@@ -55,6 +55,7 @@ void SampleSelector<Dtype>::ProcessLabelSelectParam(){
 template <typename Dtype>
 void SampleSelector<Dtype>::ReadLabelProbMappingFile(const string& source){
   LabelProbMappingParameter lb_param;
+  LOG(INFO)<<"read prob from file : "<< source;
   ReadProtoFromTextFileOrDie(source, &lb_param);
   ignore_rest_of_label_ 				= 	lb_param.ignore_rest_of_label();
   rest_of_label_mapping_ 				= 	lb_param.rest_of_label_mapping();
@@ -105,12 +106,12 @@ struct CmpByValue {
       vector<PAIR> label_prob_vec(label_prob_map_.begin(), label_prob_map_.end());
       sort(label_prob_vec.begin(), label_prob_vec.end(), CmpByValue()); //prob descend order;
       float bottom_prob=label_prob_vec[num_top_label_balance_-1].second;
-      if(!ignore_rest_of_label_){
+      if(!ignore_rest_of_label_&&rest_of_label_prob_>0){
          scale_factor =bottom_prob < rest_of_label_prob_? 1.0/bottom_prob: 1.0/rest_of_label_prob_;
       }
       else
       {
-        scale_factor =1.0/(bottom_prob==0?0.0000001:bottom_prob) ;
+        scale_factor =1.0/(bottom_prob==0?0.00001:bottom_prob) ;
       }
       LOG(INFO)<<" scale_factor =  "<< scale_factor;
       LOG(INFO)<<" bottom_prob =   " << bottom_prob;
@@ -180,10 +181,12 @@ struct CmpByValue {
        //balancing_label_
        if(!balancing_label_)
            return true;
-       //LOG(INFO)<<"label_skip_rate_map_["<<label<<"] =" <<label_skip_rate_map_[label];
+      
        if (label_skip_rate_map_[label] ==0)
           return false;
        int reminder =PrefetchRand()%label_skip_rate_map_[label];
+	   //if(reminder ==0)
+	    //LOG(INFO)<<"label_skip_rate_map_["<<label<<"] =" <<label_skip_rate_map_[label]<<"reminder =="<<reminder;
        if(reminder ==0)
            return true;
        else

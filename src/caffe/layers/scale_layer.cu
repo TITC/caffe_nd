@@ -29,6 +29,10 @@ __global__ void ScaleBiasForward(const int n, const Dtype* in,
 template <typename Dtype>
 void ScaleLayer<Dtype>::Forward_gpu(
     const vector<Blob<Dtype>*>& bottom, const vector<Blob<Dtype>*>& top) {
+   /* if(this->layer_param_.phase()==PREDICT){ LOG(INFO)<<"start forward : "<< this->layer_param_.name();
+      Forward_cpu(bottom,top);
+	  return;
+    } */
   const int count = top[0]->count();
   const Dtype* bottom_data = bottom[0]->gpu_data();
   if (bottom[0] == top[0]) {

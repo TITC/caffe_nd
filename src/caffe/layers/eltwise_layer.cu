@@ -65,6 +65,14 @@ void EltwiseLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
   default:
     LOG(FATAL) << "Unknown elementwise operation.";
   }
+  
+  if(this->layer_param_.phase()==PREDICT){
+	   for (int i = 0; i < bottom.size(); ++i){
+			//LOG(INFO)<<"Free GPU mem... "<<this->layer_param_.name();
+			bottom[i]->data()->free();
+	   }
+    //bottom[0]->diff()->free();
+  }
 }
 
 template <typename Dtype>

@@ -9,6 +9,10 @@ namespace caffe {
 template <typename Dtype>
 void BatchNormLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
     const vector<Blob<Dtype>*>& top) {
+  if(this->layer_param_.phase()==PREDICT){ LOG(INFO)<<"start forward : "<< this->layer_param_.name();
+      Forward_cpu(bottom,top);
+	  return;
+    } 
   const Dtype* bottom_data = bottom[0]->gpu_data();
   Dtype* top_data = top[0]->mutable_gpu_data();
   int num = bottom[0]->shape(0);
@@ -87,6 +91,10 @@ void BatchNormLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
   //                 might clobber the data.  Can we skip this if they won't?
   caffe_copy(x_norm_.count(), top_data,
       x_norm_.mutable_gpu_data());
+	  
+  /*  if(this->layer_param_.phase()==PREDICT){ 
+      bottom[0]->data()->free();
+    }  */
 }
 
 template <typename Dtype>
