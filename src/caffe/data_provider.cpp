@@ -17,7 +17,10 @@ Data_DB_provider<Dtype>::Data_DB_provider(const DataProviderParameter& param)
 template <typename Dtype>
  Data_HDF5_provider<Dtype>:: Data_HDF5_provider(const DataProviderParameter& param)
 :Data_provider<Dtype>(param){
-  this->source_data_label_pair_.resize(this->batch_size_);
+	
+  for (int i=0;i<this->batch_size_;++i)
+  {this->source_data_label_pair_.push_back(new  Batch_data<Dtype>);}
+  //this->source_data_label_pair_.resize(this->batch_size_);
   //hdf_blobs_.resize(batch_size_);
   // Read the source to parse the filenames.
   bool has_hdf5_source = this->param_.has_data_source();
@@ -87,11 +90,11 @@ void Data_HDF5_provider<Dtype>::LoadHDF5FileData(const char* filename, int blob_
     //source_data_label_pair_[blob_idx].data = shared_ptr<Blob<Dtype> >(new Blob<Dtype>());
     //LOG(INFO) << "hdf5_load_nd_dataset ...  " << data_set_names[0];
     hdf5_load_nd_dataset(file_id, data_set_names[0].c_str(),
-        MIN_DATA_DIM, MAX_DATA_DIM, this->source_data_label_pair_[blob_idx].data_.get());
+        MIN_DATA_DIM, MAX_DATA_DIM, this->source_data_label_pair_[blob_idx]->data_.get());
     //LOG(INFO) << "hdf5_load_nd_dataset ...  " << data_set_names[1];
     //source_data_label_pair_[blob_idx].label = shared_ptr<Blob<Dtype> >(new Blob<Dtype>());
         hdf5_load_nd_dataset(file_id, data_set_names[1].c_str(),
-            MIN_DATA_DIM, MAX_DATA_DIM, this->source_data_label_pair_[blob_idx].label_.get());
+            MIN_DATA_DIM, MAX_DATA_DIM, this->source_data_label_pair_[blob_idx]->label_.get());
 
 
   //}
@@ -100,11 +103,11 @@ void Data_HDF5_provider<Dtype>::LoadHDF5FileData(const char* filename, int blob_
   CHECK_GE(status, 0) << "Failed to close HDF5 file: " << filename;
 
   // MinTopBlobs==1 guarantees at least one top blob
-  CHECK_GE(this->source_data_label_pair_[blob_idx].data_->num_axes(), 1) << "Input must have at least 1 axis.";
-  vector<int> d_shape =this->source_data_label_pair_[blob_idx].data_->shape();
+  CHECK_GE(this->source_data_label_pair_[blob_idx]->data_->num_axes(), 1) << "Input must have at least 1 axis.";
+  vector<int> d_shape =this->source_data_label_pair_[blob_idx]->data_->shape();
 
- // for (int i=0;i<d_shape.size();++i)
- //    LOG(INFO)<<"loaded data shape : " <<d_shape[i];
+  for (int i=0;i<d_shape.size();++i)
+     LOG(INFO)<<"loaded data shape : " <<d_shape[i];
 
  //make data blob to have 2 extra dimention ; num and channel but all ==1
 
@@ -112,8 +115,8 @@ void Data_HDF5_provider<Dtype>::LoadHDF5FileData(const char* filename, int blob_
     //there is no num and channel in data , so appending num and channel to the data
     d_shape.insert(d_shape.begin(),1);
     d_shape.insert(d_shape.begin(),1);
-    this->source_data_label_pair_[blob_idx].data_->Reshape(d_shape);
-    this->source_data_label_pair_[blob_idx].label_->Reshape(d_shape);
+    this->source_data_label_pair_[blob_idx]->data_->Reshape(d_shape);
+    this->source_data_label_pair_[blob_idx]->label_->Reshape(d_shape);
     //LOG(INFO)<<"Reshapeing the source data blob : adding num 1 and channel 1 : ";
     //vector<int>::iterator it=
     //this->source_data_label_pair_[blob_idx].data_

@@ -121,6 +121,8 @@ void PatchSampler<Dtype>::ReadOnePatch(QueuePair_Batch<Dtype>* qb ){
       LOG(INFO)<<"loading batch patch_count = "<<patch_count_;
       patch_count_==0?d_provider_->Load_next_batch()
                       :d_provider_->Load_next_batch(load_idx);
+	  //d_provider_->Load_next_batch();
+                     // :d_provider_->Load_next_batch();
       // apply mean has some logical error here, need to be corrected ?
       if(patch_count_==0){
         for(int i= 0;i<d_provider_->get_current_batch_size();++i){
@@ -140,8 +142,9 @@ void PatchSampler<Dtype>::ReadOnePatch(QueuePair_Batch<Dtype>* qb ){
 
 
   int data_idx=PrefetchRand()% d_provider_->get_current_batch_size();
-  const Batch_data<Dtype> source_data_label=d_provider_->getOneData(data_idx);
-  //LOG(INFO)<<"reading one patch from data blob "<<data_idx;
+  
+  const Batch_data<Dtype>& source_data_label=d_provider_->getOneData(data_idx);
+  //LOG(INFO)<<"reading one patch from data blob "<<data_idx<<"  out of "<<d_provider_->get_current_batch_size();
 
   //LOG(INFO)<< "dong reading hd5";
   // take input patch_data then warp a patch and put it to patch_data;
@@ -154,15 +157,16 @@ void PatchSampler<Dtype>::ReadOnePatch(QueuePair_Batch<Dtype>* qb ){
   vector<int> s_data_shape=source_data_label.label_.get()->shape();
   CHECK_GE(s_data_shape.size(),3);
   vector<int> real_data_shape(s_data_shape.begin()+2,s_data_shape.end());
+  //  LOG(INFO)<<s_data_shape[0]<<":"<<s_data_shape[1]<<":"<<s_data_shape[2]<<":"<<s_data_shape[3]<<":"<<s_data_shape[4];
   patch_coord_finder_->SetInputShape(real_data_shape);
 
   vector<int> randPt ;
-  Dtype pt_label_value ;
+  int pt_label_value ;
   do{
       randPt                = patch_coord_finder_->GetRandomPatchCenterCoord();
-      pt_label_value        = data_transformer_nd->ReadOnePoint(source_data_label.label_.get(), randPt);
-  }while (!sample_selector_->AcceptGivenLabel((int)pt_label_value));
-
+      pt_label_value        = static_cast<int> (data_transformer_nd->ReadOnePoint(source_data_label.label_.get(), randPt));
+  }while (!sample_selector_->AcceptGivenLabel(pt_label_value));
+    //LOG(INFO)<<"x:Y:Z "<< randPt[0]<<":"<<randPt[1]<<":"<<randPt[2];
  // LOG(INFO)<<"selected Label = "<<pt_label_value;
 
 
@@ -321,8 +325,8 @@ void Runner<Dtype>::InternalThreadEntry() {
           while (!must_stop()) {
             //for (int i = 0; i < solver_count; ++i) {
 			 // LOG(INFO)<<"size of qps["<<i<<"] free =" <<qps[i].get()->free_.size();
-			 int i=0;
-              p_sampler_.ReadOnePatch(qps[i].get());
+			// int i=0;
+              p_sampler_.ReadOnePatch(qps[0].get());
             //}
           }
         } catch (boost::thread_interrupted&) {

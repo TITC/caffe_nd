@@ -337,7 +337,7 @@ void DataTransformerND<Dtype>::Transform(Blob<Dtype>* input_blob,
     //      transformed_data[p]=0;
     //  }
     if (scale != Dtype(1)) {
-      DLOG(INFO) << "Scale: " << scale;
+      LOG(INFO) << "Scale: " << scale;
       caffe_scal( trans_data_size, scale, transformed_data);
     }
   //  LOG(INFO)<<"transform done..";

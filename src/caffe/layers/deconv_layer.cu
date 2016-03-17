@@ -7,12 +7,12 @@ namespace caffe {
 template <typename Dtype>
 void DeconvolutionLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
       const vector<Blob<Dtype>*>& top) {
-    if(this->layer_param_.phase()==PREDICT && (this->layer_param_.name()=="deconv1_3" ||this->layer_param_.name()=="deconv1_2"||
+    /* if(this->layer_param_.phase()==PREDICT && (this->layer_param_.name()=="deconv1_3" ||this->layer_param_.name()=="deconv1_2"||
 	this->layer_param_.name()=="deconv2_3" || this->layer_param_.name()=="deconv2_2" )){
       LOG(INFO)<<"start forward : "<< this->layer_param_.name();
       Forward_cpu(bottom,top);
 	  return;
-    } 
+    }  */
   const Dtype* weight = this->blobs_[0]->gpu_data();
   for (int i = 0; i < bottom.size(); ++i) {
     const Dtype* bottom_data = bottom[i]->gpu_data();

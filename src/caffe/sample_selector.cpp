@@ -181,7 +181,8 @@ struct CmpByValue {
        //balancing_label_
        if(!balancing_label_)
            return true;
-      
+       //label_skip_rate_map_[1]=1;
+	   //label_skip_rate_map_[0]=5000;
        if (label_skip_rate_map_[label] ==0)
           return false;
        int reminder =PrefetchRand()%label_skip_rate_map_[label];
@@ -250,6 +251,7 @@ struct CmpByValue {
  template <typename Dtype>
  void SampleSelector<Dtype>::InitRand(){
    //if (needs_rand) {
+	   rng_.reset();
      const unsigned int rng_seed = caffe_rng_rand();
         rng_.reset(new Caffe::RNG(rng_seed));
    //} else {
