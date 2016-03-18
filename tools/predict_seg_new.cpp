@@ -201,10 +201,20 @@ void Segmentor::SetMean(const string& mean_file) {
   //input_layer->ReshapeLike(*data_blob_);
 
   vector<Blob<float>*> prob_blobs;
-  int shif_num=FLAGS_shift_num<=0?shift_data_dim_size:FLAGS_shift_num;
+  int shif_num=0;FLAGS_shift_num==0?shift_data_dim_size:FLAGS_shift_num;
+  if (FLAGS_shift_num==0)
+	  shif_num = shift_data_dim_size;
+  else if(FLAGS_shift_num<0)
+	  shif_num = 1;
+  else
+	   shif_num =FLAGS_shift_num;
+
 //  for(int i=0;i<FLAGS_shift_num;++i){
   for(int i=0;i<shif_num;++i){
-      off_set[FLAGS_shift_axis]=i*FLAGS_shift_stride-shift_input_dim_size/2;
+	  if(FLAGS_shift_num>=0)
+		off_set[FLAGS_shift_axis]=i*FLAGS_shift_stride-shift_input_dim_size/2;
+      else
+		off_set[FLAGS_shift_axis]=0;  
       //off_set[FLAGS_shift_axis]=i*FLAGS_shift_stride-FLAGS_shift_num/2;
       transformer->Transform(data_blob_.get(),
                               &trans_blob,

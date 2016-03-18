@@ -111,9 +111,9 @@ void AccuracyLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
 
   }
   
-  for(int i=0;i<num_labels;++i){
+ /*  for(int i=0;i<num_labels;++i){
 	   LOG(INFO)<<"label "<<i<< " = "  <<correct_lb[i]<<"/"<<total_label[i];
-  }
+  } */
   //  LOG(INFO)<<"label 4  C/T  :  "<<correct_lb[4]<<"/"<<total_label[4]<<"  label 3  C/T  :  "<<correct_lb[3]<<"/"<<total_label[3]<<"  label 2  C/T  :  "<<correct_lb[2]<<"/"<<total_label[2]<<"  label 1  C/T  :  "<<correct_lb[1]<<"/"<<total_label[1]<<"  label 0 C/T : "<<correct_lb[0]<<"/"<< total_label[0] <<  "  count = "<<count;
 
   // LOG(INFO) << "Accuracy: " << accuracy;
