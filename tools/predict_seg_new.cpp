@@ -169,7 +169,7 @@ void Segmentor::SetMean(const string& mean_file) {
   LoadHD5File(input_hd5_file.c_str());
 
   TransformationNDParameter transform_param;
-  float mean_v =FLAGS_mean_value;
+  //float mean_v =FLAGS_mean_value;
   transform_param.add_mean_value(FLAGS_mean_value);
   //set_mean_value(0,FLAGS_mean_value);
   DataTransformerND<float>* transformer
@@ -201,7 +201,7 @@ void Segmentor::SetMean(const string& mean_file) {
   //input_layer->ReshapeLike(*data_blob_);
 
   vector<Blob<float>*> prob_blobs;
-  int shif_num=0;FLAGS_shift_num==0?shift_data_dim_size:FLAGS_shift_num;
+  int shif_num=0;//FLAGS_shift_num==0?shift_data_dim_size:FLAGS_shift_num;
   if (FLAGS_shift_num==0)
 	  shif_num = shift_data_dim_size;
   else if(FLAGS_shift_num<0)
