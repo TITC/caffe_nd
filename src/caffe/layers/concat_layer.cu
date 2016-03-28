@@ -43,6 +43,13 @@ void ConcatLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
         top_concat_axis, bottom_concat_axis, offset_concat_axis, top_data);
     offset_concat_axis += bottom_concat_axis;
   }
+  
+  if(this->layer_param_.phase()==PREDICT){
+	   for (int i = 0; i < bottom.size(); ++i){
+			//LOG(INFO)<<"Free GPU mem... "<<this->layer_param_.name();
+			bottom[i]->data()->free();
+	   }
+  }
 }
 
 template <typename Dtype>

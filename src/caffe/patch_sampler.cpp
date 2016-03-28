@@ -393,7 +393,9 @@ void Runner<Dtype>::InternalThreadEntry() {
             int max_point     =    input_shape_[i]-min_point-1;
             //int max_point    =    input_shape_[i]-label_shape_[i]/2-1;
             int diff          =     max_point-min_point+1;
-            CHECK_GE(diff,0);
+			if(diff<0){
+			LOG(INFO)<<"label_shape"<<i<<"="<<label_shape_[i]<<" "<<"input_shape_[i] ="<<input_shape_[i];}
+            CHECK_GT(diff,0);
             label_shape_center_[i]  =   diff==0?min_point:Rand(diff)+min_point;
            //CHECK_GE(diff,0);
             //label_shape_center_[i]  =    Rand(max_point-min_point)+min_point;
