@@ -324,6 +324,7 @@ void DataTransformerND<Dtype>::Transform(Blob<Dtype>* input_blob,
      for (int n=1;n<nd_point.size();++n){
          if(nd_point[n]<0 || nd_point[n]>input_shape[n]-1){
            data_in_pad_space =true;
+		   //LOG(INFO)<<"Pad out range set to 0"<<nd_point[n];
            break;
          }
         data_idx*=input_shape[n];

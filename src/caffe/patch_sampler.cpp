@@ -184,7 +184,8 @@ void PatchSampler<Dtype>::ReadOnePatch(QueuePair_Batch<Dtype>* qb ){
                                     patch_data_label->label_.get(),
                                     label_offset,
                                     patch_label_shape_);
-
+   //if(label_offset[2]<=0 || label_offset[1]<=0||label_offset[0]<=0)
+	//   LOG(INFO)<<"label offset small "<<label_offset[2]<<":"<<label_offset[1]<<":"<<label_offset[0];
 
   //LOG(INFO)<<"end transfer";
   int new_label=(int)  patch_data_label->label_.get()->cpu_data()[0];

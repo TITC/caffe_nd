@@ -262,7 +262,9 @@ BOOST_PYTHON_MODULE(_caffe) {
     .add_property("width",    &Blob<Dtype>::width)
    // .add_property("count",    static_cast<int (Blob<Dtype>::*)() const>(
    //     &Blob<Dtype>::count))
-	.add_property("count",    static_cast<size_t (Blob<Dtype>::*)() const>(
+	//.add_property("count",    static_cast<size_t (Blob<Dtype>::*)() const>(
+    //    &Blob<Dtype>::count))
+	.add_property("count",    static_cast<long (Blob<Dtype>::*)() const>(
         &Blob<Dtype>::count))
     .def("reshape",           bp::raw_function(&Blob_Reshape))
     .add_property("data",     bp::make_function(&Blob<Dtype>::mutable_cpu_data,

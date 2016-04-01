@@ -264,10 +264,12 @@ void BaseConvolutionLayer<Dtype>::forward_cpu_gemm(const Dtype* input,
     col_buff = col_buffer_.cpu_data();
   }
   for (int g = 0; g < group_; ++g) {
+	 //LOG(INFO)<<"start caffe_cpu gemm";
     caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, conv_out_channels_ /
         group_, conv_out_spatial_dim_, kernel_dim_,
         (Dtype)1., weights + weight_offset_ * g, col_buff + col_offset_ * g,
         (Dtype)0., output + output_offset_ * g);
+	//LOG(INFO)<<"done caffe_cpu gemm";
   }
 }
 

@@ -72,7 +72,7 @@ class Blob {
     return shape_[CanonicalAxisIndex(index)];
   }
   inline int num_axes() const { return shape_.size(); }
-  inline size_t count() const { return count_; }
+  inline long count() const { return count_; }
 
   /**
    * @brief Compute the volume of a slice; i.e., the product of dimensions
@@ -82,15 +82,15 @@ class Blob {
    *
    * @param end_axis The first axis to exclude from the slice.
    */
-  inline size_t count(int start_axis, int end_axis) const {
+  inline long count(int start_axis, int end_axis) const {
     CHECK_LE(start_axis, end_axis);
     CHECK_GE(start_axis, 0);
     CHECK_GE(end_axis, 0);
     CHECK_LE(start_axis, num_axes());
     CHECK_LE(end_axis, num_axes());
-    int count = 1;
+    long count = 1;
     for (int i = start_axis; i < end_axis; ++i) {
-      count *= (size_t)shape(i);
+      count *= (long)shape(i);
     }
     return count;
   }
@@ -100,7 +100,7 @@ class Blob {
    *
    * @param start_axis The first axis to include in the slice.
    */
-  inline size_t count(int start_axis) const {
+  inline long count(int start_axis) const {
     return count(start_axis, num_axes());
   }
 
@@ -150,7 +150,7 @@ class Blob {
     return shape(index);
   }
 
-  inline int offset(const int n, const int c = 0, const int h = 0,
+  inline long offset(const int n, const int c = 0, const int h = 0,
       const int w = 0) const {
     CHECK_GE(n, 0);
     CHECK_LE(n, num());
@@ -160,7 +160,7 @@ class Blob {
     CHECK_LE(h, height());
     CHECK_GE(width(), 0);
     CHECK_LE(w, width());
-    return ((n * channels() + c) * height() + h) * width() + w;
+    return ((long)(n * channels() + c) * (long)height() + h) * (long)width() + w;
   }
 
   // inline int offset(const vector<int>& indices) const {
@@ -176,15 +176,15 @@ class Blob {
   //   }
   //   return offset;
   // }
-  inline size_t offset(const vector<int>& indices) const {
+  inline long offset(const vector<int>& indices) const {
     CHECK_LE(indices.size(), num_axes());
-    size_t offset = 0;
+    long offset = 0;
     for (int i = 0; i < num_axes(); ++i) {
-      offset *=(size_t) shape(i);
+      offset *=(long) shape(i);
       if (indices.size() > i) {
         CHECK_GE(indices[i], 0);
         CHECK_LT(indices[i], shape(i));
-        offset +=(size_t) indices[i];
+        offset +=(long) indices[i];
       }
     }
     return offset;
@@ -287,8 +287,8 @@ class Blob {
   vector<int> shape_;
   //int count_;
   //int capacity_;
-  size_t count_;
-  size_t capacity_;
+  long count_;
+  long capacity_;
   DISABLE_COPY_AND_ASSIGN(Blob);
 };  // class Blob
 
