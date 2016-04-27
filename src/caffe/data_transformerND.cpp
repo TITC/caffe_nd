@@ -260,7 +260,7 @@ void DataTransformerND<Dtype>::Transform(Blob<Dtype>* input_blob,
     const int input_num = input_shape[0];
     const int input_channels = input_shape[1];
     CHECK_EQ(input_num ,1)<<"num of input must be 1 ";
-    CHECK_EQ(input_channels,1)<<"num of channels must be 1";
+    //CHECK_EQ(input_channels,1)<<"num of channels must be 1";
     //const int channels = new_transform_shape[1];
     transform_shape =crop_shape;
     transform_shape.insert(transform_shape.begin(),input_channels);

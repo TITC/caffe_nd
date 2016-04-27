@@ -17,7 +17,7 @@ Data_DB_provider<Dtype>::Data_DB_provider(const DataProviderParameter& param)
 template <typename Dtype>
  Data_HDF5_provider<Dtype>:: Data_HDF5_provider(const DataProviderParameter& param)
 :Data_provider<Dtype>(param){
-	
+
   for (int i=0;i<this->batch_size_;++i)
   {this->source_data_label_pair_.push_back(new  Batch_data<Dtype>);}
   //this->source_data_label_pair_.resize(this->batch_size_);
@@ -105,22 +105,53 @@ void Data_HDF5_provider<Dtype>::LoadHDF5FileData(const char* filename, int blob_
   // MinTopBlobs==1 guarantees at least one top blob
   CHECK_GE(this->source_data_label_pair_[blob_idx]->data_->num_axes(), 1) << "Input must have at least 1 axis.";
   vector<int> d_shape =this->source_data_label_pair_[blob_idx]->data_->shape();
+  vector<int> l_shape =this->source_data_label_pair_[blob_idx]->label_->shape();
+  LOG(INFO)<<"d_size =" <<d_shape.size();
 
   for (int i=0;i<d_shape.size();++i)
      LOG(INFO)<<"loaded data shape : " <<d_shape[i];
 
+  LOG(INFO)<<" ";
+  for (int i=0;i<l_shape.size();++i)
+        LOG(INFO)<<"loaded label shape : " <<l_shape[i];
+
  //make data blob to have 2 extra dimention ; num and channel but all ==1
 
-  if(d_shape.size()<=3){
+  if(d_shape.size()==3){
     //there is no num and channel in data , so appending num and channel to the data
     d_shape.insert(d_shape.begin(),1);
     d_shape.insert(d_shape.begin(),1);
     this->source_data_label_pair_[blob_idx]->data_->Reshape(d_shape);
-    this->source_data_label_pair_[blob_idx]->label_->Reshape(d_shape);
     //LOG(INFO)<<"Reshapeing the source data blob : adding num 1 and channel 1 : ";
     //vector<int>::iterator it=
     //this->source_data_label_pair_[blob_idx].data_
+  }else if(d_shape.size()==4){
+    d_shape.insert(d_shape.begin(),1);
+    this->source_data_label_pair_[blob_idx]->data_->Reshape(d_shape);
   }
+
+
+  int diff_d_l=d_shape.size()-l_shape.size();
+  CHECK_GE(diff_d_l,0);
+  if(diff_d_l>0){
+      for(int i=0;i<diff_d_l;++i)
+      {l_shape.insert(l_shape.begin(),1);}
+      this->source_data_label_pair_[blob_idx]->label_->Reshape(l_shape);
+  }
+
+
+  d_shape =this->source_data_label_pair_[blob_idx]->data_->shape();
+  l_shape =this->source_data_label_pair_[blob_idx]->label_->shape();
+  LOG(INFO)<<"d_size =" <<d_shape.size();
+
+  for (int i=0;i<d_shape.size();++i)
+     LOG(INFO)<<"data shape after prependig : " <<d_shape[i];
+
+  LOG(INFO)<<" ";
+  for (int i=0;i<l_shape.size();++i)
+        LOG(INFO)<<"label shape after prependig  : " <<l_shape[i];
+
+
   //const int num = this->source_data_label_pair_[blob_idx].data_->shape(0);
   //CHECK_EQ(num,1);// for patching we assumed that very hdf file has onely one large 3D valume.
   // for (int i = 1; i < num_dataset; ++i) {
@@ -140,8 +171,8 @@ void Data_HDF5_provider<Dtype>::LoadHDF5FileData(const char* filename, int blob_
   // } else {
   //   DLOG(INFO) << "Successully loaded " << hdf_blobs_[0]->shape(0) << " rows";
   // }
-  
-  
+
+
   LOG(INFO) << "loaded hdf5 file " << filename;
 }
 
