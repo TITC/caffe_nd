@@ -367,14 +367,16 @@ void DataTransformerND<Dtype>::ApplyMean(Blob<Dtype>* input_blob,
 
   CHECK_GE(iput_axes,3);
 
-  CHECK_EQ(channels,num_ch_means);
-
+//  CHECK_EQ(channels,num_ch_means);
+// do not compute if mean_values == 0
+  if ((num_ch_means >= 1)&&(mean_values_[0]!=0)){
   int count = 0;
   for(int i=0;i<num;++i)
     for(int c=0;c<channels;++c){
       for(int d=0;d<data_size;++d)
           trans_data[count++]-=mean_values_[c];
     }
+  }
 
 }
 
