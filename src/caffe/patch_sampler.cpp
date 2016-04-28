@@ -48,12 +48,12 @@ PatchSampler<Dtype>::PatchSampler(const LayerParameter& param)
     LOG(INFO)<<"reset runner ...";
   }
   runner_->new_queue_pairs_.push(queue_pair_); */
-  
+
   runner_.reset(new Runner<Dtype>(param,*this));
   //runner_ = new Runner<Dtype>(param,*this);
   runner_->new_queue_pairs_.push(queue_pair_);
-  
-  
+
+
   LOG(INFO)<<"runner setup done ... count =" <<count_patch_instances;
   //count_patch_instances++；
   patches_per_data_batch_ = param_.patch_sampler_param().patches_per_data_batch();
@@ -142,7 +142,7 @@ void PatchSampler<Dtype>::ReadOnePatch(QueuePair_Batch<Dtype>* qb ){
 
 
   int data_idx=PrefetchRand()% d_provider_->get_current_batch_size();
-  
+
   const Batch_data<Dtype>& source_data_label=d_provider_->getOneData(data_idx);
   //LOG(INFO)<<"reading one patch from data blob "<<data_idx<<"  out of "<<d_provider_->get_current_batch_size();
 
@@ -255,7 +255,7 @@ QueuePair_Batch<Dtype>::QueuePair_Batch(const LayerParameter& param) {
   //  LOG(INFO)<<"batch_size = " << patch_shape[i+2] <<" crop_dim = "<<dim;
   }
 
-    
+
 
   for (int i = 0; i < batch_size; ++i) {
     //Batch_data<Dtype>* b_d =new
@@ -401,7 +401,7 @@ void Runner<Dtype>::InternalThreadEntry() {
            //CHECK_GE(diff,0);
             //label_shape_center_[i]  =    Rand(max_point-min_point)+min_point;
             //label_shape_center_[i]  =     Rand(diff)+min_point;
-			
+
 			//label_shape_offset_[i]  =     std::max(0,label_shape_center_[i] );
             //data_shape_offset_[i]   =     label_shape_center_[i] ;
             label_shape_offset_[i]  =     std::max(0,label_shape_center_[i] - min_point);

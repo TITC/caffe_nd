@@ -80,8 +80,9 @@ Segmentor::Segmentor(const string& model_file,
 
   Blob<float>* input_layer = net_->input_blobs()[0];
   num_channels_ = input_layer->channels();
-  CHECK(num_channels_ == 3 || num_channels_ == 1)
-    << "Input layer should have 1 or 3 channels.";
+  LOG(INFO)<<"# channels = "<< num_channels_;
+  //CHECK(num_channels_ == 3 || num_channels_ == 1)
+  //  << "Input layer should have 1 or 3 channels.";
 }
 
 void Segmentor::SaveBlob2HD5File(const char* file_name, const Blob<float>& output_blob){
@@ -124,11 +125,14 @@ void Segmentor::LoadHD5File(const char* filename){
   for (int i=0;i<d_shape.size();++i)
      LOG(INFO)<<"loaded data shape : " <<d_shape[i];
 
-  if(d_shape.size()<=3){
+  if(d_shape.size()==3){
     //there is no num and channel in data , so appending num and channel to the data
     d_shape.insert(d_shape.begin(),1);
     d_shape.insert(d_shape.begin(),1);
     data_blob_->Reshape(d_shape);
+  }else if(d_shape.size()==4){
+      d_shape.insert(d_shape.begin(),1);
+      data_blob_->Reshape(d_shape);
   }
   LOG(INFO) << "Successully loaded hdf5 file " << filename;
 
@@ -214,7 +218,7 @@ void Segmentor::SetMean(const string& mean_file) {
 	  if(FLAGS_shift_num>=0)
 		off_set[FLAGS_shift_axis]=i*FLAGS_shift_stride-shift_input_dim_size/2;
       else
-		off_set[FLAGS_shift_axis]=0;  
+		off_set[FLAGS_shift_axis]=0;
       //off_set[FLAGS_shift_axis]=i*FLAGS_shift_stride-FLAGS_shift_num/2;
       transformer->Transform(data_blob_.get(),
                               &trans_blob,

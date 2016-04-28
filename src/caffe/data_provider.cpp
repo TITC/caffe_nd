@@ -13,7 +13,6 @@ Data_DB_provider<Dtype>::Data_DB_provider(const DataProviderParameter& param)
 :Data_provider<Dtype>(param){
 
 }
-
 template <typename Dtype>
  Data_HDF5_provider<Dtype>:: Data_HDF5_provider(const DataProviderParameter& param)
 :Data_provider<Dtype>(param){
