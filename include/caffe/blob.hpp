@@ -152,6 +152,7 @@ class Blob {
 
   inline long offset(const int n, const int c = 0, const int h = 0,
       const int w = 0) const {
+	if(num_axes()==5) return offset_3d(n);
     CHECK_GE(n, 0);
     CHECK_LE(n, num());
     CHECK_GE(channels(), 0);
@@ -162,7 +163,20 @@ class Blob {
     CHECK_LE(w, width());
     return ((long)(n * channels() + c) * (long)height() + h) * (long)width() + w;
   }
-
+  
+  
+  inline long offset_3d(const int n) const {
+	 
+	
+	//for (int i = 0; i < num_axes(); ++i) {
+      //long offset *=(long) shape(i);
+    //}
+	long offset=n*shape(1)*shape(2)*shape(3)*shape(4);
+	return offset;
+  }
+  
+ 
+  
   // inline int offset(const vector<int>& indices) const {
   //   CHECK_LE(indices.size(), num_axes());
   //   int offset = 0;

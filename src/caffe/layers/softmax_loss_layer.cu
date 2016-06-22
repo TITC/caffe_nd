@@ -18,7 +18,7 @@ __global__ void SoftmaxLossForwardGPU(const int nthreads,
     const int s = index % spatial_dim;
     //const int label_value = static_cast<int>(label[n * spatial_dim + s]);
 	int label_value = static_cast<int>(label[n * spatial_dim + s]);
-	if(label_value==2) label_value=0;
+	//if(label_value==2) label_value=0;
     if (has_ignore_label_ && label_value == ignore_label_) {
       loss[index] = 0;
       counts[index] = 0;
@@ -41,7 +41,7 @@ __global__ void SoftmaxWeightedLossForwardGPU(const int nthreads,
     const int s = index % spatial_dim;
     //const int label_value = static_cast<int>(label[n * spatial_dim + s]);
 	int label_value = static_cast<int>(label[n * spatial_dim + s]);
-	if(label_value==2) label_value=0;
+	//if(label_value==2) label_value=0;
     if (has_ignore_label_ && label_value == ignore_label_) {
       loss[index] = 0;
       counts[index] = 0;
@@ -117,7 +117,7 @@ __global__ void SoftmaxWeightedLossBackwardGPU(const int nthreads, const Dtype* 
     const int s = index % spatial_dim;
    // const int label_value = static_cast<int>(label[n * spatial_dim + s]);
 	int label_value = static_cast<int>(label[n * spatial_dim + s]);
-    if(label_value==2) label_value=0;
+    //if(label_value==2) label_value=0;
     if (has_ignore_label_ && label_value == ignore_label_) {
       for (int c = 0; c < channels; ++c) {
         bottom_diff[n * dim + c * spatial_dim + s] = 0;
@@ -129,7 +129,7 @@ __global__ void SoftmaxWeightedLossBackwardGPU(const int nthreads, const Dtype* 
        //Dtype curent_diff = bottom_diff[idx];
        for (int c = 0; c < channels; ++c) {
          bottom_diff[n * dim + c * spatial_dim + s]*=static_cast<Dtype> (lossWeights[label_value]);
-	
+
        }
        counts[index] = 1;
     }
@@ -184,10 +184,10 @@ void SoftmaxWithLossLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
     const int nthreads = outer_num_ * inner_num_;
     const float* lossWeights ;
     if(has_sample_selector_){
-			  if (this->layer_param_.label_select_param().auto_balance()) 
+			  if (this->layer_param_.label_select_param().auto_balance())
 				   sample_selector_->Compute_label_prob_fromBlob(bottom[1]);
 		lossWeights = sample_selector_->Get_Label_prob_gpu_data();
-     
+
 	}
 	const float*lossWeights_cpu  =sample_selector_->Get_Label_prob_cpu_data();
 	if(rand()%200==0)
@@ -199,7 +199,7 @@ void SoftmaxWithLossLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
 
     if(has_sample_selector_){
       // NOLINT_NEXT_LINE(whitespace/operators)
-		  
+
       SoftmaxWeightedLossBackwardGPU<Dtype><<<CAFFE_GET_BLOCKS(nthreads),
           CAFFE_CUDA_NUM_THREADS>>>(nthreads, top_data, label, bottom_diff,
           outer_num_, dim, inner_num_, has_ignore_label_, ignore_label_, counts,lossWeights );

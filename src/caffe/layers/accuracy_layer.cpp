@@ -68,7 +68,7 @@ void AccuracyLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
       //    static_cast<int>(bottom_label[i * inner_num_ + j]);
 	  int label_value =
           static_cast<int>(bottom_label[i * inner_num_ + j]);
-	  if (label_value ==2) label_value =0;
+	  //if (label_value ==2) label_value =0;
       if (has_ignore_label_ && label_value == ignore_label_) {
         continue;
       }
@@ -105,12 +105,12 @@ void AccuracyLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
 		//LOG(INFO)<< "predicT_lb== " << bottom_data_vector[k].second <<" lb =" <<label_value;
       }
       ++count;
-	  total_label[label_value]++;
+	    total_label[label_value]++;
 
     }
 
   }
-  
+
  /*  for(int i=0;i<num_labels;++i){
 	   LOG(INFO)<<"label "<<i<< " = "  <<correct_lb[i]<<"/"<<total_label[i];
   } */

@@ -16,6 +16,10 @@ __global__ void ReLUForward(const int n, const Dtype* in, Dtype* out,
 template <typename Dtype>
 void ReLULayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
     const vector<Blob<Dtype>*>& top) {
+if(this->layer_param_.phase()==PREDICT_CPU){ LOG(INFO)<<"start forward : "<< this->layer_param_.name();
+            Forward_cpu(bottom,top);
+        	  return;
+    }
   const Dtype* bottom_data = bottom[0]->gpu_data();
   Dtype* top_data = top[0]->mutable_gpu_data();
   const int count = bottom[0]->count();
