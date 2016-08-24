@@ -61,6 +61,9 @@ message FillerParameter {
   optional VarianceNorm variance_norm = 8 [default = FAN_IN];
 }
 
+message FractalJoinParameter {
+  repeated float drop_path_ratio = 1;
+}
 message NetParameter {
   optional string name = 1; // consider giving the network a name
   // The input blobs to the network.
@@ -372,6 +375,7 @@ message LayerParameter {
   optional EmbedParameter embed_param = 137;
   optional ExpParameter exp_param = 111;
   optional FlattenParameter flatten_param = 135;
+  optional FractalJoinParameter fractal_join_param = 180;
   optional HDF5DataParameter hdf5_data_param = 112;
   optional HDF5OutputParameter hdf5_output_param = 113;
   optional HingeLossParameter hinge_loss_param = 114;
