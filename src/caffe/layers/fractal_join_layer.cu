@@ -37,6 +37,13 @@ void FractalJoinLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
       caffe_gpu_axpy(top[0]->count(), mult, bottom[i]->gpu_data(), top[0]->mutable_gpu_data());
     }
   }
+  
+  for (int i = 0; i < bottom.size(); ++i){
+   if(this->layer_param_.phase()==PREDICT){
+      bottom[i]->data()->free();
+      bottom[i]->diff()->free();
+    }
+  }
 }
 
 template <typename Dtype>
