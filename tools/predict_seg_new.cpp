@@ -32,10 +32,10 @@ DEFINE_string(predict, "", "predicted segmentation file");
 DEFINE_int32(shift_axis, 0, "the patch shifting dimention along the 3d data");
 DEFINE_int32(shift_num, 0,
     "total shifting times along the axis");
-	
+
 DEFINE_int32(start_slice, 0,
     "start shifting slice along the axis");
-	
+
 DEFINE_int32(shift_stride, 1,
     "shift stride along the axis");
 DEFINE_int32(gpu, -1,
@@ -187,7 +187,7 @@ void Segmentor::SetMean(const string& mean_file) {
   // vector<int> input_shape = data_blob_->shape();
   // vector<int > crop_shape(input_shape.begin()+2,input_shape.end());
   // Blob<float>* input_layer = net_->input_blobs()[0];
-  int data_axis =2;
+  const int data_axis =2;
   vector<int> segdata_shape = data_blob_->shape();
   Blob<float>* input_blob = net_->input_blobs()[0];
   vector<int>  input_shape = input_blob->shape();
@@ -195,7 +195,7 @@ void Segmentor::SetMean(const string& mean_file) {
   int shift_data_dim_size = segdata_shape[data_axis+FLAGS_shift_axis];
   int shift_input_dim_size =crop_shape[FLAGS_shift_axis];
   LOG(INFO)<<"shift_dim size = " <<shift_input_dim_size;
-  
+
 
 
   //crop_shape[FLAGS_shift_axis]=FLAGS_shift_num;
@@ -218,18 +218,18 @@ void Segmentor::SetMean(const string& mean_file) {
 	   shif_num =FLAGS_shift_num;
 
 //  for(int i=0;i<FLAGS_shift_num;++i){
-	
+
   LOG(INFO)<<"shift_num = " <<shif_num;
-  
+
 
   int start_slice =0;
   if(FLAGS_start_slice<0)
 	  start_slice =0;
   else
 	  start_slice =FLAGS_start_slice;
-  
+
   CHECK_GE(shif_num, start_slice) << "start_slice must not less than shif_num.";
-  
+
   for(int i=start_slice;i<shif_num;++i){
 	  if(FLAGS_shift_num>=0)
 		off_set[FLAGS_shift_axis]=i*FLAGS_shift_stride-shift_input_dim_size/2;

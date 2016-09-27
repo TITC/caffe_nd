@@ -33,7 +33,7 @@ void ConcatLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
   vector<int> top_shape = bottom[0]->shape();
   num_concats_ = bottom[0]->count(0, concat_axis_);
   concat_input_size_ = bottom[0]->count(concat_axis_ + 1);
-  int bottom_count_sum = bottom[0]->count();
+  unsigned  long bottom_count_sum = bottom[0]->count();
   for (int i = 1; i < bottom.size(); ++i) {
     CHECK_EQ(num_axes, bottom[i]->num_axes())
         << "All inputs must have the same #axes.";
