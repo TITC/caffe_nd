@@ -1,5 +1,9 @@
-# caffe for 3D image segmentation
+# Caffe for 3D image segmentation
 This version of caffe was modified for 3D image Segmenation. 
+DataPatch layer allows to load hd5 valume and fro which it ronadomly crop 3d Patch data and corresponding 3d label
+to feed to networks.
+class weight are autmatically balanced for in softmaxloss layer for imbalanced classes.
+Perform either hole volume prediction or slice by slice prediction in testing phase.
 
 
 # Caffe
