@@ -1,3 +1,7 @@
+# caffe for 3D image segmentation
+This version of caffe was modified for 3D image Segmenation. 
+
+
 # Caffe
 
 [![Build Status](https://travis-ci.org/BVLC/caffe.svg?branch=master)](https://travis-ci.org/BVLC/caffe)
