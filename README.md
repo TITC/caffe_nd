@@ -4,7 +4,7 @@ This version of caffe was modified for 3D image Segmenation.
 to feed to networks.
 - Support 3D pooling
 - Class weights are autmatically balanced in softmaxloss layer for imbalanced classes.
-- Perform either hole volume prediction or slice by slice prediction in testing phase.
+- Perform either entire 3D volume prediction or slice by slice prediction in testing phase.
 
 
 # Caffe
