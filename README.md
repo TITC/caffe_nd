@@ -1,6 +1,6 @@
 # Caffe for 3D image segmentation
 This version of caffe was modified for 3D image Segmenation. 
-- DataPatch layer allows to load hd5 valume from which it ronadomly crop 3d Patch data and corresponding 3d label
+- DataPatch layer allows to load hd5 valume from which it randomly crop 3d Patch data and corresponding 3d label
 to feed to networks.
 - Support 3D pooling
 - Class weights are autmatically balanced in softmaxloss layer for imbalanced classes.
