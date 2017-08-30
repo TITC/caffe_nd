@@ -5,6 +5,11 @@
 
 #include <cuda.h>
 
+// dont add atomicAdd for newer versions of cuda ie 7+
+// https://stackoverflow.com/questions/39274472/error-function-atomicadddouble-double-has-already-been-defined
+ #if !defined(__CUDA_ARCH__) || __CUDA_ARCH__ >= 600
+
+ #else
 // CUDA: atomicAdd is not defined for doubles
 static __inline__ __device__ double atomicAdd(double *address, double val) {
   unsigned long long int* address_as_ull = (unsigned long long int*)address;
@@ -17,5 +22,5 @@ static __inline__ __device__ double atomicAdd(double *address, double val) {
   } while (assumed != old);
   return __longlong_as_double(old);
 }
-
+ #endif
 #endif
