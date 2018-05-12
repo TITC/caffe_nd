@@ -304,6 +304,21 @@ void SGDSolver<Dtype>::RestoreSolverStateFromBinaryProto(
   ReadProtoFromBinaryFile(state_file, &state);
   this->iter_ = state.iter();
   if (state.has_learned_net()) {
+
+    // if state.learned_net file is not found ie .caffemodel
+    // try looking for file in same directory as state_file ie .solverstate
+    // file
+    boost::filesystem::path learned_net_path(state.learned_net());
+    if (!boost::filesystem::exists(learned_net_path)){
+      LOG(INFO) << state.learned_net() << " not found. "
+                << "going to look in " << state_file << " dir";
+      boost::filesystem::path netpath(state_file);
+      boost::filesystem::path netdir = netpath.parent_path();
+      boost::filesystem::path newnetpath = netdir / learned_net_path.filename();
+      state.set_learned_net(newnetpath.string());
+      LOG(INFO) << "Trying new path: " << state.learned_net();
+    }
+
     NetParameter net_param;
     ReadNetParamsFromBinaryFileOrDie(state.learned_net().c_str(), &net_param);
     this->net_->CopyTrainedLayersFrom(net_param);
